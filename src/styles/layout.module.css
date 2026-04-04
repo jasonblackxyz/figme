@@ -1,0 +1,52 @@
+.shell {
+  display: grid;
+  grid-template-areas:
+    "toolbar toolbar toolbar"
+    "layers  canvas  properties"
+    "status  status  status";
+  grid-template-columns: 240px 1fr 280px;
+  grid-template-rows: 40px 1fr 24px;
+  height: 100%;
+  width: 100%;
+}
+
+.toolbar {
+  grid-area: toolbar;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.layersPanel {
+  grid-area: layers;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+}
+
+.canvas {
+  grid-area: canvas;
+  background: var(--color-bg);
+  overflow: hidden;
+  position: relative;
+}
+
+.propertiesPanel {
+  grid-area: properties;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  overflow-y: auto;
+}
+
+.statusBar {
+  grid-area: status;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 11px;
+  color: var(--color-text-dim);
+}

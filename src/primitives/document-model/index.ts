@@ -1,0 +1,31 @@
+export type {
+  Layer,
+  LayerKind,
+  BorderBoxProperties,
+  TextBlockProperties,
+  FigletTextProperties,
+  ImageProperties,
+  EdgePathProperties,
+  CustomBorderChars,
+  AutoLayoutConfig,
+  LayerProperties,
+  FigMePage,
+  FigMeDocument,
+  ComponentDef,
+} from './types.ts'
+export {
+  addLayer,
+  removeLayer,
+  updateLayer,
+  moveLayer,
+  reorderLayers,
+  addPage,
+  removePage,
+  setActivePage,
+  createComponent,
+  instantiateComponent,
+  detachComponent,
+  createEmptyDocument,
+  createEmptyPage,
+} from './operations.ts'
+export { serializeDocument, deserializeDocument } from './serialization.ts'
