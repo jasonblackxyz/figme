@@ -28,7 +28,7 @@ Hooks (src/hooks/)            — custom React hooks
 App (src/App.tsx)             — shell layout (CSS Grid: toolbar, layers, canvas, properties, status bar)
 ```
 
-**Boundary rule:** `src/primitives/` must NOT import from `@features`, `@stores`, or `@renderer`. This is ESLint-enforced.
+**Boundary rule:** `src/primitives/` must NOT import from `@features`, `@stores`, or `@renderer`. This is ESLint-enforced via both alias-based patterns (`@features/*`) and relative path patterns (`**/features/*`), preventing any bypass through relative imports.
 
 ## Key Primitives (`src/primitives/`)
 
@@ -38,10 +38,10 @@ App (src/App.tsx)             — shell layout (CSS Grid: toolbar, layers, canva
 | `stamp-system` | StampBuffer (chars[][] + styles[][]) — the intermediate representation between logic and rendering. Border stamps (rounded/double/section/custom), fill, merge |
 | `style-system` | 56 StyleKey palette mirroring readme-app's theme. StyleDef = {color, bg, fontWeight?} |
 | `document-model` | Layer/Page/Document CRUD. LayerKinds: border-box, text-block, figlet-text, divider, image, edge-path, group, component |
-| `layout-engine` | Guides, auto-layout (direction/gap/padding/alignment), alignment computation |
-| `figlet-engine` | FLF font parsing, ASCII art text rendering |
-| `char-registry` | Searchable Unicode character catalog (~500 chars), categories, favorites, recents |
-| `image-pipeline` | Image→ASCII conversion (5 styles: classic, smooth, braille, contour, hatch) |
+| `layout-engine` | **@experimental** Guides, auto-layout (direction/gap/padding/alignment), alignment computation — stubs, deferred to Tier 2 |
+| `figlet-engine` | **@experimental** FLF font parsing, ASCII art text rendering — stubs, deferred to Tier 2 |
+| `char-registry` | Searchable Unicode character catalog (39 chars currently, ~500 planned for Tier 2), categories, in-memory favorites/recents |
+| `image-pipeline` | **@experimental** Image→ASCII conversion (5 styles: classic, smooth, braille, contour, hatch) — stubs, deferred to Tier 2 |
 | `pattern-fill` | Repeating tile patterns for rectangular region fills |
 | `text-flow` | Text layout, word-wrap, line breaking within bounded regions |
 

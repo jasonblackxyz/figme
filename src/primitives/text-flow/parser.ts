@@ -13,7 +13,9 @@ export interface InlineSegment {
 export function parseInlineMarkdown(
   content: string,
   defaultStyleKey: StyleKey,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- TODO: remove when implemented
   _headingStyleKey?: StyleKey,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- TODO: remove when implemented
   _boldStyleKey?: StyleKey,
 ): InlineSegment[] {
   return [{ text: content, styleKey: defaultStyleKey }];

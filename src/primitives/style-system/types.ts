@@ -53,7 +53,8 @@ export type StyleKey =
   | 'imageDeep'
   | 'imageMid'
   | 'imageLight'
-  | 'imageEdge';
+  | 'imageEdge'
+  | 'success';
 
 export interface StyleDef {
   color: string;

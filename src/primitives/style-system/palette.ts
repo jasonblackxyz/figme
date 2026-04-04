@@ -16,6 +16,7 @@ export const STYLE_KEYS: StyleKey[] = [
   'ghostBlob', 'ghostEye', 'ghostBubbleBorder', 'ghostBubbleBg', 'ghostBubbleText',
   'ghostBubbleUser', 'ghostInput', 'ghostInputCursor', 'ghostClose', 'ghostInputHint',
   'imageDeep', 'imageMid', 'imageLight', 'imageEdge',
+  'success',
 ];
 
 /**
@@ -106,6 +107,9 @@ export function createAsciiPalette(theme: Theme): Palette {
     imageMid: { color: '#888888', bg },
     imageLight: { color: '#cccccc', bg },
     imageEdge: { color: '#ffffff', bg },
+
+    // Status
+    success: { color: colors.success, bg },
   };
 
   return palette;

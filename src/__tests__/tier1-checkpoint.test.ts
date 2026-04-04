@@ -29,6 +29,13 @@ import { createEmptyDocument, addLayer, addPage } from '@primitives/document-mod
 // F12: DOM Grid Renderer
 import { renderGridToElements } from '@renderer/renderGrid.ts'
 
+// F5: Text Flow Engine
+import { computeTextFlow } from '@primitives/text-flow/compute.ts'
+
+// F7: Pattern Fill
+import { stampPatternFill } from '@primitives/pattern-fill/stamper.ts'
+import type { PatternTile } from '@primitives/pattern-fill/types.ts'
+
 const testTheme: Theme = {
   name: 'test',
   colors: {
@@ -271,5 +278,119 @@ describe('Tier 1 Checkpoint', () => {
     // Document model has correct layer count
     expect(Object.keys(doc.pages[0]!.layers)).toHaveLength(2)
     expect(doc.pages[0]!.layerOrder).toHaveLength(2)
+  })
+
+  it('flows text through a border-box using the Text Flow Engine', () => {
+    // PRD Tier 1 Checkpoint requirement #2:
+    // "Flows text through a border-box using the Text Flow Engine"
+    const result = computeTextFlow({
+      content: 'Hello World, this is a test of text flow within a bounded region.',
+      boundingRect: { col: 2, row: 1, width: 20, height: 8 },
+      padding: { top: 1, right: 1, bottom: 1, left: 1 },
+      kerning: 0,
+      lineSpacing: 0,
+      alignment: 'left',
+    })
+
+    // Text should wrap within the 18-char available width (20 - 2 padding)
+    expect(result.lines.length).toBeGreaterThan(1)
+    expect(result.overflow).toBe(false)
+
+    // First line should respect padding offset
+    const firstLine = result.lines[0]!
+    expect(firstLine.row).toBe(2) // row 1 + padding.top 1
+    expect(firstLine.segments[0]!.col).toBe(3) // col 2 + padding.left 1
+
+    // Verify text wraps correctly (no line exceeds available width)
+    for (const line of result.lines) {
+      for (const seg of line.segments) {
+        expect(seg.text.length).toBeLessThanOrEqual(18)
+      }
+    }
+  })
+
+  it('applies a pattern fill to a region', () => {
+    // PRD Tier 1 Checkpoint requirement #3:
+    // "Applies a pattern fill to a region"
+    const checkerTile: PatternTile = {
+      id: 'checker',
+      name: 'Checker',
+      chars: [['░', '▒'], ['▒', '░']],
+      styles: [['dim', 'dim'], ['dim', 'dim']],
+      category: 'crosshatch',
+    }
+
+    const buffer = stampPatternFill(
+      {
+        tileId: 'checker',
+        region: { col: 0, row: 0, width: 6, height: 4 },
+        offsetCol: 0,
+        offsetRow: 0,
+      },
+      checkerTile,
+    )
+
+    expect(buffer).not.toBeNull()
+    expect(buffer!.width).toBe(6)
+    expect(buffer!.height).toBe(4)
+
+    // Verify the checker pattern tiles correctly
+    expect(buffer!.chars[0]![0]).toBe('░')
+    expect(buffer!.chars[0]![1]).toBe('▒')
+    expect(buffer!.chars[1]![0]).toBe('▒')
+    expect(buffer!.chars[1]![1]).toBe('░')
+    // Pattern wraps: col 2 = col 0 of tile
+    expect(buffer!.chars[0]![2]).toBe('░')
+    expect(buffer!.chars[0]![3]).toBe('▒')
+  })
+
+  it('full pipeline with text flow and pattern fill', () => {
+    const palette = createAsciiPalette(testTheme)
+
+    // Create canvas
+    const canvas = createBuffer(40, 20)
+
+    // Stamp a border box
+    const box = stampModalBox({ col: 0, row: 0, width: 30, height: 12 }, 'modalBorder', 'modalBg')
+    const withBox = mergeBuffers(canvas, box, 5, 2)
+
+    // Apply pattern fill inside the box
+    const patternTile: PatternTile = {
+      id: 'dots',
+      name: 'Dots',
+      chars: [['.', ' '], [' ', '.']],
+      styles: [['dim', 'modalBg'], ['modalBg', 'dim']],
+      category: 'dots',
+    }
+    const fillBuf = stampPatternFill(
+      { tileId: 'dots', region: { col: 0, row: 0, width: 28, height: 10 }, offsetCol: 0, offsetRow: 0 },
+      patternTile,
+    )
+    expect(fillBuf).not.toBeNull()
+    const withFill = mergeBuffers(withBox, fillBuf!, 6, 3)
+
+    // Flow text into the box
+    const textResult = computeTextFlow({
+      content: 'Hello World',
+      boundingRect: { col: 6, row: 3, width: 28, height: 10 },
+      padding: { top: 1, right: 1, bottom: 1, left: 1 },
+      kerning: 0,
+      lineSpacing: 0,
+      alignment: 'center',
+    })
+    expect(textResult.lines.length).toBeGreaterThan(0)
+
+    // Render the composed buffer
+    const rows = renderGridToElements(withFill, palette)
+    expect(rows).toHaveLength(20)
+
+    // Box border should be present
+    const row2 = rows[2]!
+    expect(row2.spans.find(s => s.text.includes('╔'))).toBeDefined()
+
+    // Fill pattern should be inside the box
+    const row4 = rows[4]!
+    const fillSpan = row4.spans.find(s => s.text.includes('.'))
+    expect(fillSpan).toBeDefined()
   })
 })
