@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'coverage']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -27,13 +27,17 @@ export default defineConfig([
             group: ['@features/*', '@stores/*', '@renderer/*'],
             message: 'Primitives must not import from features, stores, or renderer. This enforces the architectural layer boundary.',
           },
+          {
+            group: ['**/features/*', '**/stores/*', '**/renderer/*'],
+            message: 'Primitives must not import from features, stores, or renderer (relative path). Use path aliases and respect the layer boundary.',
+          },
         ],
       }],
     },
   },
   // Override: features and stores CAN import from anywhere in src
   {
-    files: ['src/features/**/*.{ts,tsx}', 'src/stores/**/*.{ts,tsx}', 'src/renderer/**/*.{ts,tsx}', 'src/hooks/**/*.{ts,tsx}', 'src/App.tsx', 'src/main.tsx'],
+    files: ['src/features/**/*.{ts,tsx}', 'src/stores/**/*.{ts,tsx}', 'src/renderer/**/*.{ts,tsx}', 'src/hooks/**/*.{ts,tsx}', 'src/App.tsx', 'src/main.tsx', 'src/__tests__/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': 'off',
     },

@@ -8,6 +8,7 @@ import { useEffect } from 'react';
  */
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- TODO: remove when implemented
     const handler = (_e: KeyboardEvent) => {
       // Real implementation: dispatch actions based on key combos
     };

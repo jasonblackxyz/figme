@@ -51,6 +51,7 @@ export function addLayer(
  * Remove a layer from a page by ID.
  */
 export function removeLayer(page: FigMePage, layerId: string): FigMePage {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { [layerId]: _removed, ...remainingLayers } = page.layers;
   return {
     ...page,
@@ -172,6 +173,7 @@ export function createComponent(
 /**
  * Instantiate a component on a page (stub).
  */
+/* eslint-disable @typescript-eslint/no-unused-vars -- TODO: remove when implemented */
 export function instantiateComponent(
   page: FigMePage,
   _componentId: string,
@@ -189,6 +191,7 @@ export function detachComponent(
 ): FigMePage {
   return page;
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 /**
  * Create an empty FigMe document with default configuration.
@@ -306,5 +309,6 @@ function createMinimalPalette(): Palette {
     imageMid: { color: '#888888', bg: '#1a1a2e' },
     imageLight: { color: '#cccccc', bg: '#1a1a2e' },
     imageEdge: { color: '#ffffff', bg: '#1a1a2e' },
+    success: { color: '#40b070', bg: '#1a1a2e' },
   };
 }

@@ -1,5 +1,9 @@
 import type { CharEntry, CharCategory, CharRegistry } from './types.ts';
 
+// TODO(tier2): Expand to ~500 characters per PRD spec. Current set covers essential
+// box-drawing, blocks, arrows, geometric, dingbats, technical, mathematical,
+// punctuation, and braille — but many Unicode ranges are missing (heavy box-drawing,
+// line-drawing extensions, miscellaneous symbols, additional arrows, etc.).
 export const CHAR_CATALOG: CharEntry[] = [
   // Box-drawing (single-line)
   { char: '─', codepoint: 0x2500, name: 'BOX DRAWINGS LIGHT HORIZONTAL', category: 'box-drawing', tags: ['horizontal', 'line', 'thin'], width: 'narrow' },
@@ -66,6 +70,7 @@ export const CHAR_CATALOG: CharEntry[] = [
  */
 export function createCharRegistry(initialCatalog?: CharEntry[]): CharRegistry {
   const entries = [...(initialCatalog ?? CHAR_CATALOG)];
+  // TODO(tier2): Persist favorites/recents to localStorage so they survive page reloads
   const favorites: string[] = [];
   const recent: string[] = [];
 

@@ -5,9 +5,11 @@ import type { AutoLayoutResult } from './types.ts';
 /**
  * Compute auto-layout positions for children within a container.
  *
- * Stub: returns empty child rects. Real implementation will stack
- * children vertically or horizontally with gap, padding, and sizing.
+ * @experimental Stub — not yet implemented. Returns empty child rects.
+ * Real implementation will stack children vertically or horizontally
+ * with gap, padding, and sizing. Deferred to Tier 2 (Auto-layout feature).
  */
+/* eslint-disable @typescript-eslint/no-unused-vars -- TODO: remove when implemented */
 export function computeAutoLayout(
   _parentRect: GridRect,
   _config: AutoLayoutConfig,
@@ -19,3 +21,4 @@ export function computeAutoLayout(
     overflow: false,
   };
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */

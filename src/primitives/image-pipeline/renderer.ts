@@ -3,9 +3,11 @@ import type { ImageRenderConfig, ImageRenderResult } from './types.ts';
 /**
  * Render a raster image into an ASCII character grid.
  *
- * Stub: returns an empty result. Real implementation will load the image,
- * apply brightness/contrast, and map pixel brightness to characters.
+ * @experimental Stub — not yet implemented. Returns empty result.
+ * Real implementation will load the image, apply brightness/contrast,
+ * and map pixel brightness to characters. Deferred to Tier 2 (Image tool).
  */
+/* eslint-disable @typescript-eslint/no-unused-vars -- TODO: remove when implemented */
 export function renderImageToAscii(
   _config: ImageRenderConfig,
 ): ImageRenderResult {
@@ -15,3 +17,4 @@ export function renderImageToAscii(
     height: 0,
   };
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */

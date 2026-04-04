@@ -20,8 +20,8 @@ const testTheme: Theme = {
 }
 
 describe('STYLE_KEYS', () => {
-  it('contains exactly 55 style keys', () => {
-    expect(STYLE_KEYS).toHaveLength(55)
+  it('contains exactly 56 style keys', () => {
+    expect(STYLE_KEYS).toHaveLength(56)
   })
 
   it('includes all major categories', () => {
