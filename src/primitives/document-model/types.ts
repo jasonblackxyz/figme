@@ -1,0 +1,136 @@
+import type { StyleKey } from '@primitives/style-system/types.ts';
+import type { GridConfig, GridPosition, GridRect } from '@primitives/grid-engine/types.ts';
+import type { Palette } from '@primitives/style-system/types.ts';
+
+export type LayerKind =
+  | 'border-box'
+  | 'text-block'
+  | 'figlet-text'
+  | 'divider'
+  | 'image'
+  | 'edge-path'
+  | 'group'
+  | 'component';
+
+export interface BorderBoxProperties {
+  borderStyle: 'rounded' | 'double' | 'section' | 'custom';
+  borderChars?: CustomBorderChars;
+  title?: string;
+  titleStyleKey?: StyleKey;
+  bgStyleKey?: StyleKey;
+  fillPattern?: string;
+  padding: { top: number; right: number; bottom: number; left: number };
+  scrollable?: boolean;
+  totalContentRows?: number;
+}
+
+export interface TextBlockProperties {
+  content: string;
+  fontFamily: string;
+  kerning: 0 | 1 | 2;
+  lineSpacing: 0 | 1;
+  alignment: 'left' | 'center' | 'right';
+  styleKey: StyleKey;
+  headingStyleKey?: StyleKey;
+  boldStyleKey?: StyleKey;
+}
+
+export interface FigletTextProperties {
+  content: string;
+  fontName: string;
+  alignment: 'left' | 'center' | 'right';
+  styleKey: StyleKey;
+}
+
+export interface ImageProperties {
+  src: string;
+  renderStyle: 'classic' | 'smooth' | 'braille' | 'contour' | 'hatch';
+  brightness: number;
+  contrast: number;
+  invert: boolean;
+}
+
+export interface EdgePathProperties {
+  sourceLayerId: string;
+  targetLayerId: string;
+  routingStyle: 'manhattan' | 'straight';
+  waypoints: GridPosition[];
+  styleKey: StyleKey;
+}
+
+export interface CustomBorderChars {
+  tl: string;
+  t: string;
+  tr: string;
+  l: string;
+  r: string;
+  bl: string;
+  b: string;
+  br: string;
+}
+
+export interface AutoLayoutConfig {
+  direction: 'vertical' | 'horizontal';
+  gap: number;
+  padding: { top: number; right: number; bottom: number; left: number };
+  alignment: 'start' | 'center' | 'end';
+  sizing: 'hug-contents' | 'fixed';
+}
+
+export type LayerProperties =
+  | BorderBoxProperties
+  | TextBlockProperties
+  | FigletTextProperties
+  | ImageProperties
+  | EdgePathProperties
+  | Record<string, never>;
+
+export interface Layer {
+  id: string;
+  kind: LayerKind;
+  name: string;
+  rect: GridRect;
+  visible: boolean;
+  locked: boolean;
+  opacity: number;
+  styleKey: StyleKey;
+  children?: string[];
+  parentId?: string;
+  properties: LayerProperties;
+  autoLayout?: AutoLayoutConfig;
+}
+
+export interface FigMePage {
+  id: string;
+  name: string;
+  layers: Record<string, Layer>;
+  layerOrder: string[];
+  viewportPreset?: string;
+  canvasColsOverride?: number;
+  canvasRowsOverride?: number;
+  canvasX: number;
+  canvasY: number;
+}
+
+export interface FigMeDocument {
+  id: string;
+  name: string;
+  gridConfig: GridConfig;
+  palette: Palette;
+  pages: FigMePage[];
+  activePageId: string;
+  components: Record<string, ComponentDef>;
+  metadata: {
+    createdAt: string;
+    updatedAt: string;
+    version: number;
+  };
+}
+
+export interface ComponentDef {
+  id: string;
+  name: string;
+  description: string;
+  sourceLayerIds: string[];
+  thumbnail?: string;
+}

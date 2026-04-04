@@ -1,0 +1,33 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-size-base: 14px;
+  --line-height-base: 1.35;
+
+  --color-bg: #1e1e2e;
+  --color-surface: #2a2a3e;
+  --color-surface-raised: #33334d;
+  --color-border: #444466;
+  --color-text: #e0e0f0;
+  --color-text-dim: #8888aa;
+  --color-accent: #7aa2f7;
+  --color-accent-dim: #5577cc;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
