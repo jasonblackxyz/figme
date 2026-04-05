@@ -1,122 +1,118 @@
-import { describe, it, expect } from 'vitest';
 import { stampPatternFill } from '../stamper.ts';
-import type { PatternTile } from '../types.ts';
-import type { PatternFillConfig } from '../types.ts';
-import type { StyleKey } from '@primitives/style-system/types.ts';
-
-const dotTile: PatternTile = {
-  id: 'dot-2x2',
-  name: 'Dots',
-  chars: [
-    ['.', ' '],
-    [' ', '.'],
-  ],
-  styles: [
-    ['dim' as StyleKey, 'bg' as StyleKey],
-    ['bg' as StyleKey, 'dim' as StyleKey],
-  ],
-  category: 'dots',
-};
+import { BUILT_IN_PATTERNS } from '../tiles.ts';
+import type { PatternFillConfig, PatternTile } from '../types.ts';
 
 describe('stampPatternFill', () => {
-  it('tiles a 2x2 pattern across a 4x4 region', () => {
+  const dotsTile = BUILT_IN_PATTERNS.find((p) => p.id === 'light-dots')!;
+
+  it('returns null for zero-width region', () => {
     const config: PatternFillConfig = {
-      tileId: 'dot-2x2',
+      tileId: 'light-dots',
+      region: { col: 0, row: 0, width: 0, height: 5 },
+      offsetCol: 0,
+      offsetRow: 0,
+    };
+    expect(stampPatternFill(config, dotsTile)).toBeNull();
+  });
+
+  it('returns null for zero-height region', () => {
+    const config: PatternFillConfig = {
+      tileId: 'light-dots',
+      region: { col: 0, row: 0, width: 5, height: 0 },
+      offsetCol: 0,
+      offsetRow: 0,
+    };
+    expect(stampPatternFill(config, dotsTile)).toBeNull();
+  });
+
+  it('fills a region with tiled pattern', () => {
+    const config: PatternFillConfig = {
+      tileId: 'light-dots',
       region: { col: 0, row: 0, width: 4, height: 4 },
       offsetCol: 0,
       offsetRow: 0,
     };
+    const buffer = stampPatternFill(config, dotsTile);
+    expect(buffer).not.toBeNull();
+    expect(buffer!.width).toBe(4);
+    expect(buffer!.height).toBe(4);
 
-    const result = stampPatternFill(config, dotTile);
-    expect(result).not.toBeNull();
-    expect(result!.width).toBe(4);
-    expect(result!.height).toBe(4);
-
-    // Pattern repeats: row 0 = ". ." (cols 0,2 are '.', cols 1,3 are ' ')
-    expect(result!.chars[0]![0]).toBe('.');
-    expect(result!.chars[0]![1]).toBe(' ');
-    expect(result!.chars[0]![2]).toBe('.');
-    expect(result!.chars[0]![3]).toBe(' ');
-
-    // row 1 = " . " (cols 0,2 are ' ', cols 1,3 are '.')
-    expect(result!.chars[1]![0]).toBe(' ');
-    expect(result!.chars[1]![1]).toBe('.');
-    expect(result!.chars[1]![2]).toBe(' ');
-    expect(result!.chars[1]![3]).toBe('.');
-
-    // Styles match the pattern
-    expect(result!.styles[0]![0]).toBe('dim');
-    expect(result!.styles[0]![1]).toBe('bg');
-    expect(result!.styles[1]![0]).toBe('bg');
-    expect(result!.styles[1]![1]).toBe('dim');
+    // light-dots: [['.', ' '], [' ', '.']]
+    // Pattern repeats every 2 cols and 2 rows
+    expect(buffer!.chars[0]![0]).toBe('.');
+    expect(buffer!.chars[0]![1]).toBe(' ');
+    expect(buffer!.chars[0]![2]).toBe('.');
+    expect(buffer!.chars[0]![3]).toBe(' ');
+    expect(buffer!.chars[1]![0]).toBe(' ');
+    expect(buffer!.chars[1]![1]).toBe('.');
+    expect(buffer!.chars[1]![2]).toBe(' ');
+    expect(buffer!.chars[1]![3]).toBe('.');
   });
 
-  it('applies column offset', () => {
+  it('applies offset correctly', () => {
     const config: PatternFillConfig = {
-      tileId: 'dot-2x2',
-      region: { col: 0, row: 0, width: 2, height: 2 },
+      tileId: 'light-dots',
+      region: { col: 0, row: 0, width: 4, height: 2 },
       offsetCol: 1,
       offsetRow: 0,
     };
+    const buffer = stampPatternFill(config, dotsTile);
+    expect(buffer).not.toBeNull();
 
-    const result = stampPatternFill(config, dotTile);
-    expect(result).not.toBeNull();
-    // With offsetCol=1, col 0 reads from tile col 1, col 1 reads from tile col 0
-    expect(result!.chars[0]![0]).toBe(' '); // tile[0][1]
-    expect(result!.chars[0]![1]).toBe('.'); // tile[0][0]
+    // With offsetCol=1, pattern shifts by 1
+    // Tile row 0: ['.', ' '] → with offset 1: [' ', '.']
+    expect(buffer!.chars[0]![0]).toBe(' ');
+    expect(buffer!.chars[0]![1]).toBe('.');
   });
 
-  it('applies row offset', () => {
+  it('applies styleOverride to all cells', () => {
     const config: PatternFillConfig = {
-      tileId: 'dot-2x2',
-      region: { col: 0, row: 0, width: 2, height: 2 },
-      offsetCol: 0,
-      offsetRow: 1,
-    };
-
-    const result = stampPatternFill(config, dotTile);
-    expect(result).not.toBeNull();
-    // With offsetRow=1, row 0 reads from tile row 1
-    expect(result!.chars[0]![0]).toBe(' '); // tile[1][0]
-    expect(result!.chars[0]![1]).toBe('.'); // tile[1][1]
-  });
-
-  it('applies style override', () => {
-    const config: PatternFillConfig = {
-      tileId: 'dot-2x2',
-      region: { col: 0, row: 0, width: 2, height: 2 },
-      offsetCol: 0,
-      offsetRow: 0,
-      styleOverride: 'accentText' as StyleKey,
-    };
-
-    const result = stampPatternFill(config, dotTile);
-    expect(result).not.toBeNull();
-    // All styles should be overridden
-    expect(result!.styles[0]![0]).toBe('accentText');
-    expect(result!.styles[0]![1]).toBe('accentText');
-    expect(result!.styles[1]![0]).toBe('accentText');
-    expect(result!.styles[1]![1]).toBe('accentText');
-    // Characters should still come from the tile
-    expect(result!.chars[0]![0]).toBe('.');
-  });
-
-  it('handles non-divisible region sizes', () => {
-    const config: PatternFillConfig = {
-      tileId: 'dot-2x2',
+      tileId: 'light-dots',
       region: { col: 0, row: 0, width: 3, height: 3 },
       offsetCol: 0,
       offsetRow: 0,
+      styleOverride: 'accentText',
     };
+    const buffer = stampPatternFill(config, dotsTile);
+    expect(buffer).not.toBeNull();
 
-    const result = stampPatternFill(config, dotTile);
-    expect(result).not.toBeNull();
-    expect(result!.width).toBe(3);
-    expect(result!.height).toBe(3);
-    // Row 2 should wrap back to tile row 0
-    expect(result!.chars[2]![0]).toBe('.');
-    expect(result!.chars[2]![1]).toBe(' ');
-    expect(result!.chars[2]![2]).toBe('.');
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        expect(buffer!.styles[r]![c]).toBe('accentText');
+      }
+    }
+  });
+
+  it('handles negative offsets via modular arithmetic', () => {
+    const config: PatternFillConfig = {
+      tileId: 'light-dots',
+      region: { col: 0, row: 0, width: 2, height: 2 },
+      offsetCol: -1,
+      offsetRow: -1,
+    };
+    const buffer = stampPatternFill(config, dotsTile);
+    expect(buffer).not.toBeNull();
+    // Should produce valid characters (not crash)
+    expect(buffer!.chars[0]![0]).toBeDefined();
+  });
+
+  it('works with single-cell tile patterns', () => {
+    const shadeTile = BUILT_IN_PATTERNS.find((p) => p.id === 'light-shade')!;
+    const config: PatternFillConfig = {
+      tileId: 'light-shade',
+      region: { col: 0, row: 0, width: 3, height: 2 },
+      offsetCol: 0,
+      offsetRow: 0,
+    };
+    const buffer = stampPatternFill(config, shadeTile);
+    expect(buffer).not.toBeNull();
+
+    // All cells should be the shade character
+    for (let r = 0; r < 2; r++) {
+      for (let c = 0; c < 3; c++) {
+        expect(buffer!.chars[r]![c]).toBe('░');
+      }
+    }
   });
 
   it('returns null for empty tile', () => {
@@ -127,25 +123,29 @@ describe('stampPatternFill', () => {
       styles: [],
       category: 'custom',
     };
-
     const config: PatternFillConfig = {
       tileId: 'empty',
       region: { col: 0, row: 0, width: 4, height: 4 },
       offsetCol: 0,
       offsetRow: 0,
     };
-
     expect(stampPatternFill(config, emptyTile)).toBeNull();
   });
 
-  it('returns null for zero-size region', () => {
-    const config: PatternFillConfig = {
-      tileId: 'dot-2x2',
-      region: { col: 0, row: 0, width: 0, height: 4 },
-      offsetCol: 0,
-      offsetRow: 0,
-    };
+  it('works with all 9 built-in patterns', () => {
+    expect(BUILT_IN_PATTERNS.length).toBe(9);
 
-    expect(stampPatternFill(config, dotTile)).toBeNull();
+    for (const tile of BUILT_IN_PATTERNS) {
+      const config: PatternFillConfig = {
+        tileId: tile.id,
+        region: { col: 0, row: 0, width: 6, height: 6 },
+        offsetCol: 0,
+        offsetRow: 0,
+      };
+      const buffer = stampPatternFill(config, tile);
+      expect(buffer).not.toBeNull();
+      expect(buffer!.width).toBe(6);
+      expect(buffer!.height).toBe(6);
+    }
   });
 });

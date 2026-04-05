@@ -1,7 +1,13 @@
 import { useMemo } from 'react';
-import { useDocumentStore } from '@stores/documentStore.ts';
+import type { FigMePage } from '@primitives/document-model/types.ts';
+import type {
+  BorderBoxProperties,
+  TextBlockProperties,
+  FigletTextProperties,
+  EdgePathProperties,
+} from '@primitives/document-model/types.ts';
+import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
-import type { Layer, BorderBoxProperties } from '@primitives/document-model/types.ts';
 import { createBuffer, mergeBuffers } from '@primitives/stamp-system/buffer.ts';
 import {
   stampNodeBox,
@@ -10,79 +16,91 @@ import {
   stampDivider,
   stampHorizontalDivider,
 } from '@primitives/stamp-system/stamps.ts';
+import { stampTextBlock } from '@primitives/stamp-system/stampText.ts';
+import { stampFigletText } from '@primitives/stamp-system/stampFiglet.ts';
+import { stampEdge } from '@primitives/stamp-system/stampEdge.ts';
+import { getFigletFont } from '@primitives/figlet-engine/fonts/index.ts';
 
-/**
- * Stamp a single layer into a buffer based on its kind.
- * Returns null for layer kinds that don't have stamp implementations yet.
- */
-function stampLayer(layer: Layer): StampBuffer | null {
-  switch (layer.kind) {
-    case 'border-box': {
-      const props = layer.properties as BorderBoxProperties;
-      const bgStyle = props.bgStyleKey ?? 'nodeBg';
-      switch (props.borderStyle) {
-        case 'rounded':
-          return stampNodeBox(layer.rect, layer.styleKey, bgStyle);
-        case 'double':
-          return stampModalBox(layer.rect, layer.styleKey, bgStyle);
-        case 'section':
-          return stampSectionFrame(
-            layer.rect,
-            layer.styleKey,
-            bgStyle,
-            props.title,
-            props.titleStyleKey,
-          );
-        default:
-          return stampNodeBox(layer.rect, layer.styleKey, bgStyle);
-      }
-    }
-    case 'divider': {
-      if (layer.rect.width >= 2) {
-        return stampHorizontalDivider(layer.rect.width, layer.styleKey);
-      }
-      return stampDivider(layer.rect.width, layer.styleKey);
-    }
-    case 'text-block':
-    case 'figlet-text':
-    case 'image':
-    case 'edge-path':
-    case 'group':
-    case 'component':
-      // These layer kinds are not yet implemented
-      return null;
-    default:
-      return null;
-  }
-}
-
-/**
- * Hook that composes the active page's layers into a single StampBuffer.
- * Stamps each layer in z-order and merges onto a canvas-sized buffer.
- */
-export function useComposedBuffer(): StampBuffer {
-  const document = useDocumentStore((s) => s.document);
-
+export function useComposedBuffer(page: FigMePage, gridConfig: GridConfig): StampBuffer {
   return useMemo(() => {
-    const { gridConfig, pages, activePageId } = document;
-    const page = pages.find((p) => p.id === activePageId) ?? pages[0];
-    if (!page) {
-      return createBuffer(gridConfig.canvasCols, gridConfig.canvasRows);
-    }
+    let buffer = createBuffer(gridConfig.canvasCols, gridConfig.canvasRows);
 
-    let canvas = createBuffer(gridConfig.canvasCols, gridConfig.canvasRows);
-
-    // Stamp each layer in z-order (layerOrder[0] is bottom)
     for (const layerId of page.layerOrder) {
       const layer = page.layers[layerId];
       if (!layer || !layer.visible) continue;
 
-      const layerBuffer = stampLayer(layer);
+      let layerBuffer: StampBuffer | null = null;
+
+      switch (layer.kind) {
+        case 'border-box': {
+          const props = layer.properties as BorderBoxProperties;
+          const borderStyle = layer.styleKey;
+          const bgStyle = props.bgStyleKey ?? 'nodeBg';
+          switch (props.borderStyle) {
+            case 'rounded':
+              layerBuffer = stampNodeBox(layer.rect, borderStyle, bgStyle);
+              break;
+            case 'double':
+              layerBuffer = stampModalBox(layer.rect, borderStyle, bgStyle);
+              break;
+            case 'section':
+              layerBuffer = stampSectionFrame(layer.rect, borderStyle, bgStyle, props.title, props.titleStyleKey);
+              break;
+            default:
+              layerBuffer = stampNodeBox(layer.rect, borderStyle, bgStyle);
+          }
+          break;
+        }
+        case 'divider':
+          if (layer.rect.width >= 2) {
+            layerBuffer = stampHorizontalDivider(layer.rect.width, layer.styleKey);
+          } else {
+            layerBuffer = stampDivider(layer.rect.width, layer.styleKey);
+          }
+          break;
+        case 'text-block': {
+          const props = layer.properties as TextBlockProperties;
+          layerBuffer = stampTextBlock(props, layer.rect);
+          break;
+        }
+        case 'figlet-text': {
+          const props = layer.properties as FigletTextProperties;
+          const font = getFigletFont(props.fontName);
+          if (font) {
+            layerBuffer = stampFigletText(props, layer.rect, font);
+          }
+          break;
+        }
+        case 'edge-path': {
+          const props = layer.properties as EdgePathProperties;
+          const sourceLyr = page.layers[props.sourceLayerId];
+          const targetLyr = page.layers[props.targetLayerId];
+          if (sourceLyr && targetLyr) {
+            layerBuffer = stampEdge(
+              sourceLyr.rect,
+              targetLyr.rect,
+              props.styleKey,
+              gridConfig.canvasCols,
+              gridConfig.canvasRows,
+            );
+          }
+          break;
+        }
+        case 'image':
+          // Image rendering is async — handled separately via cached results
+          break;
+      }
+
       if (layerBuffer) {
-        canvas = mergeBuffers(canvas, layerBuffer, layer.rect.col, layer.rect.row);
+        // For edge-path, the buffer is already canvas-sized with absolute positions
+        if (layer.kind === 'edge-path') {
+          buffer = mergeBuffers(buffer, layerBuffer, 0, 0);
+        } else {
+          buffer = mergeBuffers(buffer, layerBuffer, layer.rect.col, layer.rect.row);
+        }
       }
     }
 
-    return canvas;
-  }, [document]);
+    return buffer;
+  }, [page, gridConfig]);
 }

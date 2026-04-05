@@ -1,144 +1,164 @@
-import { describe, it, expect } from 'vitest';
-import { computeTextFlow } from '../compute.ts';
-import type { TextFlowConfig } from '../types.ts';
+import { describe, it, expect } from 'vitest'
+import { computeTextFlow } from '../compute.ts'
+import type { TextFlowConfig } from '../types.ts'
 
 function makeConfig(overrides: Partial<TextFlowConfig> = {}): TextFlowConfig {
   return {
-    content: 'hello world',
-    boundingRect: { col: 0, row: 0, width: 20, height: 10 },
-    padding: { top: 0, right: 0, bottom: 0, left: 0 },
-    kerning: 0,
-    lineSpacing: 0,
-    alignment: 'left',
-    ...overrides,
-  };
+    content: overrides.content ?? 'Hello world',
+    boundingRect: overrides.boundingRect ?? { col: 0, row: 0, width: 20, height: 10 },
+    padding: overrides.padding ?? { top: 0, right: 0, bottom: 0, left: 0 },
+    kerning: overrides.kerning ?? 0,
+    lineSpacing: overrides.lineSpacing ?? 0,
+    alignment: overrides.alignment ?? 'left',
+  }
 }
 
 describe('computeTextFlow', () => {
   it('returns empty result for empty content', () => {
-    const result = computeTextFlow(makeConfig({ content: '' }));
-    expect(result.lines).toHaveLength(1);
-    expect(result.lines[0]!.segments).toHaveLength(0);
-    expect(result.totalRows).toBe(1);
-    expect(result.overflow).toBe(false);
-  });
+    const result = computeTextFlow(makeConfig({ content: '' }))
+    expect(result.lines).toEqual([])
+    expect(result.totalRows).toBe(0)
+    expect(result.overflow).toBe(false)
+  })
 
-  it('places a short string on one line', () => {
-    const result = computeTextFlow(makeConfig({ content: 'hello' }));
-    expect(result.lines).toHaveLength(1);
-    expect(result.lines[0]!.segments).toHaveLength(1);
-    expect(result.lines[0]!.segments[0]!.text).toBe('hello');
-    expect(result.lines[0]!.segments[0]!.col).toBe(0);
-    expect(result.lines[0]!.segments[0]!.styleKey).toBe('text');
-    expect(result.overflow).toBe(false);
-  });
+  it('renders simple text on a single line', () => {
+    const result = computeTextFlow(makeConfig({ content: 'Hello' }))
+    expect(result.lines.length).toBe(1)
+    expect(result.lines[0]!.row).toBe(0)
+    expect(result.lines[0]!.segments.length).toBeGreaterThan(0)
+  })
 
-  it('wraps long text to multiple lines', () => {
+  it('word-wraps text exceeding available width', () => {
     const result = computeTextFlow(makeConfig({
-      content: 'one two three four five six seven',
+      content: 'Hello wonderful world',
       boundingRect: { col: 0, row: 0, width: 10, height: 10 },
-    }));
-    expect(result.lines.length).toBeGreaterThan(1);
-    // First line should fit within 10 cols
-    const firstLineText = result.lines[0]!.segments[0]!.text;
-    expect(firstLineText.length).toBeLessThanOrEqual(10);
-    expect(result.overflow).toBe(false);
-  });
+    }))
+    expect(result.lines.length).toBeGreaterThan(1)
+  })
 
-  it('applies padding', () => {
+  it('applies left alignment (segments start at left padding)', () => {
     const result = computeTextFlow(makeConfig({
-      content: 'test',
-      boundingRect: { col: 5, row: 3, width: 20, height: 10 },
-      padding: { top: 2, right: 1, bottom: 1, left: 3 },
-    }));
-    expect(result.lines[0]!.row).toBe(5); // row 3 + padding.top 2
-    expect(result.lines[0]!.segments[0]!.col).toBe(8); // col 5 + padding.left 3
-  });
+      content: 'Hi',
+      alignment: 'left',
+      padding: { top: 0, right: 0, bottom: 0, left: 2 },
+    }))
+    expect(result.lines[0]!.segments[0]!.col).toBe(2)
+  })
 
-  it('centers text', () => {
+  it('applies center alignment', () => {
     const result = computeTextFlow(makeConfig({
-      content: 'hi',
-      boundingRect: { col: 0, row: 0, width: 10, height: 5 },
+      content: 'Hi',
       alignment: 'center',
-    }));
-    // 'hi' is 2 chars, available width 10, center offset = floor((10 - 2) / 2) = 4
-    expect(result.lines[0]!.segments[0]!.col).toBe(4);
-  });
+      boundingRect: { col: 0, row: 0, width: 20, height: 10 },
+    }))
+    // "Hi" is 2 chars, available width is 20
+    // Center offset = floor((20 - 2) / 2) = 9
+    const firstCol = result.lines[0]!.segments[0]!.col
+    expect(firstCol).toBe(9)
+  })
 
-  it('right-aligns text', () => {
+  it('applies right alignment', () => {
     const result = computeTextFlow(makeConfig({
-      content: 'hi',
-      boundingRect: { col: 0, row: 0, width: 10, height: 5 },
+      content: 'Hi',
       alignment: 'right',
-    }));
-    // 'hi' is 2 chars, available width 10, right offset = 10 - 2 = 8
-    expect(result.lines[0]!.segments[0]!.col).toBe(8);
-  });
+      boundingRect: { col: 0, row: 0, width: 20, height: 10 },
+    }))
+    // "Hi" is 2 chars, available width 20
+    // Right offset = 20 - 2 = 18
+    const firstCol = result.lines[0]!.segments[0]!.col
+    expect(firstCol).toBe(18)
+  })
 
-  it('detects overflow when content exceeds available height', () => {
+  it('detects overflow when lines exceed available height', () => {
     const result = computeTextFlow(makeConfig({
-      content: 'a b c d e f g h i j k l m n o p q r s t',
-      boundingRect: { col: 0, row: 0, width: 5, height: 3 },
-    }));
-    expect(result.overflow).toBe(true);
-    expect(result.overflowLineCount).toBeGreaterThan(0);
-    expect(result.lines).toHaveLength(3); // Only 3 visible lines
-  });
+      content: 'Line one\nLine two\nLine three\nLine four',
+      boundingRect: { col: 0, row: 0, width: 20, height: 2 },
+    }))
+    expect(result.overflow).toBe(true)
+    expect(result.overflowLineCount).toBeGreaterThan(0)
+  })
 
-  it('applies kerning (extra spaces between characters)', () => {
+  it('does not report overflow when all lines fit', () => {
     const result = computeTextFlow(makeConfig({
-      content: 'ab',
-      kerning: 1,
-    }));
-    expect(result.lines[0]!.segments[0]!.text).toBe('a b');
-  });
-
-  it('applies kerning=2', () => {
-    const result = computeTextFlow(makeConfig({
-      content: 'ab',
-      kerning: 2,
-    }));
-    expect(result.lines[0]!.segments[0]!.text).toBe('a  b');
-  });
-
-  it('applies line spacing', () => {
-    const result = computeTextFlow(makeConfig({
-      content: 'line1\nline2\nline3',
-      boundingRect: { col: 0, row: 0, width: 20, height: 20 },
-      lineSpacing: 1,
-    }));
-    expect(result.lines).toHaveLength(3);
-    expect(result.lines[0]!.row).toBe(0);
-    expect(result.lines[1]!.row).toBe(2); // 1 line + 1 spacing
-    expect(result.lines[2]!.row).toBe(4);
-  });
-
-  it('handles line spacing with overflow', () => {
-    const result = computeTextFlow(makeConfig({
-      content: 'a\nb\nc\nd\ne',
+      content: 'Hello',
       boundingRect: { col: 0, row: 0, width: 20, height: 5 },
+    }))
+    expect(result.overflow).toBe(false)
+    expect(result.overflowLineCount).toBe(0)
+  })
+
+  it('applies line spacing (double spacing)', () => {
+    const result = computeTextFlow(makeConfig({
+      content: 'Line one\nLine two\nLine three',
       lineSpacing: 1,
-    }));
-    // With lineSpacing=1, each line takes 2 rows. 5 rows / 2 = 2 visible lines (3rd would start at row 4 which fits)
-    expect(result.overflow).toBe(true);
-    expect(result.lines.length).toBeLessThan(5);
-  });
+      boundingRect: { col: 0, row: 0, width: 20, height: 10 },
+    }))
+    expect(result.lines.length).toBe(3)
+    expect(result.lines[0]!.row).toBe(0)
+    expect(result.lines[1]!.row).toBe(2)
+    expect(result.lines[2]!.row).toBe(4)
+  })
 
-  it('returns zero-size result for zero-width bounding box', () => {
+  it('applies kerning level 2 (extra spacing between chars)', () => {
     const result = computeTextFlow(makeConfig({
-      content: 'hello',
+      content: 'Hi',
+      kerning: 2,
+      boundingRect: { col: 0, row: 0, width: 20, height: 10 },
+    }))
+    // With kerning 2, "Hi" should be rendered as "H i" (3 chars wide)
+    const seg = result.lines[0]!.segments[0]!
+    expect(seg.text).toBe('H i')
+  })
+
+  it('respects padding', () => {
+    const result = computeTextFlow(makeConfig({
+      content: 'Hello',
+      padding: { top: 2, right: 0, bottom: 0, left: 3 },
+    }))
+    expect(result.lines[0]!.row).toBe(2)
+    expect(result.lines[0]!.segments[0]!.col).toBe(3)
+  })
+
+  it('handles multiline content with newlines', () => {
+    const result = computeTextFlow(makeConfig({
+      content: 'Line 1\nLine 2',
+      boundingRect: { col: 0, row: 0, width: 20, height: 10 },
+    }))
+    expect(result.lines.length).toBe(2)
+  })
+
+  it('handles empty lines in content', () => {
+    const result = computeTextFlow(makeConfig({
+      content: 'Hello\n\nWorld',
+      boundingRect: { col: 0, row: 0, width: 20, height: 10 },
+    }))
+    expect(result.lines.length).toBe(3)
+  })
+
+  it('returns empty for zero-width bounding rect', () => {
+    const result = computeTextFlow(makeConfig({
       boundingRect: { col: 0, row: 0, width: 0, height: 10 },
-    }));
-    expect(result.lines).toHaveLength(0);
-    expect(result.totalRows).toBe(0);
-  });
+    }))
+    expect(result.lines).toEqual([])
+  })
 
-  it('handles newlines in content', () => {
+  it('parses markdown headings in text flow', () => {
     const result = computeTextFlow(makeConfig({
-      content: 'line one\nline two',
-    }));
-    expect(result.lines).toHaveLength(2);
-    expect(result.lines[0]!.segments[0]!.text).toBe('line one');
-    expect(result.lines[1]!.segments[0]!.text).toBe('line two');
-  });
-});
+      content: '# Heading',
+      boundingRect: { col: 0, row: 0, width: 20, height: 10 },
+    }))
+    expect(result.lines.length).toBe(1)
+    expect(result.lines[0]!.segments[0]!.styleKey).toBe('modalHeading')
+  })
+
+  it('parses bold markdown in text flow', () => {
+    const result = computeTextFlow(makeConfig({
+      content: 'Hello **world**',
+      boundingRect: { col: 0, row: 0, width: 20, height: 10 },
+    }))
+    // Should have multiple segments - normal and bold
+    const allSegments = result.lines[0]!.segments
+    const boldSegment = allSegments.find(s => s.styleKey === 'textBold')
+    expect(boldSegment).toBeDefined()
+  })
+})

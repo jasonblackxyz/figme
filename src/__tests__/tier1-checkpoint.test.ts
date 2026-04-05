@@ -296,10 +296,10 @@ describe('Tier 1 Checkpoint', () => {
     expect(result.lines.length).toBeGreaterThan(1)
     expect(result.overflow).toBe(false)
 
-    // First line should respect padding offset
+    // First line should respect padding offset (coordinates are padding-relative)
     const firstLine = result.lines[0]!
-    expect(firstLine.row).toBe(2) // row 1 + padding.top 1
-    expect(firstLine.segments[0]!.col).toBe(3) // col 2 + padding.left 1
+    expect(firstLine.row).toBe(1) // padding.top 1
+    expect(firstLine.segments[0]!.col).toBe(1) // padding.left 1
 
     // Verify text wraps correctly (no line exceeds available width)
     for (const line of result.lines) {

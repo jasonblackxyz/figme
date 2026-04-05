@@ -1,0 +1,103 @@
+.tabBar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow-x: auto;
+  min-height: 30px;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-text-dim);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  border-right: 1px solid var(--color-border);
+  white-space: nowrap;
+  user-select: none;
+  min-width: 0;
+}
+
+.tab:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.tabActive {
+  color: var(--color-text);
+  background: var(--color-accent-dim);
+  font-weight: 600;
+}
+
+.tabInput {
+  background: var(--color-bg);
+  border: 1px solid var(--color-accent);
+  border-radius: 2px;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 4px;
+  outline: none;
+  width: 80px;
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-dim);
+  font-size: 16px;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.addButton:hover {
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+}
+
+.contextMenu {
+  position: fixed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  padding: 4px 0;
+}
+
+.contextMenuItem {
+  display: block;
+  width: 100%;
+  padding: 6px 16px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.contextMenuItem:hover {
+  background: var(--color-surface-raised);
+}
+
+.contextMenuItemDanger {
+  color: #ef4444;
+}
+
+.contextMenuItemDanger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}

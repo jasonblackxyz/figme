@@ -1,73 +1,114 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
-import { useUiStore } from '@stores/uiStore.ts';
 import { useToolStore } from '@stores/toolStore.ts';
+import { useUiStore } from '@stores/uiStore.ts';
 
 /**
- * Hook that logs state changes to the console for AI agent consumption.
- * Subscribes to document, UI, and tool store changes and emits
- * structured FIGME_STATE events that agents can observe.
+ * Hook that logs state changes to the console for agent consumption.
+ *
+ * Subscribes to document, tool, and UI store changes and logs structured
+ * FIGME_* events that the AI coding agent can read via the browser console.
  */
 export function useConsoleLogger(): void {
-  // Log initial state on mount
+  const prevDocRef = useRef(useDocumentStore.getState().document);
+  const prevToolRef = useRef(useToolStore.getState().activeTool);
+  const prevSelectionRef = useRef(useUiStore.getState().selectedLayerIds);
+
   useEffect(() => {
-    const doc = useDocumentStore.getState().document;
+    // Log initial state (summary only — avoid serialising the full document)
+    const initDoc = useDocumentStore.getState().document;
     console.log('FIGME_STATE', {
       action: 'init',
       timestamp: Date.now(),
       document: {
-        name: doc.name,
-        pageCount: doc.pages.length,
-        activePageId: doc.activePageId,
-        componentCount: Object.keys(doc.components).length,
+        name: initDoc.name,
+        pageCount: initDoc.pages.length,
+        activePageId: initDoc.activePageId,
+        componentCount: Object.keys(initDoc.components).length,
       },
     });
-  }, []);
 
-  // Subscribe to document changes
-  useEffect(() => {
-    const unsub = useDocumentStore.subscribe((state, prevState) => {
-      if (state.document === prevState.document) return;
-      const doc = state.document;
-      const activePage = doc.pages.find((p) => p.id === doc.activePageId);
+    // Subscribe to document changes
+    const unsubDoc = useDocumentStore.subscribe((state) => {
+      const prevDoc = prevDocRef.current;
+      const nextDoc = state.document;
+
+      if (prevDoc === nextDoc) return;
+
+      // Detect property-level changes on layers
+      const prevPage = prevDoc.pages.find((p) => p.id === prevDoc.activePageId);
+      const nextPage = nextDoc.pages.find((p) => p.id === nextDoc.activePageId);
+
+      if (prevPage && nextPage && prevPage.id === nextPage.id) {
+        for (const layerId of nextPage.layerOrder) {
+          const prevLayer = prevPage.layers[layerId];
+          const nextLayer = nextPage.layers[layerId];
+          if (prevLayer && nextLayer && prevLayer !== nextLayer) {
+            const changes: Record<string, unknown> = {};
+            for (const key of Object.keys(nextLayer) as Array<keyof typeof nextLayer>) {
+              if (prevLayer[key] !== nextLayer[key]) {
+                changes[key] = nextLayer[key];
+              }
+            }
+            if (Object.keys(changes).length > 0) {
+              console.log('FIGME_PROPERTY_CHANGE', {
+                timestamp: Date.now(),
+                layerId,
+                layerName: nextLayer.name,
+                changes,
+              });
+            }
+          }
+        }
+      }
+
       console.log('FIGME_STATE', {
         action: 'document_change',
         timestamp: Date.now(),
-        document: {
-          name: doc.name,
-          pageCount: doc.pages.length,
-          activePageId: doc.activePageId,
-          layerCount: activePage ? Object.keys(activePage.layers).length : 0,
-          componentCount: Object.keys(doc.components).length,
-        },
+        document: nextDoc,
       });
-    });
-    return unsub;
-  }, []);
 
-  // Subscribe to selection changes
-  useEffect(() => {
-    const unsub = useUiStore.subscribe((state, prevState) => {
-      if (state.selectedLayerIds === prevState.selectedLayerIds) return;
-      console.log('FIGME_STATE', {
-        action: 'selection_change',
-        timestamp: Date.now(),
-        selectedLayerIds: state.selectedLayerIds,
-      });
+      prevDocRef.current = nextDoc;
     });
-    return unsub;
-  }, []);
 
-  // Subscribe to tool changes
-  useEffect(() => {
-    const unsub = useToolStore.subscribe((state, prevState) => {
-      if (state.activeTool === prevState.activeTool) return;
+    // Subscribe to tool changes
+    const unsubTool = useToolStore.subscribe((state) => {
+      const prevTool = prevToolRef.current;
+      const nextTool = state.activeTool;
+
+      if (prevTool === nextTool) return;
+
       console.log('FIGME_STATE', {
         action: 'tool_change',
         timestamp: Date.now(),
-        activeTool: state.activeTool,
+        previousTool: prevTool,
+        activeTool: nextTool,
       });
+
+      prevToolRef.current = nextTool;
     });
-    return unsub;
+
+    // Subscribe to selection changes
+    const unsubSelection = useUiStore.subscribe((state) => {
+      const prevSelection = prevSelectionRef.current;
+      const nextSelection = state.selectedLayerIds;
+
+      if (prevSelection === nextSelection) return;
+
+      console.log('FIGME_STATE', {
+        action: 'selection_change',
+        timestamp: Date.now(),
+        previousSelection: prevSelection,
+        selectedLayerIds: nextSelection,
+      });
+
+      prevSelectionRef.current = nextSelection;
+    });
+
+    return () => {
+      unsubDoc();
+      unsubTool();
+      unsubSelection();
+    };
   }, []);
 }

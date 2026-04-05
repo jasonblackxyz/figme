@@ -1,0 +1,33 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+}
+
+.toolButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.toolButton:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.active {
+  background: var(--color-accent-dim);
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}

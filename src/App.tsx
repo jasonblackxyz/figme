@@ -1,42 +1,30 @@
-import styles from './styles/layout.module.css'
-import { useDocumentStore } from '@stores/documentStore.ts'
-import { useUiStore } from '@stores/uiStore.ts'
-import { useViewportStore } from '@stores/viewportStore.ts'
-import { createAsciiPalette } from '@primitives/style-system/palette.ts'
-import { AgentBriefing } from '@renderer/AgentBriefing.tsx'
-import { GridRenderer } from '@renderer/GridRenderer.tsx'
-import { SpecView } from '@renderer/SpecView.tsx'
-import { useComposedBuffer } from '@hooks/useComposedBuffer.ts'
-import { useConsoleLogger } from '@hooks/useConsoleLogger.ts'
-import { useMemo } from 'react'
+import { CanvasViewport } from '@features/canvas/CanvasViewport.tsx';
+import { LayersPanel } from '@features/layers-panel/LayersPanel.tsx';
+import { PropertiesPanel } from '@features/properties-panel/PropertiesPanel.tsx';
+import { Toolbar } from '@features/toolbar/Toolbar.tsx';
+import { StatusBar } from '@features/status-bar/StatusBar.tsx';
+import { SpecView } from '@features/spec-view/SpecView.tsx';
+import { ExportDialog } from '@features/export/ExportDialog.tsx';
+import { useAutoSave } from '@features/file-io/autoSave.ts';
+import { useClipboard } from '@features/clipboard/useClipboard.ts';
+import { useKeyboardShortcuts } from '@hooks/useKeyboardShortcuts.ts';
+import { useConsoleLogger } from '@hooks/useConsoleLogger.ts';
+import { useDocumentStore } from '@stores/documentStore.ts';
+import { useUiStore } from '@stores/uiStore.ts';
+import { AgentBriefing } from '@renderer/AgentBriefing.tsx';
+import styles from './styles/layout.module.css';
 
 export function App() {
-  const document = useDocumentStore((s) => s.document)
-  const selectedLayerIds = useUiStore((s) => s.selectedLayerIds)
-  const specViewOpen = useUiStore((s) => s.specViewOpen)
-  const zoom = useViewportStore((s) => s.zoom)
-  const panX = useViewportStore((s) => s.panX)
-  const panY = useViewportStore((s) => s.panY)
+  useKeyboardShortcuts();
+  useAutoSave();
+  useClipboard();
+  useConsoleLogger();
 
-  const buffer = useComposedBuffer()
-  const palette = useMemo(() => createAsciiPalette({
-    name: 'default',
-    colors: {
-      background: '#1e1e2e',
-      foreground: '#e0e0f0',
-      accent: '#7aa2f7',
-      accentForeground: '#ffffff',
-      muted: '#444466',
-      mutedForeground: '#8888aa',
-      border: '#555577',
-      card: '#2a2a3e',
-      cardForeground: '#c0c0d0',
-      error: '#b04040',
-      success: '#40b070',
-    },
-  }), [])
-
-  useConsoleLogger()
+  const document = useDocumentStore((s) => s.document);
+  const specViewOpen = useUiStore((s) => s.specViewOpen);
+  const toggleSpecView = useUiStore((s) => s.toggleSpecView);
+  const exportDialogOpen = useUiStore((s) => s.exportDialogOpen);
+  const toggleExportDialog = useUiStore((s) => s.toggleExportDialog);
 
   return (
     <div
@@ -46,30 +34,20 @@ export function App() {
     >
       <AgentBriefing document={document} />
       <header className={styles.toolbar}>
-        {/* T4: Toolbar */}
+        <Toolbar />
       </header>
       <aside className={styles.layersPanel}>
-        {/* T2: Layers Panel */}
+        <LayersPanel />
       </aside>
       <main className={styles.canvas}>
-        <GridRenderer
-          buffer={buffer}
-          palette={palette}
-          selectedLayerIds={selectedLayerIds}
-          zoom={zoom}
-          scrollCol={Math.round(panX / document.gridConfig.cellWidth)}
-          scrollRow={Math.round(panY / document.gridConfig.cellHeight)}
-        />
+        <CanvasViewport />
       </main>
       <aside className={styles.propertiesPanel}>
-        {/* T3: Properties Panel */}
+        <PropertiesPanel />
       </aside>
-      <footer className={styles.statusBar}>
-        {/* Status bar: cursor position, zoom, grid dimensions */}
-      </footer>
-      {specViewOpen && (
-        <SpecView document={document} selectedLayerIds={selectedLayerIds} />
-      )}
+      <StatusBar />
+      <SpecView visible={specViewOpen} onClose={toggleSpecView} />
+      <ExportDialog visible={exportDialogOpen} onClose={toggleExportDialog} />
     </div>
-  )
+  );
 }

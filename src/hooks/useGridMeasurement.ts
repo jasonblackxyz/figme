@@ -1,20 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
-import { createDefaultGridConfig } from '@primitives/grid-engine/measurement.ts';
+import { measureCellDimensions } from '@primitives/grid-engine/measurement.ts';
+import { useDocumentStore } from '@stores/documentStore.ts';
 
 /**
- * Hook that provides the current grid configuration and triggers re-measurement
- * when the font or size changes.
- *
- * Stub: returns the default grid config. Real implementation will measure
- * cell dimensions from a DOM element and respond to font loading events.
+ * Hook that provides the current grid configuration with measured cell dimensions.
+ * Re-measures when font parameters change in the document's gridConfig.
  */
 export function useGridMeasurement(): GridConfig {
-  const [config] = useState<GridConfig>(() => createDefaultGridConfig());
+  const gridConfig = useDocumentStore(s => s.document.gridConfig);
 
-  useEffect(() => {
-    // Real implementation: re-measure on font load, window resize, etc.
-  }, []);
+  const measured = useMemo(() => {
+    const { cellWidth, cellHeight } = measureCellDimensions(
+      gridConfig.fontFamily,
+      gridConfig.fontSize,
+      gridConfig.lineHeight,
+    );
 
-  return config;
+    return {
+      ...gridConfig,
+      cellWidth,
+      cellHeight,
+      canvasCols: Math.floor(1920 / cellWidth),
+      canvasRows: Math.floor(1080 / cellHeight),
+    };
+  }, [gridConfig.fontFamily, gridConfig.fontSize, gridConfig.lineHeight]);
+
+  return measured;
 }

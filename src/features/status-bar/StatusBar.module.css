@@ -1,0 +1,12 @@
+.statusBar {
+  grid-area: status;
+  background: var(--color-surface, #1e1e2e);
+  border-top: 1px solid var(--color-border, #333355);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 11px;
+  color: var(--color-text-dim, #666688);
+  gap: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+}

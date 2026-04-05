@@ -1,0 +1,141 @@
+import { selectTool } from '@features/tools/selectTool.ts';
+import { useDocumentStore } from '@stores/documentStore.ts';
+import { useUiStore } from '@stores/uiStore.ts';
+import { addLayer } from '@primitives/document-model/operations.ts';
+import type { BorderBoxProperties } from '@primitives/document-model/types.ts';
+
+function makePointerEvent(overrides: Partial<PointerEvent> = {}): PointerEvent {
+  return {
+    clientX: 0,
+    clientY: 0,
+    shiftKey: false,
+    button: 0,
+    ...overrides,
+  } as unknown as PointerEvent;
+}
+
+const boxProps: BorderBoxProperties = {
+  borderStyle: 'rounded',
+  padding: { top: 1, right: 1, bottom: 1, left: 1 },
+};
+
+beforeEach(() => {
+  // Reset stores
+  const docStore = useDocumentStore.getState();
+  const freshDoc = docStore.document;
+  const page = freshDoc.pages[0]!;
+
+  // Add two layers
+  let updatedPage = addLayer(
+    page,
+    'border-box',
+    'Box A',
+    { col: 5, row: 5, width: 10, height: 5 },
+    'border',
+    boxProps,
+  );
+  updatedPage = addLayer(
+    updatedPage,
+    'border-box',
+    'Box B',
+    { col: 8, row: 6, width: 10, height: 5 }, // overlaps with Box A
+    'accentBorder',
+    boxProps,
+  );
+
+  const updatedDoc = {
+    ...freshDoc,
+    pages: freshDoc.pages.map((p) => (p.id === freshDoc.activePageId ? updatedPage : p)),
+  };
+
+  useDocumentStore.setState({
+    document: updatedDoc,
+    undoStack: [],
+    redoStack: [],
+  });
+  useUiStore.setState({
+    selectedLayerIds: [],
+    isDragging: false,
+    dragStartPos: null,
+    marqueeRect: null,
+  });
+});
+
+describe('selectTool', () => {
+  it('has default cursor', () => {
+    expect(selectTool.cursor).toBe('default');
+  });
+
+  describe('hit testing', () => {
+    it('selects topmost layer at click position (reverse z-order)', () => {
+      // Click at (9, 7) which is in both Box A and Box B overlap area
+      // Box B is later in layerOrder, so should be selected
+      selectTool.onPointerDown({ col: 9, row: 7 }, makePointerEvent());
+      selectTool.onPointerUp({ col: 9, row: 7 }, makePointerEvent());
+
+      const selected = useUiStore.getState().selectedLayerIds;
+      expect(selected).toHaveLength(1);
+
+      // Verify the selected layer is Box B (the one added second)
+      const doc = useDocumentStore.getState().document;
+      const page = doc.pages.find((p) => p.id === doc.activePageId)!;
+      const selectedLayer = page.layers[selected[0]!];
+      expect(selectedLayer?.name).toBe('Box B');
+    });
+
+    it('selects Box A when clicking in its non-overlapping area', () => {
+      // Click at (5, 5) which is only in Box A
+      selectTool.onPointerDown({ col: 5, row: 5 }, makePointerEvent());
+      selectTool.onPointerUp({ col: 5, row: 5 }, makePointerEvent());
+
+      const selected = useUiStore.getState().selectedLayerIds;
+      expect(selected).toHaveLength(1);
+
+      const doc = useDocumentStore.getState().document;
+      const page = doc.pages.find((p) => p.id === doc.activePageId)!;
+      const selectedLayer = page.layers[selected[0]!];
+      expect(selectedLayer?.name).toBe('Box A');
+    });
+
+    it('clears selection when clicking empty area', () => {
+      // First select something
+      selectTool.onPointerDown({ col: 5, row: 5 }, makePointerEvent());
+      selectTool.onPointerUp({ col: 5, row: 5 }, makePointerEvent());
+      expect(useUiStore.getState().selectedLayerIds).toHaveLength(1);
+
+      // Click on empty area
+      selectTool.onPointerDown({ col: 0, row: 0 }, makePointerEvent());
+      selectTool.onPointerUp({ col: 0, row: 0 }, makePointerEvent());
+      expect(useUiStore.getState().selectedLayerIds).toHaveLength(0);
+    });
+  });
+
+  describe('shift+click toggle', () => {
+    it('adds to selection with shift+click', () => {
+      // Select Box A
+      selectTool.onPointerDown({ col: 5, row: 5 }, makePointerEvent());
+      selectTool.onPointerUp({ col: 5, row: 5 }, makePointerEvent());
+      expect(useUiStore.getState().selectedLayerIds).toHaveLength(1);
+
+      // Shift+click Box B (at a non-overlapping position)
+      selectTool.onPointerDown({ col: 17, row: 10 }, makePointerEvent({ shiftKey: true }));
+      selectTool.onPointerUp({ col: 17, row: 10 }, makePointerEvent({ shiftKey: true }));
+      expect(useUiStore.getState().selectedLayerIds).toHaveLength(2);
+    });
+
+    it('removes from selection with shift+click on already selected', () => {
+      // Select both layers
+      selectTool.onPointerDown({ col: 5, row: 5 }, makePointerEvent());
+      selectTool.onPointerUp({ col: 5, row: 5 }, makePointerEvent());
+
+      selectTool.onPointerDown({ col: 17, row: 10 }, makePointerEvent({ shiftKey: true }));
+      selectTool.onPointerUp({ col: 17, row: 10 }, makePointerEvent({ shiftKey: true }));
+      expect(useUiStore.getState().selectedLayerIds).toHaveLength(2);
+
+      // Shift+click Box A again to deselect it
+      selectTool.onPointerDown({ col: 5, row: 5 }, makePointerEvent({ shiftKey: true }));
+      selectTool.onPointerUp({ col: 5, row: 5 }, makePointerEvent({ shiftKey: true }));
+      expect(useUiStore.getState().selectedLayerIds).toHaveLength(1);
+    });
+  });
+});
