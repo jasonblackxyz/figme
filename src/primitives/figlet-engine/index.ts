@@ -1,3 +1,5 @@
 export type { FigletFont, FigletRenderResult } from './types.ts'
 export { parseFLF } from './parser.ts'
 export { renderFiglet } from './renderer.ts'
+export { getFigletFont, AVAILABLE_FONTS } from './fonts/index.ts'
+export type { FontName } from './fonts/index.ts'

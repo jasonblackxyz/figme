@@ -11,3 +11,7 @@ export {
   stampCustomBorder,
 } from './stamps.ts'
 export type { BorderCharSet } from './stamps.ts'
+export { stampImage } from './stampImage.ts'
+export { stampEdge } from './stampEdge.ts'
+export { stampTextBlock } from './stampText.ts'
+export { stampFigletText } from './stampFiglet.ts'

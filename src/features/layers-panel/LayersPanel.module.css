@@ -1,0 +1,95 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-dim);
+  margin: 0;
+}
+
+.layerList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.layerRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  border-bottom: 1px solid var(--color-border);
+  user-select: none;
+}
+
+.layerRow:hover {
+  background: var(--color-surface-raised);
+}
+
+.selected {
+  background: var(--color-accent-dim);
+}
+
+.hidden {
+  opacity: 0.5;
+}
+
+.visibilityToggle,
+.lockToggle {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  color: var(--color-text-dim);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.layerName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+.nameInput {
+  flex: 1;
+  background: var(--color-bg);
+  border: 1px solid var(--color-accent);
+  border-radius: 2px;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 1px 4px;
+  outline: none;
+}
+
+.layerKind {
+  font-size: 10px;
+  color: var(--color-text-dim);
+  flex-shrink: 0;
+}
