@@ -1,7 +1,8 @@
-import type { Layer } from '@primitives/document-model/types.ts';
+import type { Layer, LayerKind } from '@primitives/document-model/types.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { updateLayer } from '@primitives/document-model/operations.ts';
 import { STYLE_KEYS } from '@primitives/style-system/palette.ts';
+import { ColorSwatchField } from '@features/color-picker/ColorSwatchField.tsx';
 import styles from './PropertiesPanel.module.css';
 
 interface Props {
@@ -21,7 +22,25 @@ function applyUpdate(layerId: string, updates: Partial<Layer>) {
   });
 }
 
+function colorLabel(kind: LayerKind): string {
+  switch (kind) {
+    case 'border-box': return 'Border';
+    case 'text-block': return 'Text';
+    case 'figlet-text': return 'Text';
+    case 'divider': return 'Stroke';
+    case 'edge-path': return 'Line';
+    default: return 'Color';
+  }
+}
+
 export function CommonProperties({ layer }: Props) {
+  const doc = useDocumentStore(s => s.document);
+  const updateLayerColors = useDocumentStore(s => s.updateLayerColors);
+
+  const styleDef = doc.palette[layer.styleKey];
+  const fgColor = layer.customColors?.color ?? styleDef?.color ?? '#ffffff';
+  const bgColor = layer.customColors?.bg ?? styleDef?.bg ?? '#000000';
+
   return (
     <div className={styles.section}>
       <h3 className={styles.sectionTitle}>Common</h3>
@@ -92,6 +111,30 @@ export function CommonProperties({ layer }: Props) {
             ))}
           </select>
         </div>
+
+        <ColorSwatchField
+          label={colorLabel(layer.kind)}
+          color={fgColor}
+          pickerId={`fg-${layer.id}`}
+          onChange={(hex) => updateLayerColors(layer.id, { ...layer.customColors, color: hex })}
+          onReset={() => {
+            const cc = layer.customColors;
+            updateLayerColors(layer.id, cc?.bg ? { bg: cc.bg } : undefined);
+          }}
+          isOverride={!!layer.customColors?.color}
+        />
+        <ColorSwatchField
+          label="Background"
+          color={bgColor}
+          pickerId={`bg-${layer.id}`}
+          onChange={(hex) => updateLayerColors(layer.id, { ...layer.customColors, bg: hex })}
+          onReset={() => {
+            const cc = layer.customColors;
+            updateLayerColors(layer.id, cc?.color ? { color: cc.color } : undefined);
+          }}
+          isOverride={!!layer.customColors?.bg}
+        />
+
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Opacity</label>
           <input

@@ -1,5 +1,6 @@
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
+import type { ColorOverrideMap } from '@hooks/useComposedBuffer.ts';
 
 /**
  * A span segment: consecutive cells with the same style, merged into one element.
@@ -21,15 +22,34 @@ export interface GridRowElements {
   spans: GridSpan[];
 }
 
+function resolveCell(
+  r: number,
+  c: number,
+  styleKey: StyleKey,
+  palette: Palette,
+  colorOverrides?: ColorOverrideMap,
+): { color: string; bg: string; fontWeight?: number; overrideKey: string } {
+  const styleDef = palette[styleKey];
+  const override = colorOverrides?.[`${r},${c}`];
+  return {
+    color: override?.color ?? styleDef?.color ?? '#ffffff',
+    bg: override?.bg ?? styleDef?.bg ?? '#000000',
+    fontWeight: styleDef?.fontWeight,
+    overrideKey: override ? `${override.color ?? ''}_${override.bg ?? ''}` : '',
+  };
+}
+
 /**
  * Render a StampBuffer into an array of row/span data suitable for React rendering.
  *
- * Groups consecutive cells with the same StyleKey into single GridSpan objects.
- * This reduces DOM element count from (cols × rows) to a much smaller number.
+ * Groups consecutive cells with the same StyleKey and resolved colors into single
+ * GridSpan objects. Color overrides break span coalescing when they change the
+ * resolved color for a cell.
  */
 export function renderGridToElements(
   buffer: StampBuffer,
   palette: Palette,
+  colorOverrides?: ColorOverrideMap,
 ): GridRowElements[] {
   const result: GridRowElements[] = [];
 
@@ -42,43 +62,54 @@ export function renderGridToElements(
     let spanStart = 0;
     let spanChars = '';
     let currentStyleKey: StyleKey | undefined = styleRow[0];
+    let currentResolved = currentStyleKey !== undefined
+      ? resolveCell(r, 0, currentStyleKey, palette, colorOverrides)
+      : undefined;
 
     for (let c = 0; c < buffer.width; c++) {
       const styleKey = styleRow[c];
       const char = charRow[c] ?? ' ';
 
       if (styleKey === currentStyleKey) {
-        spanChars += char;
-      } else {
-        // Flush current span
-        if (currentStyleKey !== undefined && spanChars.length > 0) {
-          const styleDef = palette[currentStyleKey];
-          spans.push({
-            key: `${r}-${spanStart}`,
-            text: spanChars,
-            color: styleDef?.color ?? '#ffffff',
-            bg: styleDef?.bg ?? '#000000',
-            fontWeight: styleDef?.fontWeight,
-            startCol: spanStart,
-            endCol: spanStart + spanChars.length,
-            row: r,
-          });
+        // Same style key — but check if override changes the resolved color
+        const resolved = styleKey !== undefined
+          ? resolveCell(r, c, styleKey, palette, colorOverrides)
+          : undefined;
+        if (resolved && currentResolved && resolved.overrideKey === currentResolved.overrideKey) {
+          spanChars += char;
+          continue;
         }
-        spanStart = c;
-        spanChars = char;
-        currentStyleKey = styleKey;
       }
+
+      // Flush current span
+      if (currentStyleKey !== undefined && currentResolved && spanChars.length > 0) {
+        spans.push({
+          key: `${r}-${spanStart}`,
+          text: spanChars,
+          color: currentResolved.color,
+          bg: currentResolved.bg,
+          fontWeight: currentResolved.fontWeight,
+          startCol: spanStart,
+          endCol: spanStart + spanChars.length,
+          row: r,
+        });
+      }
+      spanStart = c;
+      spanChars = char;
+      currentStyleKey = styleKey;
+      currentResolved = styleKey !== undefined
+        ? resolveCell(r, c, styleKey, palette, colorOverrides)
+        : undefined;
     }
 
     // Flush final span
-    if (currentStyleKey !== undefined && spanChars.length > 0) {
-      const styleDef = palette[currentStyleKey];
+    if (currentStyleKey !== undefined && currentResolved && spanChars.length > 0) {
       spans.push({
         key: `${r}-${spanStart}`,
         text: spanChars,
-        color: styleDef?.color ?? '#ffffff',
-        bg: styleDef?.bg ?? '#000000',
-        fontWeight: styleDef?.fontWeight,
+        color: currentResolved.color,
+        bg: currentResolved.bg,
+        fontWeight: currentResolved.fontWeight,
         startCol: spanStart,
         endCol: spanStart + spanChars.length,
         row: r,

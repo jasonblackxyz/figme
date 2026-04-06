@@ -8,7 +8,8 @@ export type ToolType =
   | 'divider'
   | 'image'
   | 'edge-path'
-  | 'hand';
+  | 'hand'
+  | 'draw';
 
 interface ToolState {
   activeTool: ToolType;

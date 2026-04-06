@@ -35,7 +35,7 @@ export function CanvasViewport() {
   const activeTool = useToolStore((s) => s.activeTool);
   const toolHandler = getToolHandler(activeTool);
 
-  const buffer = useComposedBuffer(activePage!, gridConfig);
+  const { buffer, colorOverrides } = useComposedBuffer(activePage!, gridConfig);
 
   return (
     <div
@@ -69,6 +69,7 @@ export function CanvasViewport() {
           zoom={zoom}
           scrollCol={Math.round(panX / gridConfig.cellWidth)}
           scrollRow={Math.round(panY / gridConfig.cellHeight)}
+          colorOverrides={colorOverrides}
         />
         {gridOverlayVisible && zoom > 0.5 && (
           <GridOverlay gridConfig={gridConfig} />

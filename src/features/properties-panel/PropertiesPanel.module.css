@@ -154,3 +154,28 @@
 .textArea:focus {
   border-color: var(--color-accent);
 }
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.checkboxText {
+  font-size: 11px;
+  color: var(--color-text-dim);
+}
+
+.paintSwatch {
+  width: 24px;
+  height: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.paintSwatch:hover {
+  border-color: var(--color-accent);
+}

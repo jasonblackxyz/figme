@@ -8,6 +8,7 @@ const TOOLS: Array<{ type: ToolType; label: string; shortcut: string }> = [
   { type: 'text-block', label: 'Text', shortcut: 'T' },
   { type: 'figlet-text', label: 'FIGlet', shortcut: 'F' },
   { type: 'divider', label: 'Divider', shortcut: 'D' },
+  { type: 'draw', label: 'Draw', shortcut: 'P' },
   { type: 'hand', label: 'Hand', shortcut: 'H' },
 ];
 

@@ -98,6 +98,8 @@ export interface Layer {
   parentId?: string;
   properties: LayerProperties;
   autoLayout?: AutoLayoutConfig;
+  customColors?: { color?: string; bg?: string };
+  cellColorOverrides?: Record<string, string>;
 }
 
 export interface FigMePage {
@@ -110,6 +112,13 @@ export interface FigMePage {
   canvasRowsOverride?: number;
   canvasX: number;
   canvasY: number;
+  cellColorOverrides?: Record<string, string>;
+}
+
+export interface SwatchCollection {
+  id: string;
+  name: string;
+  colors: string[];
 }
 
 export interface FigMeDocument {
@@ -120,6 +129,7 @@ export interface FigMeDocument {
   pages: FigMePage[];
   activePageId: string;
   components: Record<string, ComponentDef>;
+  swatchCollections?: SwatchCollection[];
   metadata: {
     createdAt: string;
     updatedAt: string;

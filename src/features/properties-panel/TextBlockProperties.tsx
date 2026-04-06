@@ -1,6 +1,7 @@
 import type { Layer, TextBlockProperties as TBProps, LayerProperties } from '@primitives/document-model/types.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { updateLayer } from '@primitives/document-model/operations.ts';
+import { ColorSwatchField } from '@features/color-picker/ColorSwatchField.tsx';
 import styles from './PropertiesPanel.module.css';
 
 interface Props {
@@ -26,11 +27,31 @@ function applyPropsUpdate(layerId: string, propUpdates: Partial<TBProps>) {
 
 export function TextBlockProperties({ layer }: Props) {
   const props = layer.properties as TBProps;
+  const doc = useDocumentStore(s => s.document);
+
+  const textStyleDef = doc.palette[props.styleKey];
+  const textColor = textStyleDef?.color ?? '#ffffff';
 
   return (
     <div className={styles.section}>
       <h3 className={styles.sectionTitle}>Text Block</h3>
       <div className={styles.fieldGroup}>
+        <ColorSwatchField
+          label="Text Color"
+          color={layer.customColors?.color ?? textColor}
+          pickerId={`text-color-${layer.id}`}
+          onChange={(hex) => {
+            useDocumentStore.getState().updateLayerColors(layer.id, {
+              ...layer.customColors,
+              color: hex,
+            });
+          }}
+          onReset={() => {
+            const cc = layer.customColors;
+            useDocumentStore.getState().updateLayerColors(layer.id, cc?.bg ? { bg: cc.bg } : undefined);
+          }}
+          isOverride={!!layer.customColors?.color}
+        />
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Content</label>
         </div>
