@@ -15,14 +15,14 @@
   bottom: 48px;
   width: 480px;
   max-width: calc(100vw - 32px);
-  background: var(--color-surface, #1e1e2e);
-  border: 1px solid var(--color-border, #444);
+  background: var(--color-surface, #e8e8ee);
+  border: 1px solid var(--color-border, #c0c0cc);
   border-radius: 8px;
   z-index: 50;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .header {
@@ -30,21 +30,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border, #444);
+  border-bottom: 1px solid var(--color-border, #c0c0cc);
   flex-shrink: 0;
 }
 
 .title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text, #e0e0e0);
+  color: var(--color-text, #1a1a2e);
   margin: 0;
 }
 
 .closeButton {
   background: none;
   border: none;
-  color: var(--color-text-dim, #888);
+  color: var(--color-text-dim, #6b6b80);
   cursor: pointer;
   font-size: 18px;
   padding: 4px 8px;
@@ -53,8 +53,8 @@
 }
 
 .closeButton:hover {
-  background: var(--color-hover, rgba(255, 255, 255, 0.1));
-  color: var(--color-text, #e0e0e0);
+  background: var(--color-hover, rgba(0, 0, 0, 0.06));
+  color: var(--color-text, #1a1a2e);
 }
 
 .content {
@@ -72,7 +72,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--color-text-dim, #888);
+  color: var(--color-text-dim, #6b6b80);
   margin: 0 0 8px 0;
 }
 
@@ -83,7 +83,7 @@
 }
 
 .summaryItem {
-  background: var(--color-bg, #1a1a2e);
+  background: var(--color-bg, #f0f0f4);
   border-radius: 4px;
   padding: 8px;
   text-align: center;
@@ -92,12 +92,12 @@
 .summaryValue {
   font-size: 18px;
   font-weight: 600;
-  color: var(--color-text, #e0e0e0);
+  color: var(--color-text, #1a1a2e);
 }
 
 .summaryLabel {
   font-size: 10px;
-  color: var(--color-text-dim, #888);
+  color: var(--color-text-dim, #6b6b80);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -111,43 +111,43 @@
 .layerTable th {
   text-align: left;
   padding: 6px 8px;
-  border-bottom: 1px solid var(--color-border, #444);
-  color: var(--color-text-dim, #888);
+  border-bottom: 1px solid var(--color-border, #c0c0cc);
+  color: var(--color-text-dim, #6b6b80);
   font-weight: 600;
   font-size: 11px;
 }
 
 .layerTable td {
   padding: 4px 8px;
-  border-bottom: 1px solid var(--color-border, rgba(68, 68, 68, 0.3));
-  color: var(--color-text, #e0e0e0);
+  border-bottom: 1px solid var(--color-border, rgba(192, 192, 204, 0.3));
+  color: var(--color-text, #1a1a2e);
   white-space: nowrap;
 }
 
 .layerTable tr:hover td {
-  background: var(--color-hover, rgba(255, 255, 255, 0.05));
+  background: var(--color-hover, rgba(0, 0, 0, 0.04));
 }
 
 .jsonSection summary {
   cursor: pointer;
   font-size: 12px;
-  color: var(--color-text-dim, #888);
+  color: var(--color-text-dim, #6b6b80);
   padding: 8px 0;
   user-select: none;
 }
 
 .jsonSection summary:hover {
-  color: var(--color-text, #e0e0e0);
+  color: var(--color-text, #1a1a2e);
 }
 
 .jsonCode {
   display: block;
-  background: var(--color-bg, #1a1a2e);
+  background: var(--color-bg, #f0f0f4);
   border-radius: 4px;
   padding: 12px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
-  color: var(--color-text, #e0e0e0);
+  color: var(--color-text, #1a1a2e);
   overflow-x: auto;
   white-space: pre;
   max-height: 300px;
@@ -158,9 +158,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--color-bg, #1a1a2e);
-  border: 1px solid var(--color-border, #444);
-  color: var(--color-text-dim, #888);
+  background: var(--color-bg, #f0f0f4);
+  border: 1px solid var(--color-border, #c0c0cc);
+  color: var(--color-text-dim, #6b6b80);
   cursor: pointer;
   font-size: 11px;
   padding: 4px 10px;
@@ -169,11 +169,11 @@
 }
 
 .copyButton:hover {
-  background: var(--color-hover, rgba(255, 255, 255, 0.1));
-  color: var(--color-text, #e0e0e0);
+  background: var(--color-hover, rgba(0, 0, 0, 0.06));
+  color: var(--color-text, #1a1a2e);
 }
 
 .hidden {
-  color: var(--color-text-dim, #666);
+  color: var(--color-text-dim, #6b6b80);
   opacity: 0.5;
 }

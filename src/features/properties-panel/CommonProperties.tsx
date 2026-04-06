@@ -138,7 +138,7 @@ export function CommonProperties({ layer }: Props) {
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Opacity</label>
           <input
-            className={styles.fieldInput}
+            className={styles.opacitySlider}
             name="opacity"
             data-property="opacity"
             type="range"

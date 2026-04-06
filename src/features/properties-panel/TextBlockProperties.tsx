@@ -2,7 +2,10 @@ import type { Layer, TextBlockProperties as TBProps, LayerProperties } from '@pr
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { updateLayer } from '@primitives/document-model/operations.ts';
 import { ColorSwatchField } from '@features/color-picker/ColorSwatchField.tsx';
+import { AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import styles from './PropertiesPanel.module.css';
+
+const ALIGN_ICONS = { left: AlignLeft, center: AlignCenter, right: AlignRight } as const;
 
 interface Props {
   layer: Layer;
@@ -102,7 +105,7 @@ export function TextBlockProperties({ layer }: Props) {
                 data-property="alignment"
                 onClick={() => applyPropsUpdate(layer.id, { alignment: a })}
               >
-                {a[0]!.toUpperCase()}
+                {(() => { const Icon = ALIGN_ICONS[a]; return <Icon size={12} />; })()}
               </button>
             ))}
           </div>

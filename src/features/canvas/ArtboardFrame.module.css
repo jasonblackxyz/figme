@@ -1,6 +1,6 @@
 .frame {
   position: absolute;
-  border: 1px solid var(--color-border, #333355);
+  border: 1px solid var(--color-border, #c0c0cc);
   pointer-events: none;
   box-sizing: border-box;
 }
@@ -8,7 +8,7 @@
 .label {
   position: absolute;
   font-size: 11px;
-  color: var(--color-text-dim, #666688);
+  color: var(--color-text-dim, #6b6b80);
   white-space: nowrap;
   pointer-events: none;
   user-select: none;

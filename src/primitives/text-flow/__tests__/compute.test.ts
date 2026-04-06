@@ -120,15 +120,26 @@ describe('computeTextFlow', () => {
     expect(result.lines[2]!.row).toBe(4)
   })
 
-  it('applies kerning level 2 (extra spacing between chars)', () => {
+  it('applies kerning level 1 (single space between chars)', () => {
+    const result = computeTextFlow(makeConfig({
+      content: 'Hi',
+      kerning: 1,
+      boundingRect: { col: 0, row: 0, width: 20, height: 10 },
+    }))
+    // With kerning 1, "Hi" should be rendered as "H i" (3 chars wide: 2 + 1*1)
+    const seg = result.lines[0]!.segments[0]!
+    expect(seg.text).toBe('H i')
+  })
+
+  it('applies kerning level 2 (double space between chars)', () => {
     const result = computeTextFlow(makeConfig({
       content: 'Hi',
       kerning: 2,
       boundingRect: { col: 0, row: 0, width: 20, height: 10 },
     }))
-    // With kerning 2, "Hi" should be rendered as "H i" (3 chars wide)
+    // With kerning 2, "Hi" should be rendered as "H  i" (5 chars wide: 2 + 1*2)
     const seg = result.lines[0]!.segments[0]!
-    expect(seg.text).toBe('H i')
+    expect(seg.text).toBe('H  i')
   })
 
   it('respects padding', () => {

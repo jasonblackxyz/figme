@@ -2,7 +2,10 @@ import type { Layer, FigletTextProperties as FTProps, LayerProperties } from '@p
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { updateLayer } from '@primitives/document-model/operations.ts';
 import { AVAILABLE_FONTS } from '@primitives/figlet-engine/fonts/index.ts';
+import { AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import styles from './PropertiesPanel.module.css';
+
+const ALIGN_ICONS = { left: AlignLeft, center: AlignCenter, right: AlignRight } as const;
 
 interface Props {
   layer: Layer;
@@ -66,7 +69,7 @@ export function FigletTextProperties({ layer }: Props) {
                 data-property="figlet-alignment"
                 onClick={() => applyPropsUpdate(layer.id, { alignment: a })}
               >
-                {a[0]!.toUpperCase()}
+                {(() => { const Icon = ALIGN_ICONS[a]; return <Icon size={12} />; })()}
               </button>
             ))}
           </div>

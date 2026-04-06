@@ -94,10 +94,9 @@ describe('PropertiesPanel', () => {
     expect(textarea).toBeInTheDocument();
     expect(textarea).toHaveAttribute('data-property', 'content');
 
-    // Check alignment buttons
-    expect(screen.getByText('L')).toBeInTheDocument();
-    expect(screen.getByText('C')).toBeInTheDocument();
-    expect(screen.getByText('R')).toBeInTheDocument();
+    // Check alignment buttons rendered (icons, not text)
+    const alignButtons = document.querySelectorAll('[data-property="alignment"]');
+    expect(alignButtons.length).toBe(3);
   });
 
   it('does not show TextBlockProperties for border-box layer', () => {
