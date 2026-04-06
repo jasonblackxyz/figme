@@ -1,14 +1,39 @@
 import { useToolStore } from '@stores/toolStore.ts';
 import type { ToolType } from '@stores/toolStore.ts';
+import {
+  MousePointer2,
+  Hand,
+  Square,
+  Minus,
+  Type,
+  ALargeSmall,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import styles from './Toolbar.module.css';
 
-const TOOLS: Array<{ type: ToolType; label: string; shortcut: string }> = [
-  { type: 'select', label: 'Select', shortcut: 'V' },
-  { type: 'border-box', label: 'Border Box', shortcut: 'B' },
-  { type: 'text-block', label: 'Text', shortcut: 'T' },
-  { type: 'figlet-text', label: 'FIGlet', shortcut: 'F' },
-  { type: 'divider', label: 'Divider', shortcut: 'D' },
-  { type: 'hand', label: 'Hand', shortcut: 'H' },
+const ICON_SIZE = 14;
+
+interface ToolDef {
+  type: ToolType;
+  label: string;
+  shortcut: string;
+  icon: LucideIcon;
+}
+
+type ToolbarItem = ToolDef | 'separator';
+
+const TOOLS: ToolbarItem[] = [
+  // Navigation
+  { type: 'select', label: 'Select', shortcut: 'V', icon: MousePointer2 },
+  { type: 'hand', label: 'Hand', shortcut: 'H', icon: Hand },
+  'separator',
+  // Structure
+  { type: 'border-box', label: 'Box', shortcut: 'B', icon: Square },
+  { type: 'divider', label: 'Divider', shortcut: 'D', icon: Minus },
+  'separator',
+  // Content
+  { type: 'text-block', label: 'Text', shortcut: 'T', icon: Type },
+  { type: 'figlet-text', label: 'FIGlet', shortcut: 'F', icon: ALargeSmall },
 ];
 
 export function Toolbar() {
@@ -17,19 +42,27 @@ export function Toolbar() {
 
   return (
     <nav className={styles.toolbar} role="toolbar" aria-label="Design tools" data-component="toolbar">
-      {TOOLS.map((tool) => (
-        <button
-          key={tool.type}
-          className={`${styles.toolButton} ${activeTool === tool.type ? styles.active : ''}`}
-          aria-label={`${tool.label} (${tool.shortcut})`}
-          aria-pressed={activeTool === tool.type}
-          data-tool={tool.type}
-          onClick={() => setActiveTool(tool.type)}
-          title={`${tool.label} (${tool.shortcut})`}
-        >
-          {tool.shortcut}
-        </button>
-      ))}
+      {TOOLS.map((item, index) => {
+        if (item === 'separator') {
+          return <div key={`sep-${index}`} className={styles.separator} role="separator" />;
+        }
+
+        const Icon = item.icon;
+        return (
+          <button
+            key={item.type}
+            className={`${styles.toolButton} ${activeTool === item.type ? styles.active : ''}`}
+            aria-label={`${item.label} (${item.shortcut})`}
+            aria-pressed={activeTool === item.type}
+            data-tool={item.type}
+            onClick={() => setActiveTool(item.type)}
+            title={`${item.label} (${item.shortcut})`}
+          >
+            <Icon size={ICON_SIZE} aria-hidden="true" />
+            <span className={styles.toolLabel}>{item.label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }
