@@ -36,6 +36,27 @@ describe('computeTextFlow', () => {
     expect(result.lines.length).toBeGreaterThan(1)
   })
 
+  it('breaks long unbroken words across multiple lines', () => {
+    const result = computeTextFlow(makeConfig({
+      content: 'abcdefghij',
+      boundingRect: { col: 0, row: 0, width: 4, height: 10 },
+    }))
+
+    const lineTexts = result.lines.map((line) => line.segments.map((segment) => segment.text).join(''))
+    expect(lineTexts).toEqual(['abcd', 'efgh', 'ij'])
+    expect(result.totalRows).toBe(3)
+  })
+
+  it('moves a word to the next line before splitting it when it fits there', () => {
+    const result = computeTextFlow(makeConfig({
+      content: 'ab cdefg',
+      boundingRect: { col: 0, row: 0, width: 5, height: 10 },
+    }))
+
+    const lineTexts = result.lines.map((line) => line.segments.map((segment) => segment.text).join(''))
+    expect(lineTexts[1]).toBe('cdefg')
+  })
+
   it('applies left alignment (segments start at left padding)', () => {
     const result = computeTextFlow(makeConfig({
       content: 'Hi',
