@@ -1,5 +1,7 @@
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
+import type { GridConfig } from '@primitives/grid-engine/types.ts';
+import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 
 /**
  * Serialize the full document as formatted JSON.
@@ -12,7 +14,12 @@ export function exportAsJson(doc: FigMeDocument): string {
  * Generate a self-contained HTML file that renders the grid buffer.
  * Each row becomes a <div> with <span> elements for styled character segments.
  */
-export function exportAsHtml(doc: FigMeDocument, buffer: StampBuffer): string {
+export function exportAsHtml(
+  doc: FigMeDocument,
+  buffer: StampBuffer,
+  gridConfig: GridConfig,
+  colorOverrides?: ColorOverrideMap,
+): string {
   const palette = doc.palette;
 
   let bodyRows = '';
@@ -29,9 +36,10 @@ export function exportAsHtml(doc: FigMeDocument, buffer: StampBuffer): string {
       const ch = row[c] ?? ' ';
       const styleKey = styleRow[c] ?? 'bg';
       const styleDef = palette[styleKey];
-      const style = styleDef
-        ? `color:${styleDef.color};background:${styleDef.bg}${styleDef.fontWeight ? `;font-weight:${styleDef.fontWeight}` : ''}`
-        : '';
+      const override = colorOverrides?.[`${r},${c}`];
+      const resolvedColor = override?.color ?? styleDef?.color ?? '#ffffff';
+      const resolvedBg = override?.bg ?? styleDef?.bg ?? '#000000';
+      const style = `color:${resolvedColor};background:${resolvedBg}${styleDef?.fontWeight ? `;font-weight:${styleDef.fontWeight}` : ''}`;
 
       if (style !== currentStyle) {
         if (segment) {
@@ -60,11 +68,11 @@ body {
   padding: 16px;
   background: ${palette.bg.bg};
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
-  font-size: ${doc.gridConfig.fontSize}px;
-  line-height: ${doc.gridConfig.lineHeight};
+  font-size: ${gridConfig.fontSize}px;
+  line-height: ${gridConfig.lineHeight};
 }
 .grid { white-space: pre; }
-.row { height: ${doc.gridConfig.cellHeight}px; }
+.row { height: ${gridConfig.cellHeight}px; }
 </style>
 </head>
 <body>

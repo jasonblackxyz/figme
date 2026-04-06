@@ -30,3 +30,5 @@ export {
   createEmptyPage,
 } from './operations.ts'
 export { serializeDocument, deserializeDocument } from './serialization.ts'
+export type { ColorOverrideMap } from './colorOverrides.ts'
+export { computeColorOverrides } from './colorOverrides.ts'

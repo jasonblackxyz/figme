@@ -1,6 +1,6 @@
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
-import type { ColorOverrideMap } from '@hooks/useComposedBuffer.ts';
+import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 
 /**
  * A span segment: consecutive cells with the same style, merged into one element.
