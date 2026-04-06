@@ -18,7 +18,7 @@ import styles from './CanvasViewport.module.css';
 
 export function CanvasViewport() {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { onPointerDown, onPointerMove, onPointerUp, onWheel } = useCanvasInteraction(canvasRef);
+  const { onPointerDown, onPointerMove, onPointerUp, onDoubleClick, onWheel } = useCanvasInteraction(canvasRef);
 
   const panX = useViewportStore((s) => s.panX);
   const panY = useViewportStore((s) => s.panY);
@@ -45,6 +45,7 @@ export function CanvasViewport() {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onDoubleClick={onDoubleClick}
       onWheel={onWheel}
       data-testid="canvas-viewport"
     >

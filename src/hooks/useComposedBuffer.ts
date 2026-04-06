@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { FigMePage } from '@primitives/document-model/types.ts';
+import { useUiStore } from '@stores/uiStore.ts';
 import type {
   BorderBoxProperties,
   TextBlockProperties,
@@ -22,12 +23,15 @@ import { stampEdge } from '@primitives/stamp-system/stampEdge.ts';
 import { getFigletFont } from '@primitives/figlet-engine/fonts/index.ts';
 
 export function useComposedBuffer(page: FigMePage, gridConfig: GridConfig): StampBuffer {
+  const editingLayerId = useUiStore((s) => s.editingLayerId);
+
   return useMemo(() => {
     let buffer = createBuffer(gridConfig.canvasCols, gridConfig.canvasRows);
 
     for (const layerId of page.layerOrder) {
       const layer = page.layers[layerId];
       if (!layer || !layer.visible) continue;
+      if (layer.id === editingLayerId) continue;
 
       let layerBuffer: StampBuffer | null = null;
 
@@ -102,5 +106,5 @@ export function useComposedBuffer(page: FigMePage, gridConfig: GridConfig): Stam
     }
 
     return buffer;
-  }, [page, gridConfig]);
+  }, [page, gridConfig, editingLayerId]);
 }

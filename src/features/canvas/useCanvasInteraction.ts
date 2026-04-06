@@ -126,6 +126,23 @@ export function useCanvasInteraction(canvasRef: React.RefObject<HTMLDivElement |
     [canvasRef],
   );
 
+  const onDoubleClick = useCallback(
+    (event: React.MouseEvent) => {
+      const el = canvasRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const viewportState = useViewportStore.getState();
+      const gridConfig = viewportState.getEffectiveGridConfig();
+      const gridPos = clientToGrid(event.clientX, event.clientY, rect, viewportState.panX, viewportState.panY, gridConfig);
+
+      const tool = useToolStore.getState().activeTool;
+      const handler = getToolHandler(tool);
+      handler.onDoubleClick?.(gridPos, event.nativeEvent);
+    },
+    [canvasRef],
+  );
+
   const onWheel = useCallback(
     (event: React.WheelEvent) => {
       event.preventDefault();
@@ -149,5 +166,5 @@ export function useCanvasInteraction(canvasRef: React.RefObject<HTMLDivElement |
     [canvasRef],
   );
 
-  return { onPointerDown, onPointerMove, onPointerUp, onWheel };
+  return { onPointerDown, onPointerMove, onPointerUp, onDoubleClick, onWheel };
 }

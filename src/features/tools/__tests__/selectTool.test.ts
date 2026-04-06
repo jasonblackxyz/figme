@@ -2,7 +2,7 @@ import { selectTool } from '@features/tools/selectTool.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { addLayer } from '@primitives/document-model/operations.ts';
-import type { BorderBoxProperties } from '@primitives/document-model/types.ts';
+import type { BorderBoxProperties, TextBlockProperties } from '@primitives/document-model/types.ts';
 
 function makePointerEvent(overrides: Partial<PointerEvent> = {}): PointerEvent {
   return {
@@ -12,6 +12,14 @@ function makePointerEvent(overrides: Partial<PointerEvent> = {}): PointerEvent {
     button: 0,
     ...overrides,
   } as unknown as PointerEvent;
+}
+
+function makeMouseEvent(overrides: Partial<MouseEvent> = {}): MouseEvent {
+  return {
+    clientX: 0,
+    clientY: 0,
+    ...overrides,
+  } as unknown as MouseEvent;
 }
 
 const boxProps: BorderBoxProperties = {
@@ -58,6 +66,7 @@ beforeEach(() => {
     isDragging: false,
     dragStartPos: null,
     marqueeRect: null,
+    editingLayerId: null,
   });
 });
 
@@ -136,6 +145,62 @@ describe('selectTool', () => {
       selectTool.onPointerDown({ col: 5, row: 5 }, makePointerEvent({ shiftKey: true }));
       selectTool.onPointerUp({ col: 5, row: 5 }, makePointerEvent({ shiftKey: true }));
       expect(useUiStore.getState().selectedLayerIds).toHaveLength(1);
+    });
+  });
+
+  describe('double-click to edit', () => {
+    const textProps: TextBlockProperties = {
+      content: 'Hello',
+      fontFamily: "'IBM Plex Mono', monospace",
+      kerning: 1,
+      lineSpacing: 0,
+      alignment: 'left',
+      styleKey: 'text',
+    };
+
+    function addTextBlock(col = 20, row = 20, locked = false) {
+      const doc = useDocumentStore.getState().document;
+      const page = doc.pages.find((p) => p.id === doc.activePageId)!;
+      let updatedPage = addLayer(
+        page,
+        'text-block',
+        'Text A',
+        { col, row, width: 15, height: 5 },
+        'text',
+        textProps,
+      );
+      if (locked) {
+        const layerId = updatedPage.layerOrder[updatedPage.layerOrder.length - 1]!;
+        const layer = updatedPage.layers[layerId]!;
+        updatedPage = {
+          ...updatedPage,
+          layers: { ...updatedPage.layers, [layerId]: { ...layer, locked: true } },
+        };
+      }
+      useDocumentStore.setState({
+        document: {
+          ...doc,
+          pages: doc.pages.map((p) => (p.id === doc.activePageId ? updatedPage : p)),
+        },
+      });
+    }
+
+    it('enters edit mode on double-click of text-block', () => {
+      addTextBlock();
+      selectTool.onDoubleClick!({ col: 22, row: 22 }, makeMouseEvent());
+      expect(useUiStore.getState().editingLayerId).not.toBeNull();
+    });
+
+    it('does not enter edit mode on double-click of border-box', () => {
+      // Box A at (5,5) is a border-box from beforeEach
+      selectTool.onDoubleClick!({ col: 6, row: 6 }, makeMouseEvent());
+      expect(useUiStore.getState().editingLayerId).toBeNull();
+    });
+
+    it('does not enter edit mode on double-click of locked text-block', () => {
+      addTextBlock(40, 40, true);
+      selectTool.onDoubleClick!({ col: 42, row: 42 }, makeMouseEvent());
+      expect(useUiStore.getState().editingLayerId).toBeNull();
     });
   });
 });
