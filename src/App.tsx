@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { CanvasViewport } from '@features/canvas/CanvasViewport.tsx';
 import { LayersPanel } from '@features/layers-panel/LayersPanel.tsx';
 import { PropertiesPanel } from '@features/properties-panel/PropertiesPanel.tsx';
@@ -30,6 +31,25 @@ export function App() {
   const toggleLayersPanel = useUiStore((s) => s.toggleLayersPanel);
   const togglePropertiesPanel = useUiStore((s) => s.togglePropertiesPanel);
 
+  const collapsedLayersButtonRef = useRef<HTMLButtonElement>(null);
+  const collapsedPropertiesButtonRef = useRef<HTMLButtonElement>(null);
+  const previousLayersPanelOpen = useRef(layersPanelOpen);
+  const previousPropertiesPanelOpen = useRef(propertiesPanelOpen);
+
+  useEffect(() => {
+    if (previousLayersPanelOpen.current && !layersPanelOpen) {
+      collapsedLayersButtonRef.current?.focus();
+    }
+    previousLayersPanelOpen.current = layersPanelOpen;
+  }, [layersPanelOpen]);
+
+  useEffect(() => {
+    if (previousPropertiesPanelOpen.current && !propertiesPanelOpen) {
+      collapsedPropertiesButtonRef.current?.focus();
+    }
+    previousPropertiesPanelOpen.current = propertiesPanelOpen;
+  }, [propertiesPanelOpen]);
+
   const gridColumns = `${layersPanelOpen ? '240px' : '36px'} 1fr ${propertiesPanelOpen ? '280px' : '36px'}`;
 
   return (
@@ -42,6 +62,15 @@ export function App() {
       <AgentBriefing document={document} />
       <header className={styles.toolbar}>
         <Toolbar />
+        <div className={styles.toolbarActions}>
+          <button
+            className={styles.exportButton}
+            onClick={toggleExportDialog}
+            title="Export (Ctrl+Shift+E)"
+          >
+            Export
+          </button>
+        </div>
       </header>
       <aside className={styles.layersPanel}>
         {layersPanelOpen ? (
@@ -49,6 +78,7 @@ export function App() {
         ) : (
           <div className={styles.collapsedStrip} data-component="collapsed-layers">
             <button
+              ref={collapsedLayersButtonRef}
               className={styles.expandButton}
               onClick={toggleLayersPanel}
               aria-label="Expand layers panel"
@@ -70,6 +100,7 @@ export function App() {
         ) : (
           <div className={styles.collapsedStrip} data-component="collapsed-properties">
             <button
+              ref={collapsedPropertiesButtonRef}
               className={styles.expandButton}
               onClick={togglePropertiesPanel}
               aria-label="Expand properties panel"

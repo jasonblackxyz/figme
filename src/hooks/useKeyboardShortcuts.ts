@@ -91,14 +91,14 @@ export function useKeyboardShortcuts(): void {
       }
 
       // Ctrl+Shift+\: toggle properties panel
-      if (ctrl && e.shiftKey && e.key === '\\') {
+      if (ctrl && e.shiftKey && e.code === 'Backslash') {
         e.preventDefault();
         useUiStore.getState().togglePropertiesPanel();
         return;
       }
 
       // Ctrl+\: toggle layers panel
-      if (ctrl && !e.shiftKey && e.key === '\\') {
+      if (ctrl && !e.shiftKey && e.code === 'Backslash') {
         e.preventDefault();
         useUiStore.getState().toggleLayersPanel();
         return;

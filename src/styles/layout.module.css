@@ -19,6 +19,36 @@
   padding: 0 8px;
 }
 
+.toolbarActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.exportButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-dim);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+
+.exportButton:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
 .layersPanel {
   grid-area: layers;
   background: var(--color-surface);
