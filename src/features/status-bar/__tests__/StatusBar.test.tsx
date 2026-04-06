@@ -9,7 +9,6 @@ beforeEach(() => {
     panY: 0,
     cursorGridPos: { col: 42, row: 13 },
     gridOverlayVisible: false,
-    rulersVisible: true,
   });
 });
 
