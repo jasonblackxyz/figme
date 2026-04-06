@@ -15,13 +15,11 @@ interface ViewportState {
   panY: number;
   cursorGridPos: { col: number; row: number } | null;
   gridOverlayVisible: boolean;
-  rulersVisible: boolean;
   setZoom: (zoom: number) => void;
   setPan: (x: number, y: number) => void;
   resetView: () => void;
   setCursorGridPos: (pos: { col: number; row: number } | null) => void;
   toggleGridOverlay: () => void;
-  toggleRulers: () => void;
   zoomAtPoint: (delta: number, clientX: number, clientY: number, canvasRect: DOMRect) => void;
   getEffectiveGridConfig: () => GridConfig;
 }
@@ -32,7 +30,6 @@ export const useViewportStore = create<ViewportState>((set, get) => ({
   panY: 0,
   cursorGridPos: null,
   gridOverlayVisible: false,
-  rulersVisible: true,
 
   setZoom: (zoom: number) => set({ zoom: clamp(zoom, 0.1, 5) }),
   setPan: (x: number, y: number) => set({ panX: x, panY: y }),
@@ -40,7 +37,6 @@ export const useViewportStore = create<ViewportState>((set, get) => ({
 
   setCursorGridPos: (pos: { col: number; row: number } | null) => set({ cursorGridPos: pos }),
   toggleGridOverlay: () => set((s) => ({ gridOverlayVisible: !s.gridOverlayVisible })),
-  toggleRulers: () => set((s) => ({ rulersVisible: !s.rulersVisible })),
 
   zoomAtPoint: (delta: number, clientX: number, clientY: number, canvasRect: DOMRect) => {
     const oldZoom = get().zoom;

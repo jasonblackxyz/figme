@@ -16,7 +16,6 @@ interface ExportDialogProps {
 
 export function ExportDialog({ visible, onClose }: ExportDialogProps) {
   const document = useDocumentStore((s) => s.document);
-  const [pngRulers, setPngRulers] = useState(false);
   const [includeBuffer, setIncludeBuffer] = useState(false);
 
   const handlePngExport = useCallback(async () => {
@@ -28,7 +27,7 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
     const pageGridConfig = { ...document.gridConfig, canvasCols: cols, canvasRows: rows };
 
     const buffer = composePageBuffer(activePage, pageGridConfig);
-    const canvas = await renderBufferToCanvas(buffer, document.palette, document.gridConfig, { rulers: pngRulers });
+    const canvas = await renderBufferToCanvas(buffer, document.palette, document.gridConfig);
 
     canvas.toBlob((blob) => {
       if (blob) {
@@ -37,7 +36,7 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
       }
     }, 'image/png');
     onClose();
-  }, [document, pngRulers, onClose]);
+  }, [document, onClose]);
 
   const handleHtmlExport = useCallback(() => {
     const buffer = createBuffer(
@@ -82,23 +81,13 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
         <div className={styles.body}>
           <div className={styles.sectionLabel}>Visual</div>
 
-          <div className={styles.formatGroup}>
-            <button className={styles.formatButton} onClick={handlePngExport}>
-              <span className={styles.formatIcon}>{'▣'}</span>
-              <div>
-                <div className={styles.formatLabel}>PNG Image</div>
-                <div className={styles.formatDesc}>Rasterized grid with dimensions in filename</div>
-              </div>
-            </button>
-            <label className={styles.optionToggle}>
-              <input
-                type="checkbox"
-                checked={pngRulers}
-                onChange={(e) => setPngRulers(e.target.checked)}
-              />
-              <span className={styles.optionLabel}>Include row/column rulers</span>
-            </label>
-          </div>
+          <button className={styles.formatButton} onClick={handlePngExport}>
+            <span className={styles.formatIcon}>{'▣'}</span>
+            <div>
+              <div className={styles.formatLabel}>PNG Image</div>
+              <div className={styles.formatDesc}>Rasterized grid with dimensions in filename</div>
+            </div>
+          </button>
 
           <button className={styles.formatButton} onClick={handleHtmlExport}>
             <span className={styles.formatIcon}>{'<>'}</span>
