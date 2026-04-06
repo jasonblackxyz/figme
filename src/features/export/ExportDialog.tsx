@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { exportAsJson, exportAsHtml, exportAsMarkdown } from './exporters.ts';
 import { exportGridSpecAsJson } from './gridspec/exporter.ts';
@@ -15,66 +15,129 @@ interface ExportDialogProps {
 }
 
 export function ExportDialog({ visible, onClose }: ExportDialogProps) {
-  const document = useDocumentStore((s) => s.document);
+  const doc = useDocumentStore((s) => s.document);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [includeBuffer, setIncludeBuffer] = useState(false);
 
+  useEffect(() => {
+    if (!visible) return undefined;
+
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
+    return () => {
+      previousFocus?.focus();
+    };
+  }, [visible]);
+
+  const handleDialogKeyDown = useCallback((e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+      return;
+    }
+
+    if (e.key !== 'Tab') return;
+
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+
+    if (focusable.length === 0) {
+      e.preventDefault();
+      dialog.focus();
+      return;
+    }
+
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    const active = document.activeElement;
+
+    if (e.shiftKey && active === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, [onClose]);
+
   const handlePngExport = useCallback(async () => {
-    const activePage = document.pages.find((p) => p.id === document.activePageId) ?? document.pages[0];
+    const activePage = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
     if (!activePage) return;
 
-    const cols = activePage.canvasColsOverride ?? document.gridConfig.canvasCols;
-    const rows = activePage.canvasRowsOverride ?? document.gridConfig.canvasRows;
-    const pageGridConfig = { ...document.gridConfig, canvasCols: cols, canvasRows: rows };
+    const cols = activePage.canvasColsOverride ?? doc.gridConfig.canvasCols;
+    const rows = activePage.canvasRowsOverride ?? doc.gridConfig.canvasRows;
+    const pageGridConfig = { ...doc.gridConfig, canvasCols: cols, canvasRows: rows };
 
     const buffer = composePageBuffer(activePage, pageGridConfig);
-    const canvas = await renderBufferToCanvas(buffer, document.palette, document.gridConfig);
+    const canvas = await renderBufferToCanvas(buffer, doc.palette, doc.gridConfig);
 
     canvas.toBlob((blob) => {
       if (blob) {
-        const name = document.name || 'untitled';
+        const name = doc.name || 'untitled';
         downloadBlob(blob, `${name}_${cols}x${rows}.png`);
       }
     }, 'image/png');
     onClose();
-  }, [document, onClose]);
+  }, [doc, onClose]);
 
   const handleHtmlExport = useCallback(() => {
     const buffer = createBuffer(
-      document.gridConfig.canvasCols,
-      document.gridConfig.canvasRows,
+      doc.gridConfig.canvasCols,
+      doc.gridConfig.canvasRows,
     );
-    const html = exportAsHtml(document, buffer);
-    downloadFile(html, `${document.name || 'untitled'}.html`, 'text/html');
+    const html = exportAsHtml(doc, buffer);
+    downloadFile(html, `${doc.name || 'untitled'}.html`, 'text/html');
     onClose();
-  }, [document, onClose]);
+  }, [doc, onClose]);
 
   const handleJsonExport = useCallback(() => {
-    const json = exportAsJson(document);
-    downloadFile(json, `${document.name || 'untitled'}.figme`, 'application/json');
+    const json = exportAsJson(doc);
+    downloadFile(json, `${doc.name || 'untitled'}.figme`, 'application/json');
     onClose();
-  }, [document, onClose]);
+  }, [doc, onClose]);
 
   const handleGridSpecExport = useCallback(() => {
-    const json = exportGridSpecAsJson(document, { includeBuffer });
-    downloadFile(json, `${document.name || 'untitled'}.gridspec.json`, 'application/json');
+    const json = exportGridSpecAsJson(doc, { includeBuffer });
+    downloadFile(json, `${doc.name || 'untitled'}.gridspec.json`, 'application/json');
     onClose();
-  }, [document, includeBuffer, onClose]);
+  }, [doc, includeBuffer, onClose]);
 
   const handleMarkdownExport = useCallback(() => {
-    const md = exportAsMarkdown(document);
-    downloadFile(md, `${document.name || 'untitled'}-spec.md`, 'text/markdown');
+    const md = exportAsMarkdown(doc);
+    downloadFile(md, `${doc.name || 'untitled'}-spec.md`, 'text/markdown');
     onClose();
-  }, [document, onClose]);
+  }, [doc, onClose]);
 
   if (!visible) return null;
 
   return (
     <>
-      <div className={styles.overlay} onClick={onClose} />
-      <div className={styles.dialog} role="dialog" aria-label="Export Document">
+      <div className={styles.overlay} onClick={onClose} aria-hidden="true" />
+      <div
+        ref={dialogRef}
+        className={styles.dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Export Document"
+        tabIndex={-1}
+        onKeyDown={handleDialogKeyDown}
+      >
         <div className={styles.header}>
           <h2 className={styles.title}>Export Document</h2>
-          <button className={styles.closeButton} onClick={onClose} aria-label="Close export dialog">
+          <button
+            ref={closeButtonRef}
+            className={styles.closeButton}
+            onClick={onClose}
+            aria-label="Close export dialog"
+          >
             x
           </button>
         </div>

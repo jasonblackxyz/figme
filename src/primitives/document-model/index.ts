@@ -6,6 +6,7 @@ export type {
   FigletTextProperties,
   ImageProperties,
   EdgePathProperties,
+  ComponentInstanceProperties,
   CustomBorderChars,
   AutoLayoutConfig,
   LayerProperties,
