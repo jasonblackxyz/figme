@@ -1513,7 +1513,6 @@ Every feature should be validated against this checklist before shipping:
 | Group | Ctrl+G | |
 | Ungroup | Ctrl+Shift+G | |
 | Auto Layout | Shift+A | Wrap selected layers in auto-layout group |
-| Toggle grid overlay | Ctrl+' | |
 | Toggle spec view | Ctrl+Shift+S | |
 | Toggle smart guides | Ctrl+; | |
 | Toggle character picker | Ctrl+Shift+C | |
