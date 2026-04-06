@@ -9,7 +9,6 @@ import { useCanvasInteraction } from './useCanvasInteraction.ts';
 import { SelectionOverlay } from './SelectionOverlay.tsx';
 import { DrawingPreview } from './DrawingPreview.tsx';
 import { ArtboardFrame } from './ArtboardFrame.tsx';
-import { GridOverlay } from './GridOverlay.tsx';
 import { TextEditor } from '@features/text-editor/TextEditor.tsx';
 import { SmartGuides } from '@features/smart-guides/SmartGuides.tsx';
 import { getToolHandler } from '@features/tools/toolRegistry.ts';
@@ -22,7 +21,6 @@ export function CanvasViewport() {
   const panX = useViewportStore((s) => s.panX);
   const panY = useViewportStore((s) => s.panY);
   const gridConfig = useViewportStore((s) => s.getEffectiveGridConfig());
-  const gridOverlayVisible = useViewportStore((s) => s.gridOverlayVisible);
   const zoom = useViewportStore((s) => s.zoom);
 
   const doc = useDocumentStore((s) => s.document);
@@ -67,9 +65,6 @@ export function CanvasViewport() {
           scrollRow={Math.round(panY / gridConfig.cellHeight)}
           colorOverrides={colorOverrides}
         />
-        {gridOverlayVisible && zoom > 0.5 && (
-          <GridOverlay gridConfig={gridConfig} />
-        )}
       </div>
       <div className={styles.overlay}>
         <SelectionOverlay gridConfig={gridConfig} panX={panX} panY={panY} />

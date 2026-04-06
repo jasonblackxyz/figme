@@ -85,13 +85,6 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
-      // Ctrl+': toggle grid overlay
-      if (ctrl && e.key === "'") {
-        e.preventDefault();
-        useViewportStore.getState().toggleGridOverlay();
-        return;
-      }
-
       // Ctrl+;: toggle smart guides
       if (ctrl && e.key === ';') {
         e.preventDefault();
