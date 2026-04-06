@@ -26,3 +26,7 @@ coverage/
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Claude Code
+.claude/*
+!.claude/settings.json
