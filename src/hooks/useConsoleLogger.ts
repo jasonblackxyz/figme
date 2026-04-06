@@ -13,6 +13,7 @@ export function useConsoleLogger(): void {
   const prevDocRef = useRef(useDocumentStore.getState().document);
   const prevToolRef = useRef(useToolStore.getState().activeTool);
   const prevSelectionRef = useRef(useUiStore.getState().selectedLayerIds);
+  const prevEditingRef = useRef(useUiStore.getState().editingLayerId);
 
   useEffect(() => {
     // Log initial state (summary only — avoid serialising the full document)
@@ -105,10 +106,35 @@ export function useConsoleLogger(): void {
       prevSelectionRef.current = nextSelection;
     });
 
+    // Subscribe to text edit mode changes
+    const unsubEditing = useUiStore.subscribe((state) => {
+      const prevEditing = prevEditingRef.current;
+      const nextEditing = state.editingLayerId;
+
+      if (prevEditing === nextEditing) return;
+
+      if (nextEditing) {
+        console.log('FIGME_STATE', {
+          action: 'text_edit_start',
+          timestamp: Date.now(),
+          layerId: nextEditing,
+        });
+      } else if (prevEditing) {
+        console.log('FIGME_STATE', {
+          action: 'text_edit_end',
+          timestamp: Date.now(),
+          layerId: prevEditing,
+        });
+      }
+
+      prevEditingRef.current = nextEditing;
+    });
+
     return () => {
       unsubDoc();
       unsubTool();
       unsubSelection();
+      unsubEditing();
     };
   }, []);
 }
