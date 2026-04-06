@@ -90,6 +90,20 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
+      // Ctrl+Shift+\: toggle properties panel
+      if (ctrl && e.shiftKey && e.key === '\\') {
+        e.preventDefault();
+        useUiStore.getState().togglePropertiesPanel();
+        return;
+      }
+
+      // Ctrl+\: toggle layers panel
+      if (ctrl && !e.shiftKey && e.key === '\\') {
+        e.preventDefault();
+        useUiStore.getState().toggleLayersPanel();
+        return;
+      }
+
       // Don't process single-key shortcuts if ctrl is held
       if (ctrl) return;
 
