@@ -92,4 +92,15 @@ describe('stampTextBlock', () => {
     const buf = stampTextBlock(makeProps(), makeRect({ height: 0 }))
     expect(buf.height).toBe(0)
   })
+
+  it('supports literal mode without markdown parsing or whitespace trimming', () => {
+    const text = '  # keep **stars**'
+    const buf = stampTextBlock(
+      makeProps({ content: text, renderMode: 'literal' }),
+      makeRect({ width: text.length, height: 1 }),
+    )
+
+    expect(buf.chars[0]!.join('')).toBe(text)
+    expect(buf.styles[0]!.slice(0, text.length).every((style) => style === 'text')).toBe(true)
+  })
 })

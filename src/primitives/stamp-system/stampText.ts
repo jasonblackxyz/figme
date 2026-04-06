@@ -25,6 +25,10 @@ export function stampTextBlock(
     return buffer;
   }
 
+  if (props.renderMode === 'literal') {
+    return stampLiteralTextBlock(props, rect);
+  }
+
   // Compute text flow with default padding (0 all around unless we add padding support)
   const flowResult = computeTextFlow({
     content: props.content,
@@ -50,6 +54,26 @@ export function stampTextBlock(
           }
         }
       }
+    }
+  }
+
+  return buffer;
+}
+
+function stampLiteralTextBlock(
+  props: TextBlockProperties,
+  rect: GridRect,
+): StampBuffer {
+  const buffer = createBuffer(rect.width, rect.height);
+  const lines = props.content.split('\n');
+
+  for (let row = 0; row < Math.min(lines.length, rect.height); row++) {
+    const line = lines[row] ?? '';
+    for (let col = 0; col < Math.min(line.length, rect.width); col++) {
+      const ch = line[col];
+      if (ch === undefined) continue;
+      buffer.chars[row]![col] = ch;
+      buffer.styles[row]![col] = props.styleKey;
     }
   }
 

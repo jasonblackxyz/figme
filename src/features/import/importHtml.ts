@@ -1,13 +1,12 @@
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigMeDocument, Layer } from '@primitives/document-model/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
 
 /**
  * Import a FigMe-exported HTML file back into a FigMeDocument.
  *
- * Parses the character grid and inline styles from <span> elements,
- * reverse-maps styles to palette keys, and creates a document with
- * a single text-block layer containing the reconstructed text.
+ * Parses the character grid and inline styles from <span> elements
+ * and rebuilds one literal text-block layer per styled HTML span.
  */
 export function importHtml(html: string): FigMeDocument {
   const parser = new DOMParser();
@@ -22,94 +21,70 @@ export function importHtml(html: string): FigMeDocument {
   // Create document with extracted config
   const doc = createEmptyDocument(title, gridConfig);
 
-  // Build reverse palette lookup: "color;bg;fontWeight" → styleKey
+  // Build reverse palette lookup: "color;bg;fontWeight" -> styleKey
   const reversePalette = buildReversePalette(doc.palette);
-
-  // Parse character grid from rows
   const rows = htmlDoc.querySelectorAll('.row');
-  const lines: string[] = [];
-
-  for (const row of rows) {
-    let line = '';
-    const spans = row.querySelectorAll('span');
-    for (const span of spans) {
-      line += span.textContent ?? '';
-    }
-    lines.push(line);
-  }
-
-  // Trim trailing empty lines
-  while (lines.length > 0 && lines[lines.length - 1]!.trim() === '') {
-    lines.pop();
-  }
-
-  const content = lines.join('\n');
-
-  if (content.trim().length === 0) {
-    return doc;
-  }
-
-  // Find content bounding box (skip empty margins)
-  let minCol = Infinity;
-  let maxCol = 0;
-  let minRow = Infinity;
-  let maxRow = 0;
-
-  for (let r = 0; r < lines.length; r++) {
-    const line = lines[r]!;
-    for (let c = 0; c < line.length; c++) {
-      if (line[c] !== ' ') {
-        minCol = Math.min(minCol, c);
-        maxCol = Math.max(maxCol, c);
-        minRow = Math.min(minRow, r);
-        maxRow = Math.max(maxRow, r);
-      }
-    }
-  }
-
-  if (minCol === Infinity) {
-    return doc;
-  }
-
-  // Extract the bounded content
-  const boundedLines: string[] = [];
-  for (let r = minRow; r <= maxRow; r++) {
-    const line = lines[r] ?? '';
-    boundedLines.push(line.slice(minCol, maxCol + 1));
-  }
-  const boundedContent = boundedLines.join('\n');
-
-  // Determine the dominant style key from the spans
-  const styleKey = findDominantStyleKey(htmlDoc, reversePalette);
-
-  const width = maxCol - minCol + 1;
-  const height = maxRow - minRow + 1;
-
   const page = doc.pages[0]!;
-  const layerId = `layer_${Date.now()}_1`;
-  const layer = {
-    id: layerId,
-    kind: 'text-block' as const,
-    name: 'Imported Content',
-    rect: { col: minCol, row: minRow, width, height },
-    visible: true,
-    locked: false,
-    opacity: 1,
-    styleKey,
-    properties: {
-      content: boundedContent,
-      fontFamily: gridConfig.fontFamily,
-      kerning: 0 as const,
-      lineSpacing: 0 as const,
-      alignment: 'left' as const,
-      styleKey,
-    },
-  };
+  const layers: Record<string, Layer> = {};
+  const layerOrder: string[] = [];
+  let hasVisibleContent = false;
+  let nextLayerId = 1;
+  const defaultBg = normalizeStyleValue(doc.palette.bg.bg);
+
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex]!;
+    let col = 0;
+
+    for (const span of row.querySelectorAll('span')) {
+      const text = span.textContent ?? '';
+      if (text.length === 0) continue;
+
+      if (!hasVisibleContent && text.trim().length > 0) {
+        hasVisibleContent = true;
+      }
+
+      const { styleKey, customColors, bg } = resolveSpanStyle(span, reversePalette, doc.palette);
+      if (text.trim().length === 0 && normalizeStyleValue(bg) === defaultBg) {
+        col += text.length;
+        continue;
+      }
+
+      const layerId = `layer_${Date.now()}_${nextLayerId++}`;
+      const layer: Layer = {
+        id: layerId,
+        kind: 'text-block',
+        name: `Imported Row ${rowIndex + 1} Segment ${nextLayerId - 1}`,
+        rect: { col, row: rowIndex, width: text.length, height: 1 },
+        visible: true,
+        locked: false,
+        opacity: 1,
+        styleKey,
+        ...(customColors ? { customColors } : {}),
+        properties: {
+          content: text,
+          fontFamily: gridConfig.fontFamily,
+          kerning: 0,
+          lineSpacing: 0,
+          alignment: 'left',
+          styleKey,
+          renderMode: 'literal',
+        },
+      };
+
+      layers[layerId] = layer;
+      layerOrder.push(layerId);
+      col += text.length;
+    }
+  }
+
+  if (!hasVisibleContent) {
+    return doc;
+  }
 
   const updatedPage = {
     ...page,
-    layers: { [layerId]: layer },
-    layerOrder: [layerId],
+    layers,
+    layerOrder,
   };
 
   return {
@@ -165,38 +140,48 @@ function buildReversePalette(palette: Palette): ReversePalette {
   return map;
 }
 
-function findDominantStyleKey(htmlDoc: Document, reversePalette: ReversePalette): StyleKey {
-  const counts = new Map<string, number>();
+function resolveSpanStyle(
+  span: Element,
+  reversePalette: ReversePalette,
+  palette: Palette,
+): { styleKey: StyleKey; bg: string; customColors?: { color?: string; bg?: string } } {
+  const style = (span as HTMLElement).getAttribute('style') ?? '';
+  const colorMatch = style.match(/(?:^|;)\s*color:\s*([^;]+)/);
+  const bgMatch = style.match(/(?:^|;)\s*background(?:-color)?:\s*([^;]+)/);
+  const fwMatch = style.match(/(?:^|;)\s*font-weight:\s*([^;]+)/);
 
-  const spans = htmlDoc.querySelectorAll('.row span');
-  for (const span of spans) {
-    const text = span.textContent ?? '';
-    if (text.trim().length === 0) continue;
+  const color = normalizeStyleValue(colorMatch?.[1] ?? '');
+  const bg = normalizeStyleValue(bgMatch?.[1] ?? '');
+  const fontWeight = fwMatch?.[1]?.trim() ?? '';
 
-    const style = (span as HTMLElement).getAttribute('style') ?? '';
-    const colorMatch = style.match(/(?:^|;)\s*color:\s*([^;]+)/);
-    const bgMatch = style.match(/background:\s*([^;]+)/);
-    const fwMatch = style.match(/font-weight:\s*([^;]+)/);
-
-    const color = colorMatch?.[1]?.trim() ?? '';
-    const bg = bgMatch?.[1]?.trim() ?? '';
-    const fw = fwMatch?.[1]?.trim() ?? '';
-
-    const sig = `${color};${bg};${fw}`;
-    const key = reversePalette.get(sig);
-    if (key) {
-      counts.set(key, (counts.get(key) ?? 0) + text.length);
-    }
+  const sig = `${color};${bg};${fontWeight}`;
+  const matchedStyleKey = reversePalette.get(sig);
+  if (matchedStyleKey) {
+    return { styleKey: matchedStyleKey, bg };
   }
 
-  let best: StyleKey = 'text';
-  let bestCount = 0;
-  for (const [key, count] of counts) {
-    if (count > bestCount) {
-      best = key as StyleKey;
-      bestCount = count;
-    }
-  }
+  const styleKey = pickFallbackStyleKey(fontWeight);
+  const paletteStyle = palette[styleKey];
+  const customColors = {
+    ...(color && color !== normalizeStyleValue(paletteStyle.color) ? { color } : {}),
+    ...(bg && bg !== normalizeStyleValue(paletteStyle.bg) ? { bg } : {}),
+  };
 
-  return best;
+  return {
+    styleKey,
+    bg,
+    ...(Object.keys(customColors).length > 0 ? { customColors } : {}),
+  };
+}
+
+function pickFallbackStyleKey(fontWeight: string): StyleKey {
+  const numericWeight = Number.parseInt(fontWeight, 10);
+  if (!Number.isNaN(numericWeight) && numericWeight >= 700) {
+    return 'textBold';
+  }
+  return 'text';
+}
+
+function normalizeStyleValue(value: string): string {
+  return value.trim().toLowerCase();
 }
