@@ -141,6 +141,14 @@ function wordDisplayWidth(text: string, kerning: 0 | 1 | 2): number {
   return text.length;
 }
 
+function maxCharsThatFit(availWidth: number, kerning: 0 | 1 | 2): number {
+  if (availWidth <= 0) return 0;
+  if (kerning === 2) {
+    return Math.floor((availWidth + 1) / 2);
+  }
+  return availWidth;
+}
+
 /**
  * Word-wrap an array of styled words to fit within availWidth.
  * Returns an array of lines, where each line is an array of StyledWords.
@@ -160,9 +168,9 @@ function wordWrap(
 
   for (const word of words) {
     const isSpace = word.text.trim().length === 0;
-    const wWidth = wordDisplayWidth(word.text, kerning);
 
     if (isSpace) {
+      const wWidth = wordDisplayWidth(word.text, kerning);
       // Spaces: add if they fit, otherwise skip at line start
       if (currentLine.length > 0 && currentWidth + wWidth <= availWidth) {
         currentLine.push(word);
@@ -171,19 +179,42 @@ function wordWrap(
       continue;
     }
 
-    if (currentLine.length === 0) {
-      // First word on line - always add (may be truncated if too wide)
-      currentLine.push(word);
-      currentWidth = wWidth;
-    } else if (currentWidth + wWidth <= availWidth) {
-      // Fits (space already included from word splitting)
-      currentLine.push(word);
-      currentWidth += wWidth;
-    } else {
-      // Doesn't fit - start new line
-      lines.push(currentLine);
-      currentLine = [word];
-      currentWidth = wWidth;
+    let remainingText = word.text;
+    while (remainingText.length > 0) {
+      const remainingWidth = wordDisplayWidth(remainingText, kerning);
+      const availableWidth = currentLine.length === 0 ? availWidth : availWidth - currentWidth;
+
+      if (remainingWidth <= availableWidth) {
+        currentLine.push({ text: remainingText, styleKey: word.styleKey });
+        currentWidth += remainingWidth;
+        break;
+      }
+
+      if (currentLine.length > 0 && remainingWidth <= availWidth) {
+        lines.push(currentLine);
+        currentLine = [];
+        currentWidth = 0;
+        continue;
+      }
+
+      const charsThatFit = maxCharsThatFit(availableWidth, kerning);
+      if (charsThatFit <= 0) {
+        lines.push(currentLine);
+        currentLine = [];
+        currentWidth = 0;
+        continue;
+      }
+
+      const chunkText = remainingText.slice(0, charsThatFit);
+      currentLine.push({ text: chunkText, styleKey: word.styleKey });
+      currentWidth += wordDisplayWidth(chunkText, kerning);
+      remainingText = remainingText.slice(charsThatFit);
+
+      if (remainingText.length > 0) {
+        lines.push(currentLine);
+        currentLine = [];
+        currentWidth = 0;
+      }
     }
   }
 

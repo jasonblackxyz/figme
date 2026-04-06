@@ -81,6 +81,10 @@ export function TextEditor() {
     e.stopPropagation();
   };
 
+  const stopCanvasEventPropagation = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    event.stopPropagation();
+  };
+
   return (
     <textarea
       ref={textareaRef}
@@ -99,6 +103,14 @@ export function TextEditor() {
       value={props.content}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
+      onPointerDown={stopCanvasEventPropagation}
+      onPointerMove={stopCanvasEventPropagation}
+      onPointerUp={stopCanvasEventPropagation}
+      onMouseDown={stopCanvasEventPropagation}
+      onMouseUp={stopCanvasEventPropagation}
+      onClick={stopCanvasEventPropagation}
+      onDoubleClick={stopCanvasEventPropagation}
+      onWheel={stopCanvasEventPropagation}
       onBlur={() => useUiStore.getState().setEditingLayerId(null)}
       data-editing-layer={layer.id}
     />
