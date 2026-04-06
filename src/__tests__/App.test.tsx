@@ -102,9 +102,10 @@ describe('App', () => {
     expect(screen.getByText('Export Dialog')).toBeInTheDocument();
   });
 
-  it('toggles the properties panel with Ctrl+Shift+Backslash', () => {
+  it('does not toggle the properties panel via keyboard shortcut', () => {
     render(<App />);
 
+    // Ctrl+Shift+\ was removed to prevent accidental panel hiding
     fireEvent.keyDown(window, {
       ctrlKey: true,
       shiftKey: true,
@@ -112,7 +113,8 @@ describe('App', () => {
       code: 'Backslash',
     });
 
-    expect(screen.getByLabelText('Expand properties panel')).toBeInTheDocument();
+    // panel should still be open (shortcut is a no-op now)
+    expect(screen.queryByLabelText('Expand properties panel')).not.toBeInTheDocument();
   });
 
   it('moves focus to the layers expand button after collapsing the panel', async () => {

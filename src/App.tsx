@@ -94,7 +94,7 @@ export function App() {
               onClick={toggleLayersPanel}
               aria-label="Expand layers panel"
               aria-expanded={false}
-              title="Expand layers panel (Ctrl+\)"
+              title="Expand layers panel"
             >
               {'\u00BB'}
             </button>
@@ -116,7 +116,7 @@ export function App() {
               onClick={togglePropertiesPanel}
               aria-label="Expand properties panel"
               aria-expanded={false}
-              title="Expand properties panel (Ctrl+Shift+\)"
+              title="Expand properties panel"
             >
               {'\u00AB'}
             </button>
