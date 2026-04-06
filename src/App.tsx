@@ -7,6 +7,7 @@ import { StatusBar } from '@features/status-bar/StatusBar.tsx';
 import { SpecView } from '@features/spec-view/SpecView.tsx';
 import { ExportDialog } from '@features/export/ExportDialog.tsx';
 import { useAutoSave } from '@features/file-io/autoSave.ts';
+import { importFile } from '@features/import/importFile.ts';
 import { useClipboard } from '@features/clipboard/useClipboard.ts';
 import { useKeyboardShortcuts } from '@hooks/useKeyboardShortcuts.ts';
 import { useConsoleLogger } from '@hooks/useConsoleLogger.ts';
@@ -63,6 +64,16 @@ export function App() {
       <header className={styles.toolbar}>
         <Toolbar />
         <div className={styles.toolbarActions}>
+          <button
+            className={styles.exportButton}
+            onClick={async () => {
+              const doc = await importFile();
+              if (doc) useDocumentStore.getState().setDocument(doc);
+            }}
+            title="Import (Ctrl+O)"
+          >
+            Import
+          </button>
           <button
             className={styles.exportButton}
             onClick={toggleExportDialog}
