@@ -28,6 +28,11 @@ export function useKeyboardShortcuts(): void {
       const tag = (document.activeElement as HTMLElement | null)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
+      // Don't fire shortcuts while a text layer is being edited (closes the
+      // timing gap between setEditingLayerId being called and the textarea
+      // actually receiving focus via useEffect)
+      if (uiState.editingLayerId !== null) return;
+
       // Ctrl+Z: undo
       if (ctrl && !e.shiftKey && e.key === 'z') {
         e.preventDefault();
@@ -99,20 +104,6 @@ export function useKeyboardShortcuts(): void {
       if (ctrl && e.key === ';') {
         e.preventDefault();
         useUiStore.getState().toggleSmartGuides();
-        return;
-      }
-
-      // Ctrl+Shift+\: toggle properties panel
-      if (ctrl && e.shiftKey && e.code === 'Backslash') {
-        e.preventDefault();
-        useUiStore.getState().togglePropertiesPanel();
-        return;
-      }
-
-      // Ctrl+\: toggle layers panel
-      if (ctrl && !e.shiftKey && e.code === 'Backslash') {
-        e.preventDefault();
-        useUiStore.getState().toggleLayersPanel();
         return;
       }
 
