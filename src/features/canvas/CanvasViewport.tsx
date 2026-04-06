@@ -9,7 +9,6 @@ import { useCanvasInteraction } from './useCanvasInteraction.ts';
 import { SelectionOverlay } from './SelectionOverlay.tsx';
 import { DrawingPreview } from './DrawingPreview.tsx';
 import { ArtboardFrame } from './ArtboardFrame.tsx';
-import { Rulers } from './Rulers.tsx';
 import { GridOverlay } from './GridOverlay.tsx';
 import { TextEditor } from '@features/text-editor/TextEditor.tsx';
 import { SmartGuides } from '@features/smart-guides/SmartGuides.tsx';
@@ -24,7 +23,6 @@ export function CanvasViewport() {
   const panY = useViewportStore((s) => s.panY);
   const gridConfig = useViewportStore((s) => s.getEffectiveGridConfig());
   const gridOverlayVisible = useViewportStore((s) => s.gridOverlayVisible);
-  const rulersVisible = useViewportStore((s) => s.rulersVisible);
   const zoom = useViewportStore((s) => s.zoom);
 
   const doc = useDocumentStore((s) => s.document);
@@ -49,9 +47,6 @@ export function CanvasViewport() {
       onWheel={onWheel}
       data-testid="canvas-viewport"
     >
-      {rulersVisible && (
-        <Rulers gridConfig={gridConfig} panX={panX} panY={panY} />
-      )}
       <div
         className={styles.canvasInner}
         style={{ transform: `translate(${panX}px, ${panY}px)` }}

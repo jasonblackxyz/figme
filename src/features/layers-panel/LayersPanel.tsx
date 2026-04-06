@@ -20,6 +20,15 @@ export function LayersPanel() {
       <ArtboardTabs />
       <div className={styles.header}>
         <h2 className={styles.title}>Layers</h2>
+        <button
+          className={styles.collapseButton}
+          onClick={useUiStore.getState().toggleLayersPanel}
+          aria-label="Collapse layers panel"
+          aria-expanded={true}
+          title="Collapse layers panel (Ctrl+\)"
+        >
+          {'\u00AB'}
+        </button>
       </div>
       <ul role="tree" className={styles.layerList} aria-label="Layers">
         {orderedIds.map(id => {

@@ -25,25 +25,71 @@ export function App() {
   const toggleSpecView = useUiStore((s) => s.toggleSpecView);
   const exportDialogOpen = useUiStore((s) => s.exportDialogOpen);
   const toggleExportDialog = useUiStore((s) => s.toggleExportDialog);
+  const layersPanelOpen = useUiStore((s) => s.layersPanelOpen);
+  const propertiesPanelOpen = useUiStore((s) => s.propertiesPanelOpen);
+  const toggleLayersPanel = useUiStore((s) => s.toggleLayersPanel);
+  const togglePropertiesPanel = useUiStore((s) => s.togglePropertiesPanel);
+
+  const gridColumns = `${layersPanelOpen ? '240px' : '36px'} 1fr ${propertiesPanelOpen ? '280px' : '36px'}`;
 
   return (
     <div
       id="app-root"
       className={styles.shell}
+      style={{ gridTemplateColumns: gridColumns }}
       aria-describedby="figme-agent-briefing"
     >
       <AgentBriefing document={document} />
       <header className={styles.toolbar}>
         <Toolbar />
+        <div className={styles.toolbarActions}>
+          <button
+            className={styles.exportButton}
+            onClick={toggleExportDialog}
+            title="Export (Ctrl+Shift+E)"
+          >
+            Export
+          </button>
+        </div>
       </header>
       <aside className={styles.layersPanel}>
-        <LayersPanel />
+        {layersPanelOpen ? (
+          <LayersPanel />
+        ) : (
+          <div className={styles.collapsedStrip} data-component="collapsed-layers">
+            <button
+              className={styles.expandButton}
+              onClick={toggleLayersPanel}
+              aria-label="Expand layers panel"
+              aria-expanded={false}
+              title="Expand layers panel (Ctrl+\)"
+            >
+              {'\u00BB'}
+            </button>
+            <span className={styles.rotatedLabel}>Layers</span>
+          </div>
+        )}
       </aside>
       <main className={styles.canvas}>
         <CanvasViewport />
       </main>
       <aside className={styles.propertiesPanel}>
-        <PropertiesPanel />
+        {propertiesPanelOpen ? (
+          <PropertiesPanel />
+        ) : (
+          <div className={styles.collapsedStrip} data-component="collapsed-properties">
+            <button
+              className={styles.expandButton}
+              onClick={togglePropertiesPanel}
+              aria-label="Expand properties panel"
+              aria-expanded={false}
+              title="Expand properties panel (Ctrl+Shift+\)"
+            >
+              {'\u00AB'}
+            </button>
+            <span className={styles.rotatedLabel}>Properties</span>
+          </div>
+        )}
       </aside>
       <StatusBar />
       <SpecView visible={specViewOpen} onClose={toggleSpecView} />
