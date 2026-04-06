@@ -12,10 +12,24 @@ export function PropertiesPanel() {
   const doc = useDocumentStore(s => s.document);
   const selectedIds = useUiStore(s => s.selectedLayerIds);
 
+  const togglePropertiesPanel = useUiStore(s => s.togglePropertiesPanel);
+
   const activePage = doc.pages.find(p => p.id === doc.activePageId);
   if (!activePage || selectedIds.length === 0) {
     return (
       <div className={styles.panel} data-component="properties-panel">
+        <div className={styles.header}>
+          <button
+            className={styles.collapseButton}
+            onClick={togglePropertiesPanel}
+            aria-label="Collapse properties panel"
+            aria-expanded={true}
+            title="Collapse properties panel (Ctrl+Shift+\)"
+          >
+            {'\u00BB'}
+          </button>
+          <h2 className={styles.title}>Properties</h2>
+        </div>
         <div className={styles.empty}>No selection</div>
       </div>
     );
@@ -29,6 +43,15 @@ export function PropertiesPanel() {
   return (
     <div className={styles.panel} data-component="properties-panel">
       <div className={styles.header}>
+        <button
+          className={styles.collapseButton}
+          onClick={togglePropertiesPanel}
+          aria-label="Collapse properties panel"
+          aria-expanded={true}
+          title="Collapse properties panel (Ctrl+Shift+\)"
+        >
+          {'\u00BB'}
+        </button>
         <h2 className={styles.title}>Properties</h2>
       </div>
       <div className={styles.content}>

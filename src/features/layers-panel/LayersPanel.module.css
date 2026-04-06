@@ -21,6 +21,28 @@
   margin: 0;
 }
 
+.collapseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--color-text);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s;
+}
+
+.collapseButton:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-accent);
+}
+
 .layerList {
   list-style: none;
   padding: 0;
