@@ -31,6 +31,7 @@ export interface TextBlockProperties {
   lineSpacing: 0 | 1;
   alignment: 'left' | 'center' | 'right';
   styleKey: StyleKey;
+  renderMode?: 'flow' | 'literal';
   headingStyleKey?: StyleKey;
   boldStyleKey?: StyleKey;
 }

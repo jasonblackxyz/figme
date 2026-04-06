@@ -5,6 +5,7 @@ import { useViewportStore } from '@stores/viewportStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { removeLayer } from '@primitives/document-model/operations.ts';
 import { saveDocument } from '@features/file-io/fileSaveLoad.ts';
+import { importFile } from '@features/import/importFile.ts';
 
 /**
  * Hook that registers global keyboard shortcuts for the design tool.
@@ -52,6 +53,15 @@ export function useKeyboardShortcuts(): void {
       if (ctrl && e.shiftKey && (e.key === 'S' || e.key === 's')) {
         e.preventDefault();
         useUiStore.getState().toggleSpecView();
+        return;
+      }
+
+      // Ctrl+O: import file
+      if (ctrl && !e.shiftKey && e.key === 'o') {
+        e.preventDefault();
+        void importFile().then((doc) => {
+          if (doc) useDocumentStore.getState().setDocument(doc);
+        });
         return;
       }
 
