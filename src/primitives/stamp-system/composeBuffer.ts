@@ -24,12 +24,13 @@ import { getFigletFont } from '@primitives/figlet-engine/fonts/index.ts';
  * Compose all visible layers on a page into a single StampBuffer.
  * Pure function — no React, no store access.
  */
-export function composePageBuffer(page: FigMePage, gridConfig: GridConfig): StampBuffer {
+export function composePageBuffer(page: FigMePage, gridConfig: GridConfig, skipLayerId?: string | null): StampBuffer {
   let buffer = createBuffer(gridConfig.canvasCols, gridConfig.canvasRows);
 
   for (const layerId of page.layerOrder) {
     const layer = page.layers[layerId];
     if (!layer || !layer.visible) continue;
+    if (skipLayerId && layer.id === skipLayerId) continue;
 
     let layerBuffer: StampBuffer | null = null;
 
