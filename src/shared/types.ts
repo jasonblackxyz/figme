@@ -23,6 +23,7 @@ export type {
   FigMePage,
   FigMeDocument,
   ComponentDef,
+  ComponentInstanceProperties,
 } from '@primitives/document-model/types.ts';
 
 export type {

@@ -58,6 +58,10 @@ export interface EdgePathProperties {
   styleKey: StyleKey;
 }
 
+export interface ComponentInstanceProperties {
+  componentId: string;
+}
+
 export interface CustomBorderChars {
   tl: string;
   t: string;
@@ -83,6 +87,7 @@ export type LayerProperties =
   | FigletTextProperties
   | ImageProperties
   | EdgePathProperties
+  | ComponentInstanceProperties
   | Record<string, never>;
 
 export interface Layer {

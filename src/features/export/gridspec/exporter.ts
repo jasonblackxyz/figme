@@ -1,4 +1,13 @@
-import type { FigMeDocument, BorderBoxProperties, TextBlockProperties, FigletTextProperties, EdgePathProperties, Layer } from '@primitives/document-model/types.ts';
+import type {
+  FigMeDocument,
+  BorderBoxProperties,
+  TextBlockProperties,
+  FigletTextProperties,
+  EdgePathProperties,
+  ComponentDef,
+  ComponentInstanceProperties,
+  Layer,
+} from '@primitives/document-model/types.ts';
 import type { Palette, StyleDef } from '@primitives/style-system/types.ts';
 import { BORDER_CHARS } from '@primitives/stamp-system/stamps.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
@@ -13,6 +22,21 @@ const FALLBACK_STYLE: StyleDef = { color: '#888', bg: '#000' };
 function resolveStyle(palette: Palette, key: string | undefined): StyleDef | undefined {
   if (!key) return undefined;
   return (palette as Record<string, StyleDef>)[key] ?? undefined;
+}
+
+function findLayerName(doc: FigMeDocument, layerId: string): string {
+  for (const page of doc.pages) {
+    const layer = page.layers[layerId];
+    if (layer) return layer.name;
+  }
+  return layerId;
+}
+
+function resolveComponentDefinition(layer: Layer, doc: FigMeDocument): ComponentDef | undefined {
+  const properties = layer.properties as Partial<ComponentInstanceProperties>;
+  const componentId = typeof properties.componentId === 'string' ? properties.componentId : undefined;
+  if (!componentId) return undefined;
+  return doc.components[componentId];
 }
 
 /**
@@ -33,6 +57,7 @@ export function exportAsGridSpec(doc: FigMeDocument, options?: GridSpecExportOpt
       .map((layer) => buildSpecLayer(layer, page.layers, doc));
 
     const specPage: GridSpecPage = {
+      id: page.id,
       name: page.name,
       ...(hasOverride ? { gridOverride: { cols, rows } } : {}),
       layers,
@@ -55,25 +80,22 @@ export function exportAsGridSpec(doc: FigMeDocument, options?: GridSpecExportOpt
   });
 
   const components: GridSpecComponent[] = Object.values(doc.components).map((comp) => ({
+    id: comp.id,
     name: comp.name,
     description: comp.description,
+    sourceLayerIds: [...comp.sourceLayerIds],
     sourceLayerNames: comp.sourceLayerIds
-      .map((id) => {
-        // Search all pages for the layer
-        for (const page of doc.pages) {
-          const layer = page.layers[id];
-          if (layer) return layer.name;
-        }
-        return id; // fallback to ID if not found
-      }),
+      .map((id) => findLayerName(doc, id)),
   }));
 
   return {
     $schema: 'figme-gridspec-v1',
     document: {
+      id: doc.id,
       name: doc.name,
       createdAt: doc.metadata.createdAt,
       updatedAt: doc.metadata.updatedAt,
+      version: doc.metadata.version,
     },
     grid: {
       fontFamily: gridConfig.fontFamily,
@@ -107,14 +129,16 @@ function buildSpecLayer(
   const { gridConfig, palette } = doc;
   const { rect } = layer;
 
+  const childIds = layer.children ? [...layer.children] : undefined;
   const parentName = layer.parentId ? allLayers[layer.parentId]?.name : undefined;
-  const childNames = layer.children
+  const childNames = childIds
     ?.map((id) => allLayers[id]?.name)
     .filter((n): n is string => n != null);
 
   const resolved = buildResolved(layer, allLayers, doc);
 
   return {
+    id: layer.id,
     name: layer.name,
     kind: layer.kind,
     gridRect: { col: rect.col, row: rect.row, width: rect.width, height: rect.height },
@@ -129,7 +153,9 @@ function buildSpecLayer(
     visible: layer.visible,
     locked: layer.locked,
     opacity: layer.opacity,
+    ...(layer.parentId ? { parentId: layer.parentId } : {}),
     ...(parentName ? { parentName } : {}),
+    ...(childIds && childIds.length > 0 ? { childIds } : {}),
     ...(childNames && childNames.length > 0 ? { childNames } : {}),
     ...(layer.autoLayout ? { autoLayout: layer.autoLayout } : {}),
     properties: layer.properties as Record<string, unknown>,
@@ -184,27 +210,22 @@ function buildResolved(
       const props = layer.properties as EdgePathProperties;
       const sourceLyr = allLayers[props.sourceLayerId];
       const targetLyr = allLayers[props.targetLayerId];
+      resolved.sourceLayerId = props.sourceLayerId;
       resolved.sourceLayerName = sourceLyr?.name ?? props.sourceLayerId;
+      resolved.targetLayerId = props.targetLayerId;
       resolved.targetLayerName = targetLyr?.name ?? props.targetLayerId;
       break;
     }
     case 'component': {
-      // Find component definition — search by matching sourceLayerIds
-      const comp = Object.values(doc.components).find((c) =>
-        c.sourceLayerIds.includes(layer.id),
-      );
+      const comp = resolveComponentDefinition(layer, doc);
       if (comp) {
         resolved.componentDef = {
+          id: comp.id,
           name: comp.name,
           description: comp.description,
+          sourceLayerIds: [...comp.sourceLayerIds],
           sourceLayerNames: comp.sourceLayerIds
-            .map((id) => {
-              for (const page of doc.pages) {
-                const lyr = page.layers[id];
-                if (lyr) return lyr.name;
-              }
-              return id;
-            }),
+            .map((id) => findLayerName(doc, id)),
         };
       }
       break;

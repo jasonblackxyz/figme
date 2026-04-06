@@ -4,9 +4,11 @@ import type { StyleDef } from '@primitives/style-system/types.ts';
 export interface GridSpec {
   $schema: 'figme-gridspec-v1';
   document: {
+    id: string;
     name: string;
     createdAt: string;
     updatedAt: string;
+    version: number;
   };
   grid: {
     fontFamily: string;
@@ -25,6 +27,7 @@ export interface GridSpec {
 }
 
 export interface GridSpecPage {
+  id: string;
   name: string;
   gridOverride?: { cols: number; rows: number };
   layers: GridSpecLayer[];
@@ -35,6 +38,7 @@ export interface GridSpecPage {
 }
 
 export interface GridSpecLayer {
+  id: string;
   name: string;
   kind: string;
   gridRect: {
@@ -54,7 +58,9 @@ export interface GridSpecLayer {
   visible: boolean;
   locked: boolean;
   opacity: number;
+  parentId?: string;
   parentName?: string;
+  childIds?: string[];
   childNames?: string[];
   autoLayout?: {
     direction: 'vertical' | 'horizontal';
@@ -87,19 +93,25 @@ export interface GridSpecResolved {
   // text-block: resolved bold style
   boldStyle?: StyleDef;
   // edge-path: resolved source layer name
+  sourceLayerId?: string;
   sourceLayerName?: string;
   // edge-path: resolved target layer name
+  targetLayerId?: string;
   targetLayerName?: string;
   // component: inlined component definition
   componentDef?: {
+    id: string;
     name: string;
     description: string;
+    sourceLayerIds: string[];
     sourceLayerNames: string[];
   };
 }
 
 export interface GridSpecComponent {
+  id: string;
   name: string;
   description: string;
+  sourceLayerIds: string[];
   sourceLayerNames: string[];
 }

@@ -12,11 +12,20 @@ import { saveDocument } from '@features/file-io/fileSaveLoad.ts';
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      const uiState = useUiStore.getState();
+
+      if (uiState.exportDialogOpen) {
+        if (e.key === 'Escape' || (ctrl && e.shiftKey && (e.key === 'E' || e.key === 'e'))) {
+          e.preventDefault();
+          uiState.toggleExportDialog();
+        }
+        return;
+      }
+
       // Don't fire when typing in inputs/textareas/selects
       const tag = (document.activeElement as HTMLElement | null)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
-      const ctrl = e.ctrlKey || e.metaKey;
 
       // Ctrl+Z: undo
       if (ctrl && !e.shiftKey && e.key === 'z') {
