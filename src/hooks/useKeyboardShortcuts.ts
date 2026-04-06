@@ -127,6 +127,9 @@ export function useKeyboardShortcuts(): void {
         case 'f':
           useToolStore.getState().setActiveTool('figlet-text');
           return;
+        case 'p':
+          useToolStore.getState().setActiveTool('draw');
+          return;
       }
 
       // Delete/Backspace: delete selected layers

@@ -7,6 +7,7 @@ import {
   Minus,
   Type,
   ALargeSmall,
+  Pencil,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import styles from './Toolbar.module.css';
@@ -34,6 +35,9 @@ const TOOLS: ToolbarItem[] = [
   // Content
   { type: 'text-block', label: 'Text', shortcut: 'T', icon: Type },
   { type: 'figlet-text', label: 'FIGlet', shortcut: 'F', icon: ALargeSmall },
+  'separator',
+  // Drawing
+  { type: 'draw', label: 'Draw', shortcut: 'P', icon: Pencil },
 ];
 
 export function Toolbar() {

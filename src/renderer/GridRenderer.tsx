@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { Palette } from '@primitives/style-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
+import type { ColorOverrideMap } from '@hooks/useComposedBuffer.ts';
 import { renderGridToElements } from './renderGrid.ts';
 
 interface GridRendererProps {
@@ -12,6 +13,7 @@ interface GridRendererProps {
   zoom?: number;
   scrollCol?: number;
   scrollRow?: number;
+  colorOverrides?: ColorOverrideMap;
 }
 
 /**
@@ -28,8 +30,9 @@ export function GridRenderer({
   zoom = 1,
   scrollCol = 0,
   scrollRow = 0,
+  colorOverrides,
 }: GridRendererProps): ReactNode {
-  const rows = renderGridToElements(buffer, palette);
+  const rows = renderGridToElements(buffer, palette, colorOverrides);
 
   const fontStyle = gridConfig
     ? {

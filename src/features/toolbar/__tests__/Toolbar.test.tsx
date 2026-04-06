@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { Toolbar } from '../Toolbar.tsx';
 import { useToolStore } from '@stores/toolStore.ts';
 
@@ -15,12 +15,13 @@ describe('Toolbar', () => {
     expect(screen.getByText('Divider')).toBeInTheDocument();
     expect(screen.getByText('Text')).toBeInTheDocument();
     expect(screen.getByText('FIGlet')).toBeInTheDocument();
+    expect(screen.getByText('Draw')).toBeInTheDocument();
   });
 
   it('renders visual separators between tool groups', () => {
     render(<Toolbar />);
     const separators = document.querySelectorAll('[role="separator"]');
-    expect(separators).toHaveLength(2);
+    expect(separators).toHaveLength(3);
   });
 
   it('renders as a toolbar nav element', () => {
@@ -58,7 +59,9 @@ describe('Toolbar', () => {
 
   it('updates aria-pressed when active tool changes', () => {
     const { rerender } = render(<Toolbar />);
-    useToolStore.setState({ activeTool: 'hand' });
+    act(() => {
+      useToolStore.setState({ activeTool: 'hand' });
+    });
     rerender(<Toolbar />);
 
     const handBtn = screen.getByLabelText('Hand (H)');
@@ -75,5 +78,8 @@ describe('Toolbar', () => {
 
     const dividerBtn = screen.getByLabelText('Divider (D)');
     expect(dividerBtn).toHaveAttribute('title', 'Divider (D)');
+
+    const drawBtn = screen.getByLabelText('Draw (P)');
+    expect(drawBtn).toHaveAttribute('title', 'Draw (P)');
   });
 });

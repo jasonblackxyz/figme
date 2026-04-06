@@ -13,6 +13,10 @@ interface UiState {
   drawingPreview: { rect: { col: number; row: number; width: number; height: number }; kind: string } | null;
   editingLayerId: string | null;
   smartGuidesEnabled: boolean;
+  activeColor: string;
+  openColorPickerId: string | null;
+  brushSize: 1 | 2 | 3;
+  eraserMode: boolean;
   setSelectedLayers: (ids: string[]) => void;
   setHoveredLayer: (id: string | null) => void;
   toggleLayersPanel: () => void;
@@ -25,6 +29,10 @@ interface UiState {
   setDrawingPreview: (preview: { rect: { col: number; row: number; width: number; height: number }; kind: string } | null) => void;
   setEditingLayerId: (id: string | null) => void;
   toggleSmartGuides: () => void;
+  setActiveColor: (hex: string) => void;
+  setOpenColorPickerId: (id: string | null) => void;
+  setBrushSize: (size: 1 | 2 | 3) => void;
+  setEraserMode: (v: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -40,6 +48,10 @@ export const useUiStore = create<UiState>((set) => ({
   drawingPreview: null,
   editingLayerId: null,
   smartGuidesEnabled: true,
+  activeColor: '#ffffff',
+  openColorPickerId: null,
+  brushSize: 1 as 1 | 2 | 3,
+  eraserMode: false,
 
   setSelectedLayers: (ids: string[]) => set({ selectedLayerIds: ids }),
   setHoveredLayer: (id: string | null) => set({ hoveredLayerId: id }),
@@ -55,4 +67,8 @@ export const useUiStore = create<UiState>((set) => ({
   setDrawingPreview: (preview: { rect: { col: number; row: number; width: number; height: number }; kind: string } | null) => set({ drawingPreview: preview }),
   setEditingLayerId: (id: string | null) => set({ editingLayerId: id }),
   toggleSmartGuides: () => set((s) => ({ smartGuidesEnabled: !s.smartGuidesEnabled })),
+  setActiveColor: (hex: string) => set({ activeColor: hex }),
+  setOpenColorPickerId: (id: string | null) => set({ openColorPickerId: id }),
+  setBrushSize: (size: 1 | 2 | 3) => set({ brushSize: size }),
+  setEraserMode: (v: boolean) => set({ eraserMode: v }),
 }));

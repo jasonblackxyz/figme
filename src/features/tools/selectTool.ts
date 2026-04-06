@@ -1,35 +1,10 @@
 import type { ToolHandler } from './types.ts';
 import type { GridPosition } from '@primitives/grid-engine/types.ts';
-import type { Layer } from '@primitives/document-model/types.ts';
 import { rectIntersects } from '@primitives/grid-engine/geometry.ts';
 import { moveLayer } from '@primitives/document-model/operations.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
-
-function pointInRect(pos: GridPosition, layer: Layer): boolean {
-  return (
-    pos.col >= layer.rect.col &&
-    pos.col < layer.rect.col + layer.rect.width &&
-    pos.row >= layer.rect.row &&
-    pos.row < layer.rect.row + layer.rect.height
-  );
-}
-
-function hitTestLayers(gridPos: GridPosition): Layer | null {
-  const doc = useDocumentStore.getState().document;
-  const page = doc.pages.find((p) => p.id === doc.activePageId);
-  if (!page) return null;
-
-  // Iterate in reverse to hit topmost layer first
-  for (let i = page.layerOrder.length - 1; i >= 0; i--) {
-    const layerId = page.layerOrder[i];
-    if (!layerId) continue;
-    const layer = page.layers[layerId];
-    if (!layer || !layer.visible || layer.locked) continue;
-    if (pointInRect(gridPos, layer)) return layer;
-  }
-  return null;
-}
+import { hitTestLayers } from './hitTest.ts';
 
 let dragOriginCol = 0;
 let dragOriginRow = 0;
@@ -49,25 +24,21 @@ export const selectTool: ToolHandler = {
       const currentSelected = uiState.selectedLayerIds;
 
       if (isShift) {
-        // Toggle selection
         if (currentSelected.includes(hit.id)) {
           uiState.setSelectedLayers(currentSelected.filter((id) => id !== hit.id));
         } else {
           uiState.setSelectedLayers([...currentSelected, hit.id]);
         }
       } else {
-        // If clicking on already-selected layer, keep multi-selection for drag
         if (!currentSelected.includes(hit.id)) {
           uiState.setSelectedLayers([hit.id]);
         }
       }
 
-      // Prepare for layer drag
       isDraggingLayer = true;
       dragOriginCol = gridPos.col;
       dragOriginRow = gridPos.row;
 
-      // Store original positions
       const doc = useDocumentStore.getState().document;
       const page = doc.pages.find((p) => p.id === doc.activePageId);
       if (page) {
@@ -80,13 +51,10 @@ export const selectTool: ToolHandler = {
           .filter((x): x is { id: string; col: number; row: number } => x !== null);
       }
 
-      // Push undo before any move
       useDocumentStore.getState().pushUndo();
-
       uiState.setIsDragging(true);
       uiState.setDragStartPos(gridPos);
     } else {
-      // Click on empty area — start marquee
       if (!event.shiftKey) {
         uiState.setSelectedLayers([]);
       }
@@ -105,10 +73,8 @@ export const selectTool: ToolHandler = {
     if (!uiState.isDragging) return;
 
     if (isDraggingLayer) {
-      // Move selected layers
       const deltaCol = gridPos.col - dragOriginCol;
       const deltaRow = gridPos.row - dragOriginRow;
-
       if (deltaCol === 0 && deltaRow === 0) return;
 
       const doc = useDocumentStore.getState().document;
@@ -120,13 +86,11 @@ export const selectTool: ToolHandler = {
         updatedPage = moveLayer(updatedPage, orig.id, orig.col + deltaCol, orig.row + deltaRow);
       }
 
-      const updatedDoc = {
+      useDocumentStore.getState().setDocument({
         ...doc,
         pages: doc.pages.map((p) => (p.id === doc.activePageId ? updatedPage : p)),
-      };
-      useDocumentStore.getState().setDocument(updatedDoc);
+      });
     } else if (isMarqueeActive) {
-      // Update marquee rect
       const col = Math.min(dragOriginCol, gridPos.col);
       const row = Math.min(dragOriginRow, gridPos.row);
       const width = Math.abs(gridPos.col - dragOriginCol);
@@ -146,7 +110,6 @@ export const selectTool: ToolHandler = {
     const uiState = useUiStore.getState();
 
     if (isMarqueeActive && uiState.marqueeRect) {
-      // Select all layers intersecting the marquee
       const marquee = uiState.marqueeRect;
       if (marquee.width > 0 || marquee.height > 0) {
         const doc = useDocumentStore.getState().document;
