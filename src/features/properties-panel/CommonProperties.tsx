@@ -1,7 +1,6 @@
 import type { Layer, LayerKind } from '@primitives/document-model/types.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { updateLayer } from '@primitives/document-model/operations.ts';
-import { STYLE_KEYS } from '@primitives/style-system/palette.ts';
 import { ColorSwatchField } from '@features/color-picker/ColorSwatchField.tsx';
 import styles from './PropertiesPanel.module.css';
 
@@ -97,21 +96,6 @@ export function CommonProperties({ layer }: Props) {
             />
           </div>
         </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Style</label>
-          <select
-            className={styles.fieldSelect}
-            name="styleKey"
-            data-property="styleKey"
-            value={layer.styleKey}
-            onChange={(e) => applyUpdate(layer.id, { styleKey: e.target.value as typeof layer.styleKey })}
-          >
-            {STYLE_KEYS.map(key => (
-              <option key={key} value={key}>{key}</option>
-            ))}
-          </select>
-        </div>
-
         <ColorSwatchField
           label={colorLabel(layer.kind)}
           color={fgColor}

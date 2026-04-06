@@ -1,7 +1,7 @@
 import type { StyleKey, Palette, Theme } from './types.ts';
 
 /**
- * All 56 style keys in the system.
+ * All 40 style keys in the system.
  */
 export const STYLE_KEYS: StyleKey[] = [
   'bg', 'dot', 'border', 'dim',
@@ -12,9 +12,6 @@ export const STYLE_KEYS: StyleKey[] = [
   'queryButton', 'queryButtonActive', 'queryError', 'queryPill', 'queryPillBlink',
   'queryDivider', 'queryCitation', 'queryMatch',
   'textBold', 'dimOnCard',
-  'etchFrame', 'etchScreen', 'etchScreenBorder', 'etchTrail', 'etchCursor', 'etchKnob',
-  'ghostBlob', 'ghostEye', 'ghostBubbleBorder', 'ghostBubbleBg', 'ghostBubbleText',
-  'ghostBubbleUser', 'ghostInput', 'ghostInputCursor', 'ghostClose', 'ghostInputHint',
   'imageDeep', 'imageMid', 'imageLight', 'imageEdge',
   'success',
 ];
@@ -81,26 +78,6 @@ export function createAsciiPalette(theme: Theme): Palette {
     // Text
     textBold: { color: fg, bg: card, fontWeight: 700 },
     dimOnCard: { color: mutedFg, bg: card },
-
-    // Etch-a-Sketch
-    etchFrame: { color: '#cc3333', bg: '#aa2222' },
-    etchScreen: { color: '#88aa66', bg: '#667744' },
-    etchScreenBorder: { color: '#556633', bg: '#667744' },
-    etchTrail: { color: '#334422', bg: '#667744' },
-    etchCursor: { color: '#ffffff', bg: '#667744' },
-    etchKnob: { color: '#ffffff', bg: '#cc3333' },
-
-    // Ghost
-    ghostBlob: { color: '#aaaaff', bg },
-    ghostEye: { color: '#ffffff', bg: '#aaaaff' },
-    ghostBubbleBorder: { color: borderColor, bg: card },
-    ghostBubbleBg: { color: cardFg, bg: card },
-    ghostBubbleText: { color: fg, bg: card },
-    ghostBubbleUser: { color: accent, bg: card },
-    ghostInput: { color: fg, bg: card },
-    ghostInputCursor: { color: accent, bg: card },
-    ghostClose: { color: mutedFg, bg: card },
-    ghostInputHint: { color: mutedFg, bg: card },
 
     // Image
     imageDeep: { color: '#222222', bg },

@@ -20,17 +20,20 @@ const testTheme: Theme = {
 }
 
 describe('STYLE_KEYS', () => {
-  it('contains exactly 56 style keys', () => {
-    expect(STYLE_KEYS).toHaveLength(56)
+  it('contains exactly 40 style keys', () => {
+    expect(STYLE_KEYS).toHaveLength(40)
   })
 
   it('includes all major categories', () => {
     expect(STYLE_KEYS).toContain('bg')
     expect(STYLE_KEYS).toContain('modalBorder')
     expect(STYLE_KEYS).toContain('queryText')
-    expect(STYLE_KEYS).toContain('etchFrame')
-    expect(STYLE_KEYS).toContain('ghostBlob')
     expect(STYLE_KEYS).toContain('imageDeep')
+  })
+
+  it('does not include removed etch/ghost keys', () => {
+    expect(STYLE_KEYS).not.toContain('etchFrame')
+    expect(STYLE_KEYS).not.toContain('ghostBlob')
   })
 
   it('has no duplicates', () => {
@@ -42,7 +45,7 @@ describe('STYLE_KEYS', () => {
 describe('createAsciiPalette', () => {
   const palette = createAsciiPalette(testTheme)
 
-  it('returns a palette with all 56 keys', () => {
+  it('returns a palette with all 40 keys', () => {
     for (const key of STYLE_KEYS) {
       expect(palette[key]).toBeDefined()
       expect(palette[key].color).toBeTruthy()

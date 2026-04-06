@@ -248,7 +248,7 @@ export function createEmptyPage(name?: string): FigMePage {
 }
 
 /**
- * Create a minimal palette with default light theme colors for all 56 style keys.
+ * Create a minimal palette with default light theme colors for all 40 style keys.
  * This is used internally when no palette is provided.
  */
 function createMinimalPalette(): Palette {
@@ -289,22 +289,6 @@ function createMinimalPalette(): Palette {
     queryMatch: { color: '#2563eb', bg: 'transparent', fontWeight: 700 },
     textBold: { color: '#1a1a1a', bg: 'transparent', fontWeight: 700 },
     dimOnCard: { color: '#999999', bg: '#f0ece4' },
-    etchFrame: { color: '#cc3333', bg: '#aa2222' },
-    etchScreen: { color: '#88aa66', bg: '#667744' },
-    etchScreenBorder: { color: '#556633', bg: '#667744' },
-    etchTrail: { color: '#334422', bg: '#667744' },
-    etchCursor: { color: '#ffffff', bg: '#667744' },
-    etchKnob: { color: '#ffffff', bg: '#cc3333' },
-    ghostBlob: { color: '#aaaaff', bg: 'transparent' },
-    ghostEye: { color: '#ffffff', bg: '#aaaaff' },
-    ghostBubbleBorder: { color: '#6b6b80', bg: '#f0ece4' },
-    ghostBubbleBg: { color: '#3a3a4a', bg: '#f0ece4' },
-    ghostBubbleText: { color: '#1a1a1a', bg: '#f0ece4' },
-    ghostBubbleUser: { color: '#2563eb', bg: '#f0ece4' },
-    ghostInput: { color: '#1a1a1a', bg: '#f0ece4' },
-    ghostInputCursor: { color: '#2563eb', bg: '#f0ece4' },
-    ghostClose: { color: '#999999', bg: '#f0ece4' },
-    ghostInputHint: { color: '#999999', bg: '#f0ece4' },
     imageDeep: { color: '#222222', bg: 'transparent' },
     imageMid: { color: '#888888', bg: 'transparent' },
     imageLight: { color: '#cccccc', bg: 'transparent' },

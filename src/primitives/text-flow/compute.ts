@@ -1,4 +1,5 @@
 import type { StyleKey } from '@primitives/style-system/types.ts';
+import { DEFAULT_HEADING_STYLE, DEFAULT_BOLD_STYLE } from '@primitives/style-system/defaults.ts';
 import type { TextFlowConfig, TextFlowResult, FlowLine, FlowSegment } from './types.ts';
 import { parseInlineMarkdown } from './parser.ts';
 import type { InlineSegment } from './parser.ts';
@@ -36,8 +37,8 @@ export function computeTextFlow(config: TextFlowConfig): TextFlowResult {
 
   // Parse markdown using default style keys
   const defaultStyleKey: StyleKey = 'text';
-  const headingStyleKey: StyleKey = 'modalHeading';
-  const boldStyleKey: StyleKey = 'textBold';
+  const headingStyleKey: StyleKey = DEFAULT_HEADING_STYLE;
+  const boldStyleKey: StyleKey = DEFAULT_BOLD_STYLE;
 
   // Split content by newlines first to handle hard line breaks
   const contentLines = content.split('\n');

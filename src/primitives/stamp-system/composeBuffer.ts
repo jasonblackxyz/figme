@@ -7,6 +7,7 @@ import type {
 } from '@primitives/document-model/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { StampBuffer } from './types.ts';
+import { DEFAULT_CARD_FILL_STYLE } from '@primitives/style-system/defaults.ts';
 import { createBuffer, mergeBuffers } from './buffer.ts';
 import {
   stampNodeBox,
@@ -38,7 +39,7 @@ export function composePageBuffer(page: FigMePage, gridConfig: GridConfig, skipL
       case 'border-box': {
         const props = layer.properties as BorderBoxProperties;
         const borderStyle = layer.styleKey;
-        const bgStyle = props.bgStyleKey ?? 'nodeBg';
+        const bgStyle = props.bgStyleKey ?? DEFAULT_CARD_FILL_STYLE;
         switch (props.borderStyle) {
           case 'rounded':
             layerBuffer = stampNodeBox(layer.rect, borderStyle, bgStyle);
