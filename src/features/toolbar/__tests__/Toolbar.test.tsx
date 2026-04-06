@@ -20,8 +20,30 @@ describe('Toolbar', () => {
 
   it('renders visual separators between tool groups', () => {
     render(<Toolbar />);
-    const separators = document.querySelectorAll('[role="separator"]');
+    expect(screen.queryAllByRole('separator')).toHaveLength(0);
+    const toolbar = screen.getByRole('toolbar');
+    const separators = toolbar.querySelectorAll('div[aria-hidden="true"]');
     expect(separators).toHaveLength(3);
+  });
+
+  it('exposes the intended accessible names for each tool', () => {
+    render(<Toolbar />);
+    expect(screen.getByRole('button', { name: 'Select (V)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hand (H)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Box (B)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Divider (D)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Text (T)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'FIGlet (F)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Draw (P)' })).toBeInTheDocument();
+  });
+
+  it('keeps toolbar icons out of the accessibility tree', () => {
+    render(<Toolbar />);
+    for (const name of ['Select (V)', 'Hand (H)', 'Box (B)', 'Divider (D)', 'Text (T)', 'FIGlet (F)', 'Draw (P)']) {
+      const button = screen.getByRole('button', { name });
+      const icon = button.querySelector('svg');
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
+    }
   });
 
   it('renders as a toolbar nav element', () => {

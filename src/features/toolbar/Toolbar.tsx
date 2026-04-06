@@ -48,7 +48,7 @@ export function Toolbar() {
     <nav className={styles.toolbar} role="toolbar" aria-label="Design tools" data-component="toolbar">
       {TOOLS.map((item, index) => {
         if (item === 'separator') {
-          return <div key={`sep-${index}`} className={styles.separator} role="separator" />;
+          return <div key={`sep-${index}`} className={styles.separator} aria-hidden="true" />;
         }
 
         const Icon = item.icon;
