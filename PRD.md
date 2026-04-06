@@ -952,7 +952,6 @@ The zoom operation:
 **Other features:**
 - Snap-to-grid: all layer positions snap to cell boundaries within their artboard
 - Selection: click to select layer, Shift+click for multi-select, drag for marquee
-- Rulers: column/row rulers along top and left edges (relative to the active artboard)
 - Grid overlay: toggle-able faint grid lines showing cell boundaries (visible when zoomed in past 50%)
 - Crosshair: cursor position shown as col,row in status bar (relative to the hovered artboard)
 
@@ -961,7 +960,6 @@ The zoom operation:
 Each artboard appears as a labeled, outlined rectangle on the canvas. The artboard name is displayed above its top-left corner. The outline uses a subtle gray color that doesn't interfere with the ASCII grid content inside.
 
 When an artboard is selected (click its title or its empty margin), it becomes the "active artboard" and:
-- The rulers calibrate to its coordinate system (0,0 at its top-left)
 - New layers are placed inside it
 - The Properties Panel shows artboard-level settings (name, viewport preset)
 
