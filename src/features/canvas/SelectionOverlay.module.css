@@ -12,3 +12,27 @@
   pointer-events: none;
   box-sizing: border-box;
 }
+
+.handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border: 1.5px solid #6366f1;
+  border-radius: 1px;
+  pointer-events: auto;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+/* Corners */
+.handleNw { top: 0; left: 0; transform: translate(-50%, -50%); }
+.handleNe { top: 0; right: 0; transform: translate(50%, -50%); }
+.handleSe { bottom: 0; right: 0; transform: translate(50%, 50%); }
+.handleSw { bottom: 0; left: 0; transform: translate(-50%, 50%); }
+
+/* Edge midpoints */
+.handleN { top: 0; left: 50%; transform: translate(-50%, -50%); }
+.handleE { top: 50%; right: 0; transform: translate(50%, -50%); }
+.handleS { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+.handleW { top: 50%; left: 0; transform: translate(-50%, -50%); }
