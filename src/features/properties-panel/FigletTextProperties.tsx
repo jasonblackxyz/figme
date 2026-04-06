@@ -2,7 +2,14 @@ import type { Layer, FigletTextProperties as FTProps, LayerProperties } from '@p
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { updateLayer } from '@primitives/document-model/operations.ts';
 import { AVAILABLE_FONTS } from '@primitives/figlet-engine/fonts/index.ts';
+import { AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import styles from './PropertiesPanel.module.css';
+
+const ALIGN_OPTIONS = {
+  left: { Icon: AlignLeft, label: 'Align left' },
+  center: { Icon: AlignCenter, label: 'Align center' },
+  right: { Icon: AlignRight, label: 'Align right' },
+} as const;
 
 interface Props {
   layer: Layer;
@@ -59,16 +66,22 @@ export function FigletTextProperties({ layer }: Props) {
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Align</label>
           <div className={styles.radioGroup}>
-            {(['left', 'center', 'right'] as const).map(a => (
-              <button
-                key={a}
-                className={`${styles.radioButton} ${props.alignment === a ? styles.radioActive : ''}`}
-                data-property="figlet-alignment"
-                onClick={() => applyPropsUpdate(layer.id, { alignment: a })}
-              >
-                {a[0]!.toUpperCase()}
-              </button>
-            ))}
+            {(['left', 'center', 'right'] as const).map(a => {
+              const { Icon, label } = ALIGN_OPTIONS[a];
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  className={`${styles.radioButton} ${props.alignment === a ? styles.radioActive : ''}`}
+                  data-property="figlet-alignment"
+                  aria-label={label}
+                  title={label}
+                  onClick={() => applyPropsUpdate(layer.id, { alignment: a })}
+                >
+                  <Icon size={12} aria-hidden="true" />
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

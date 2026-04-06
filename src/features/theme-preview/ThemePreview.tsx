@@ -16,15 +16,15 @@ const THEMES: Theme[] = [
     colors: {
       background: '#1a1a2e',
       foreground: '#e0e0e0',
-      accent: '#6366f1',
+      accent: '#2563eb',
       accentForeground: '#ffffff',
       muted: '#333355',
       mutedForeground: '#666688',
       border: '#444466',
       card: '#252540',
       cardForeground: '#c0c0d0',
-      error: '#ef4444',
-      success: '#22c55e',
+      error: '#dc2626',
+      success: '#16a34a',
     },
   },
   {

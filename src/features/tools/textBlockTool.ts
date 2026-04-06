@@ -27,7 +27,7 @@ export const textBlockTool: ToolHandler = {
     const props: TextBlockProperties = {
       content: 'Text',
       fontFamily: doc.gridConfig.fontFamily,
-      kerning: 1,
+      kerning: 0,
       lineSpacing: 0,
       alignment: 'left',
       styleKey: 'text',

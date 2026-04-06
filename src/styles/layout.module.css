@@ -59,7 +59,7 @@
 
 .canvas {
   grid-area: canvas;
-  background: var(--color-bg);
+  background: var(--color-canvas);
   overflow: hidden;
   position: relative;
 }

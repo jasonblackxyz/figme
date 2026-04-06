@@ -17,7 +17,7 @@ interface StyledWord {
  *
  * - Parses inline markdown (# headings, **bold**)
  * - Word-wraps text within boundingRect minus padding
- * - Applies kerning (0=tight, 1=normal/single space, 2=extra space between chars)
+ * - Applies kerning (0=normal, 1=single space between chars, 2=double space between chars)
  * - Applies lineSpacing (0=single, 1=double)
  * - Applies alignment (left/center/right within available width)
  * - Returns FlowLine[] with each line's segments positioned at correct col
@@ -130,23 +130,20 @@ function segmentsToWords(segments: InlineSegment[]): StyledWord[] {
 
 /**
  * Compute the display width of a word given a kerning level.
- * Kerning 0 = tight (no extra), 1 = normal (no extra), 2 = extra space between chars.
- * For kerning 2, each char occupies 2 cells except the last which occupies 1.
+ * Kerning 0 = normal (no extra spacing), 1 = one space between chars, 2 = two spaces between chars.
  */
 function wordDisplayWidth(text: string, kerning: 0 | 1 | 2): number {
   if (text.length === 0) return 0;
-  if (kerning === 2) {
-    return text.length * 2 - 1;
-  }
-  return text.length;
+  if (kerning === 0) return text.length;
+  // kerning N: each char is 1 wide, plus N spaces between each pair
+  return text.length + (text.length - 1) * kerning;
 }
 
 function maxCharsThatFit(availWidth: number, kerning: 0 | 1 | 2): number {
   if (availWidth <= 0) return 0;
-  if (kerning === 2) {
-    return Math.floor((availWidth + 1) / 2);
-  }
-  return availWidth;
+  if (kerning === 0) return availWidth;
+  // Inverse of: width = chars + (chars - 1) * kerning = chars * (1 + kerning) - kerning
+  return Math.floor((availWidth + kerning) / (1 + kerning));
 }
 
 /**
@@ -261,9 +258,9 @@ function layoutLine(
   // Place each word as a segment
   let col = startCol;
   for (const word of words) {
-    if (kerning === 2) {
-      // Extra spacing: add space between each character
-      const spacedText = word.text.split('').join(' ');
+    if (kerning > 0) {
+      const spacer = ' '.repeat(kerning);
+      const spacedText = word.text.split('').join(spacer);
       segments.push({
         text: spacedText,
         styleKey: word.styleKey,

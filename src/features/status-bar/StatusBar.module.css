@@ -1,12 +1,12 @@
 .statusBar {
   grid-area: status;
-  background: var(--color-surface, #1e1e2e);
-  border-top: 1px solid var(--color-border, #333355);
+  background: var(--color-surface, #e8e8ee);
+  border-top: 1px solid var(--color-border, #c0c0cc);
   display: flex;
   align-items: center;
   padding: 0 8px;
   font-size: 11px;
-  color: var(--color-text-dim, #666688);
+  color: var(--color-text-dim, #6b6b80);
   gap: 16px;
   font-family: 'IBM Plex Mono', monospace;
 }
@@ -15,10 +15,10 @@
   margin-left: auto;
   height: 18px;
   padding: 0 10px;
-  border: 1px solid var(--color-border, #333355);
+  border: 1px solid var(--color-border, #c0c0cc);
   border-radius: 3px;
   background: transparent;
-  color: var(--color-text-dim, #666688);
+  color: var(--color-text-dim, #6b6b80);
   cursor: pointer;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
@@ -27,6 +27,6 @@
 }
 
 .exportButton:hover {
-  background: var(--color-surface-raised, rgba(255, 255, 255, 0.05));
-  color: var(--color-text, #e0e0e0);
+  background: var(--color-surface-raised, rgba(0, 0, 0, 0.04));
+  color: var(--color-text, #1a1a2e);
 }

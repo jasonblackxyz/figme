@@ -68,13 +68,13 @@ export function SpecView({ document, selectedLayerIds }: SpecViewProps): ReactNo
         bottom: 0,
         width: '360px',
         overflow: 'auto',
-        backgroundColor: '#1a1a2e',
-        color: '#e0e0f0',
+        backgroundColor: 'var(--color-surface, #e8e8ee)',
+        color: 'var(--color-text, #1a1a2e)',
         fontFamily: "'IBM Plex Mono', monospace",
         fontSize: '12px',
         padding: '8px',
         zIndex: 1000,
-        borderLeft: '1px solid #444466',
+        borderLeft: '1px solid var(--color-border, #c0c0cc)',
       }}
     >
       <pre>{JSON.stringify(spec, null, 2)}</pre>

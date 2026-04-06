@@ -33,6 +33,7 @@ describe('createEmptyDocument', () => {
   it('palette covers all style keys', () => {
     const doc = createEmptyDocument()
     expect(doc.palette.bg).toBeDefined()
+    expect(doc.palette.bg.bg).toBe('#faf6ef')
     expect(doc.palette.modalBorder).toBeDefined()
     expect(doc.palette.ghostBlob).toBeDefined()
   })

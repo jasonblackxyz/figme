@@ -11,14 +11,15 @@
   --font-size-base: 14px;
   --line-height-base: 1.35;
 
-  --color-bg: #1e1e2e;
-  --color-surface: #2a2a3e;
-  --color-surface-raised: #33334d;
-  --color-border: #444466;
-  --color-text: #e0e0f0;
-  --color-text-dim: #8888aa;
-  --color-accent: #7aa2f7;
-  --color-accent-dim: #5577cc;
+  --color-bg: #f0f0f4;
+  --color-canvas: #faf6ef;
+  --color-surface: #e8e8ee;
+  --color-surface-raised: #d8d8e0;
+  --color-border: #c0c0cc;
+  --color-text: #1a1a2e;
+  --color-text-dim: #6b6b80;
+  --color-accent: #2563eb;
+  --color-accent-dim: #dbeafe;
 }
 
 html, body, #root {
