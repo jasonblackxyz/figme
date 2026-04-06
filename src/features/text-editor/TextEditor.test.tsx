@@ -68,7 +68,6 @@ describe('TextEditor', () => {
       panX: 0,
       panY: 0,
       cursorGridPos: null,
-      gridOverlayVisible: false,
     });
   });
 

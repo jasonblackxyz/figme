@@ -14,12 +14,10 @@ interface ViewportState {
   panX: number;
   panY: number;
   cursorGridPos: { col: number; row: number } | null;
-  gridOverlayVisible: boolean;
   setZoom: (zoom: number) => void;
   setPan: (x: number, y: number) => void;
   resetView: () => void;
   setCursorGridPos: (pos: { col: number; row: number } | null) => void;
-  toggleGridOverlay: () => void;
   zoomAtPoint: (delta: number, clientX: number, clientY: number, canvasRect: DOMRect) => void;
   getEffectiveGridConfig: () => GridConfig;
 }
@@ -29,14 +27,12 @@ export const useViewportStore = create<ViewportState>((set, get) => ({
   panX: 0,
   panY: 0,
   cursorGridPos: null,
-  gridOverlayVisible: false,
 
   setZoom: (zoom: number) => set({ zoom: clamp(zoom, 0.1, 5) }),
   setPan: (x: number, y: number) => set({ panX: x, panY: y }),
   resetView: () => set({ zoom: 1, panX: 0, panY: 0 }),
 
   setCursorGridPos: (pos: { col: number; row: number } | null) => set({ cursorGridPos: pos }),
-  toggleGridOverlay: () => set((s) => ({ gridOverlayVisible: !s.gridOverlayVisible })),
 
   zoomAtPoint: (delta: number, clientX: number, clientY: number, canvasRect: DOMRect) => {
     const oldZoom = get().zoom;

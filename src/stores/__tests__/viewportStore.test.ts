@@ -6,7 +6,6 @@ beforeEach(() => {
     panX: 0,
     panY: 0,
     cursorGridPos: null,
-    gridOverlayVisible: false,
   });
 });
 
@@ -100,16 +99,6 @@ describe('viewportStore', () => {
     });
   });
 
-  describe('toggles', () => {
-    it('toggles grid overlay', () => {
-      expect(useViewportStore.getState().gridOverlayVisible).toBe(false);
-      useViewportStore.getState().toggleGridOverlay();
-      expect(useViewportStore.getState().gridOverlayVisible).toBe(true);
-      useViewportStore.getState().toggleGridOverlay();
-      expect(useViewportStore.getState().gridOverlayVisible).toBe(false);
-    });
-
-  });
 
   describe('cursor grid position', () => {
     it('sets and clears cursor position', () => {

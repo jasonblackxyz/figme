@@ -58,7 +58,6 @@ function setupSelectionOverlay(locked = false) {
     panX: 0,
     panY: 0,
     cursorGridPos: null,
-    gridOverlayVisible: false,
   });
 
   const view = render(
@@ -105,7 +104,6 @@ beforeEach(() => {
     panX: 0,
     panY: 0,
     cursorGridPos: null,
-    gridOverlayVisible: false,
   });
   Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
     configurable: true,
