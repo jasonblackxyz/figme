@@ -7,14 +7,20 @@ beforeEach(() => {
 });
 
 describe('Toolbar', () => {
-  it('renders all tool buttons', () => {
+  it('renders all tool buttons with labels', () => {
     render(<Toolbar />);
-    expect(screen.getByText('V')).toBeInTheDocument();
-    expect(screen.getByText('B')).toBeInTheDocument();
-    expect(screen.getByText('T')).toBeInTheDocument();
-    expect(screen.getByText('F')).toBeInTheDocument();
-    expect(screen.getByText('D')).toBeInTheDocument();
-    expect(screen.getByText('H')).toBeInTheDocument();
+    expect(screen.getByText('Select')).toBeInTheDocument();
+    expect(screen.getByText('Hand')).toBeInTheDocument();
+    expect(screen.getByText('Box')).toBeInTheDocument();
+    expect(screen.getByText('Divider')).toBeInTheDocument();
+    expect(screen.getByText('Text')).toBeInTheDocument();
+    expect(screen.getByText('FIGlet')).toBeInTheDocument();
+  });
+
+  it('renders visual separators between tool groups', () => {
+    render(<Toolbar />);
+    const separators = document.querySelectorAll('[role="separator"]');
+    expect(separators).toHaveLength(3);
   });
 
   it('renders as a toolbar nav element', () => {
@@ -30,7 +36,7 @@ describe('Toolbar', () => {
     const selectBtn = screen.getByLabelText('Select (V)');
     expect(selectBtn).toHaveAttribute('aria-pressed', 'true');
 
-    const borderBoxBtn = screen.getByLabelText('Border Box (B)');
+    const borderBoxBtn = screen.getByLabelText('Box (B)');
     expect(borderBoxBtn).toHaveAttribute('aria-pressed', 'false');
   });
 
@@ -39,13 +45,13 @@ describe('Toolbar', () => {
     const selectBtn = screen.getByLabelText('Select (V)');
     expect(selectBtn).toHaveAttribute('data-tool', 'select');
 
-    const borderBoxBtn = screen.getByLabelText('Border Box (B)');
+    const borderBoxBtn = screen.getByLabelText('Box (B)');
     expect(borderBoxBtn).toHaveAttribute('data-tool', 'border-box');
   });
 
   it('changes active tool on click', () => {
     render(<Toolbar />);
-    const borderBoxBtn = screen.getByLabelText('Border Box (B)');
+    const borderBoxBtn = screen.getByLabelText('Box (B)');
     fireEvent.click(borderBoxBtn);
     expect(useToolStore.getState().activeTool).toBe('border-box');
   });

@@ -5,6 +5,9 @@
 }
 
 .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 8px 12px;
   border-bottom: 1px solid var(--color-border);
 }
@@ -16,6 +19,28 @@
   letter-spacing: 0.5px;
   color: var(--color-text-dim);
   margin: 0;
+}
+
+.collapseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--color-text);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s;
+}
+
+.collapseButton:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-accent);
 }
 
 .content {

@@ -99,6 +99,13 @@ export const selectTool: ToolHandler = {
     }
   },
 
+  onDoubleClick(gridPos: GridPosition, _event: MouseEvent) {
+    const hit = hitTestLayers(gridPos);
+    if (hit && hit.kind === 'text-block' && !hit.locked) {
+      useUiStore.getState().setEditingLayerId(hit.id);
+    }
+  },
+
   onPointerUp(_gridPos: GridPosition, _event: PointerEvent) {
     const uiState = useUiStore.getState();
 
