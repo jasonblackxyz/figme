@@ -252,7 +252,7 @@ export function createEmptyPage(name?: string): FigMePage {
  * This is used internally when no palette is provided.
  */
 function createMinimalPalette(): Palette {
-  const def = { color: '#1a1a1a', bg: 'transparent' };
+  const def = { color: '#1a1a1a', bg: '#faf6ef' };
   return {
     bg: def,
     dot: { color: '#c0c0cc', bg: 'transparent' },

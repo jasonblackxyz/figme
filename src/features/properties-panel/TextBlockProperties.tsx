@@ -5,7 +5,11 @@ import { ColorSwatchField } from '@features/color-picker/ColorSwatchField.tsx';
 import { AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import styles from './PropertiesPanel.module.css';
 
-const ALIGN_ICONS = { left: AlignLeft, center: AlignCenter, right: AlignRight } as const;
+const ALIGN_OPTIONS = {
+  left: { Icon: AlignLeft, label: 'Align left' },
+  center: { Icon: AlignCenter, label: 'Align center' },
+  right: { Icon: AlignRight, label: 'Align right' },
+} as const;
 
 interface Props {
   layer: Layer;
@@ -98,16 +102,22 @@ export function TextBlockProperties({ layer }: Props) {
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Align</label>
           <div className={styles.radioGroup}>
-            {(['left', 'center', 'right'] as const).map(a => (
-              <button
-                key={a}
-                className={`${styles.radioButton} ${props.alignment === a ? styles.radioActive : ''}`}
-                data-property="alignment"
-                onClick={() => applyPropsUpdate(layer.id, { alignment: a })}
-              >
-                {(() => { const Icon = ALIGN_ICONS[a]; return <Icon size={12} />; })()}
-              </button>
-            ))}
+            {(['left', 'center', 'right'] as const).map(a => {
+              const { Icon, label } = ALIGN_OPTIONS[a];
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  className={`${styles.radioButton} ${props.alignment === a ? styles.radioActive : ''}`}
+                  data-property="alignment"
+                  aria-label={label}
+                  title={label}
+                  onClick={() => applyPropsUpdate(layer.id, { alignment: a })}
+                >
+                  <Icon size={12} aria-hidden="true" />
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
