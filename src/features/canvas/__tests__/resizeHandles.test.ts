@@ -1,7 +1,17 @@
-import { computeResizedRect, HANDLES } from '../resizeHandles.ts';
+import { computeResizeDragDelta, computeResizedRect, HANDLES } from '../resizeHandles.ts';
 import type { GridRect } from '@primitives/grid-engine/types.ts';
+import type { GridConfig } from '@primitives/grid-engine/types.ts';
 
 const BASE: GridRect = { col: 5, row: 10, width: 8, height: 6 };
+const GRID: GridConfig = {
+  fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: 14,
+  lineHeight: 1.35,
+  cellWidth: 4,
+  cellHeight: 10,
+  canvasCols: 100,
+  canvasRows: 100,
+};
 
 describe('computeResizedRect', () => {
   it('se: extends bottom-right', () => {
@@ -68,5 +78,47 @@ describe('computeResizedRect', () => {
 
   it('HANDLES has exactly 8 entries', () => {
     expect(HANDLES).toHaveLength(8);
+  });
+});
+
+describe('computeResizeDragDelta', () => {
+  it('normalizes east-handle drags regardless of click position inside the handle', () => {
+    const innerClick = computeResizeDragDelta(
+      BASE,
+      'e',
+      { x: 49, y: 130 },
+      { x: 53, y: 130 },
+      GRID,
+    );
+    const outerClick = computeResizeDragDelta(
+      BASE,
+      'e',
+      { x: 55, y: 130 },
+      { x: 59, y: 130 },
+      GRID,
+    );
+
+    expect(innerClick).toEqual({ deltaCol: 1, deltaRow: 0 });
+    expect(outerClick).toEqual({ deltaCol: 1, deltaRow: 0 });
+  });
+
+  it('normalizes corner drags regardless of click position inside the handle', () => {
+    const innerClick = computeResizeDragDelta(
+      BASE,
+      'se',
+      { x: 49, y: 156 },
+      { x: 53, y: 166 },
+      GRID,
+    );
+    const outerClick = computeResizeDragDelta(
+      BASE,
+      'se',
+      { x: 55, y: 164 },
+      { x: 59, y: 174 },
+      GRID,
+    );
+
+    expect(innerClick).toEqual({ deltaCol: 1, deltaRow: 1 });
+    expect(outerClick).toEqual({ deltaCol: 1, deltaRow: 1 });
   });
 });

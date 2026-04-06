@@ -5,8 +5,7 @@ import { useUiStore } from '@stores/uiStore.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
 import { updateLayer } from '@primitives/document-model/operations.ts';
-import { clientToGrid } from './useCanvasInteraction.ts';
-import { HANDLES, computeResizedRect } from './resizeHandles.ts';
+import { HANDLES, computeResizeDragDelta, computeResizedRect } from './resizeHandles.ts';
 import type { ResizeHandle } from './resizeHandles.ts';
 import styles from './SelectionOverlay.module.css';
 
@@ -32,16 +31,15 @@ export function SelectionOverlay({ gridConfig, panX, panY }: SelectionOverlayPro
   const marqueeRect = useUiStore((s) => s.marqueeRect);
   const doc = useDocumentStore((s) => s.document);
   const page = doc.pages.find((p) => p.id === doc.activePageId);
+  const selectedLayerId = selectedLayerIds.length === 1 ? selectedLayerIds[0]! : null;
+  const selectedLayer = selectedLayerId && page ? page.layers[selectedLayerId] : null;
 
-  const showHandles = selectedLayerIds.length === 1;
+  const showHandles = Boolean(selectedLayer && !selectedLayer.locked);
 
   const onHandlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>, handle: ResizeHandle, layerId: string) => {
       e.stopPropagation();
       e.preventDefault();
-
-      const el = e.currentTarget;
-      el.setPointerCapture(e.pointerId);
 
       // Snapshot state at drag start
       const docState = useDocumentStore.getState();
@@ -51,7 +49,7 @@ export function SelectionOverlay({ gridConfig, panX, panY }: SelectionOverlayPro
         (p) => p.id === docState.document.activePageId,
       );
       const layer = currentPage?.layers[layerId];
-      if (!layer || !currentPage) return;
+      if (!layer || !currentPage || layer.locked) return;
 
       const origRect: GridRect = { ...layer.rect };
 
@@ -59,28 +57,35 @@ export function SelectionOverlay({ gridConfig, panX, panY }: SelectionOverlayPro
       const viewport = document.querySelector('[data-testid="canvas-viewport"]') as HTMLElement | null;
       if (!viewport) return;
       const canvasRect = viewport.getBoundingClientRect();
-
-      const startGrid = clientToGrid(
-        e.clientX, e.clientY, canvasRect,
-        viewportState.panX, viewportState.panY, currentGridConfig,
-      );
+      const el = e.currentTarget;
+      el.setPointerCapture(e.pointerId);
+      const startPointerPx = {
+        x: e.clientX - canvasRect.left - viewportState.panX,
+        y: e.clientY - canvasRect.top - viewportState.panY,
+      };
 
       docState.pushUndo();
 
       const onMove = (me: PointerEvent) => {
-        const vs = useViewportStore.getState();
-        const gc = vs.getEffectiveGridConfig();
-        const cr = viewport.getBoundingClientRect();
-        const currentGrid = clientToGrid(me.clientX, me.clientY, cr, vs.panX, vs.panY, gc);
-
-        const deltaCol = currentGrid.col - startGrid.col;
-        const deltaRow = currentGrid.row - startGrid.row;
+        const currentPointerPx = {
+          x: me.clientX - canvasRect.left - viewportState.panX,
+          y: me.clientY - canvasRect.top - viewportState.panY,
+        };
+        const { deltaCol, deltaRow } = computeResizeDragDelta(
+          origRect,
+          handle,
+          startPointerPx,
+          currentPointerPx,
+          currentGridConfig,
+        );
 
         const newRect = computeResizedRect(origRect, handle, deltaCol, deltaRow);
 
         const ds = useDocumentStore.getState();
         const pg = ds.document.pages.find((p) => p.id === ds.document.activePageId);
         if (!pg) return;
+        const currentLayer = pg.layers[layerId];
+        if (!currentLayer || currentLayer.locked) return;
 
         const updatedPage = updateLayer(pg, layerId, { rect: newRect });
         const updatedDoc = {
@@ -92,13 +97,20 @@ export function SelectionOverlay({ gridConfig, panX, panY }: SelectionOverlayPro
         ds.setDocument(updatedDoc);
       };
 
-      const onUp = () => {
+      const cleanup = () => {
         el.removeEventListener('pointermove', onMove);
-        el.removeEventListener('pointerup', onUp);
+        el.removeEventListener('pointerup', cleanup);
+        el.removeEventListener('pointercancel', cleanup);
+        el.removeEventListener('lostpointercapture', cleanup);
+        if (el.hasPointerCapture(e.pointerId)) {
+          el.releasePointerCapture(e.pointerId);
+        }
       };
 
       el.addEventListener('pointermove', onMove);
-      el.addEventListener('pointerup', onUp);
+      el.addEventListener('pointerup', cleanup);
+      el.addEventListener('pointercancel', cleanup);
+      el.addEventListener('lostpointercapture', cleanup);
     },
     [],
   );
@@ -122,6 +134,7 @@ export function SelectionOverlay({ gridConfig, panX, panY }: SelectionOverlayPro
               }}
             >
               {showHandles &&
+                layerId === selectedLayerId &&
                 HANDLES.map((h) => (
                   <div
                     key={h.key}
