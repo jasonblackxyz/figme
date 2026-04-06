@@ -13,8 +13,10 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 400px;
+  width: 420px;
   max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
   background: var(--color-surface, #1e1e2e);
   border: 1px solid var(--color-border, #444);
   border-radius: 8px;
@@ -54,10 +56,30 @@
 }
 
 .body {
-  padding: 20px;
+  padding: 16px 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+}
+
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-dim, #888);
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.sectionLabel:first-child {
+  margin-top: 0;
+}
+
+.formatGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .formatButton {
@@ -72,6 +94,10 @@
   color: var(--color-text, #e0e0e0);
   text-align: left;
   transition: border-color 0.15s;
+}
+
+.formatGroup .formatButton {
+  border-radius: 6px 6px 0 0;
 }
 
 .formatButton:hover {
@@ -95,4 +121,27 @@
   width: 32px;
   text-align: center;
   flex-shrink: 0;
+}
+
+.optionToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 8px 60px;
+  background: var(--color-bg, #1a1a2e);
+  border: 1px solid var(--color-border, #444);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.optionToggle input[type="checkbox"] {
+  accent-color: var(--color-accent, #6366f1);
+  cursor: pointer;
+}
+
+.optionLabel {
+  font-size: 11px;
+  color: var(--color-text-dim, #888);
 }

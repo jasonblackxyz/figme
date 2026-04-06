@@ -35,6 +35,15 @@ export function App() {
       <AgentBriefing document={document} />
       <header className={styles.toolbar}>
         <Toolbar />
+        <div className={styles.toolbarActions}>
+          <button
+            className={styles.exportButton}
+            onClick={toggleExportDialog}
+            title="Export (Ctrl+Shift+E)"
+          >
+            Export
+          </button>
+        </div>
       </header>
       <aside className={styles.layersPanel}>
         <LayersPanel />
