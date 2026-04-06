@@ -14,6 +14,14 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, 'src/shared'),
     },
   },
+  server: {
+    watch: {
+      ignored: ['**/.claude/**'],
+    },
+  },
+  optimizeDeps: {
+    entries: ['index.html'],
+  },
   css: {
     modules: {
       localsConvention: 'camelCase',
