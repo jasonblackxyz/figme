@@ -22,25 +22,38 @@ function paintAt(gridPos: GridPosition) {
   const { brushSize, eraserMode, activeColor } = useUiStore.getState();
   const color = eraserMode ? undefined : activeColor;
   const cells = getBrushCells(gridPos, brushSize);
-  const hit = hitTestLayers(gridPos);
+  const docStore = useDocumentStore.getState();
+  const pageCells: Array<{ row: number; col: number }> = [];
+  const layerCells = new Map<string, Array<{ row: number; col: number }>>();
 
-  if (hit) {
-    // Paint on the layer's cellColorOverrides
-    for (const cell of cells) {
-      const relRow = cell.row - hit.rect.row;
-      const relCol = cell.col - hit.rect.col;
-      if (relRow >= 0 && relRow < hit.rect.height && relCol >= 0 && relCol < hit.rect.width) {
-        useDocumentStore.getState().setCellColorOverride(hit.id, relRow, relCol, color);
-      }
+  for (const cell of cells) {
+    const hit = hitTestLayers({ col: cell.col, row: cell.row });
+    if (!hit) {
+      pageCells.push(cell);
+      continue;
     }
-  } else {
-    // Paint on the page's cellColorOverrides
-    if (cells.length === 1) {
-      const cell = cells[0]!;
-      useDocumentStore.getState().setPageCellOverride(cell.row, cell.col, color);
-    } else {
-      useDocumentStore.getState().setPageCellOverridesBulk(cells, color);
+
+    const relCell = {
+      row: cell.row - hit.rect.row,
+      col: cell.col - hit.rect.col,
+    };
+    const existing = layerCells.get(hit.id) ?? [];
+    existing.push(relCell);
+    layerCells.set(hit.id, existing);
+  }
+
+  if (pageCells.length > 0) {
+    docStore.setPageCellOverridesBulk(pageCells, color, { pushUndo: false });
+  }
+
+  for (const [layerId, relCells] of layerCells) {
+    if (relCells.length === 1) {
+      const cell = relCells[0]!;
+      docStore.setCellColorOverride(layerId, cell.row, cell.col, color, { pushUndo: false });
+      continue;
     }
+
+    docStore.setLayerCellOverridesBulk(layerId, relCells, color, { pushUndo: false });
   }
 }
 
@@ -48,6 +61,7 @@ export const drawTool: ToolHandler = {
   cursor: 'crosshair',
 
   onPointerDown(gridPos: GridPosition, _event: PointerEvent) {
+    useDocumentStore.getState().pushUndo();
     isPainting = true;
     paintAt(gridPos);
   },

@@ -3,6 +3,15 @@ import type { FigMeDocument, SwatchCollection } from '@primitives/document-model
 import { createEmptyDocument, updateLayer, removeLayer, addLayer } from '@primitives/document-model/operations.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 
+interface CellCoord {
+  row: number;
+  col: number;
+}
+
+interface PaintMutationOptions {
+  pushUndo?: boolean;
+}
+
 interface DocumentState {
   document: FigMeDocument;
   undoStack: FigMeDocument[];
@@ -17,14 +26,56 @@ interface DocumentState {
   deleteSelectedLayers: () => void;
   duplicateSelectedLayers: () => void;
   updateLayerColors: (layerId: string, customColors: { color?: string; bg?: string } | undefined) => void;
-  setCellColorOverride: (layerId: string, relRow: number, relCol: number, bgColor: string | undefined) => void;
+  setCellColorOverride: (
+    layerId: string,
+    relRow: number,
+    relCol: number,
+    bgColor: string | undefined,
+    options?: PaintMutationOptions,
+  ) => void;
+  setLayerCellOverridesBulk: (
+    layerId: string,
+    cells: CellCoord[],
+    bgColor: string | undefined,
+    options?: PaintMutationOptions,
+  ) => void;
   addSwatchCollection: (name: string) => void;
   removeSwatchCollection: (collectionId: string) => void;
   renameSwatchCollection: (collectionId: string, name: string) => void;
   addColorToCollection: (collectionId: string, hex: string) => void;
   removeColorFromCollection: (collectionId: string, colorIndex: number) => void;
-  setPageCellOverride: (row: number, col: number, bgColor: string | undefined) => void;
-  setPageCellOverridesBulk: (cells: Array<{ row: number; col: number }>, bgColor: string | undefined) => void;
+  setPageCellOverride: (
+    row: number,
+    col: number,
+    bgColor: string | undefined,
+    options?: PaintMutationOptions,
+  ) => void;
+  setPageCellOverridesBulk: (
+    cells: CellCoord[],
+    bgColor: string | undefined,
+    options?: PaintMutationOptions,
+  ) => void;
+}
+
+function buildOverrideMap(
+  existing: Record<string, string> | undefined,
+  cells: CellCoord[],
+  bgColor: string | undefined,
+): Record<string, string> | undefined {
+  if (cells.length === 0) return existing;
+
+  const next = { ...(existing ?? {}) };
+  const keys = new Set(cells.map(({ row, col }) => `${row},${col}`));
+
+  for (const key of keys) {
+    if (bgColor === undefined) {
+      delete next[key];
+    } else {
+      next[key] = bgColor;
+    }
+  }
+
+  return Object.keys(next).length > 0 ? next : undefined;
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => ({
@@ -195,22 +246,32 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     });
   },
 
-  setCellColorOverride: (layerId: string, relRow: number, relCol: number, bgColor: string | undefined) => {
+  setCellColorOverride: (
+    layerId: string,
+    relRow: number,
+    relCol: number,
+    bgColor: string | undefined,
+    options?: PaintMutationOptions,
+  ) => {
+    get().setLayerCellOverridesBulk(layerId, [{ row: relRow, col: relCol }], bgColor, options);
+  },
+
+  setLayerCellOverridesBulk: (
+    layerId: string,
+    cells: CellCoord[],
+    bgColor: string | undefined,
+    options?: PaintMutationOptions,
+  ) => {
+    if (cells.length === 0) return;
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
     if (!page) return;
     const layer = page.layers[layerId];
     if (!layer) return;
-    get().pushUndo();
-    const key = `${relRow},${relCol}`;
-    const existing = layer.cellColorOverrides ?? {};
-    let overrides: Record<string, string> | undefined;
-    if (bgColor === undefined) {
-      const rest = Object.fromEntries(Object.entries(existing).filter(([k]) => k !== key));
-      overrides = Object.keys(rest).length > 0 ? rest : undefined;
-    } else {
-      overrides = { ...existing, [key]: bgColor };
+    if (options?.pushUndo !== false) {
+      get().pushUndo();
     }
+    const overrides = buildOverrideMap(layer.cellColorOverrides, cells, bgColor);
     const updatedPage = updateLayer(page, layerId, { cellColorOverrides: overrides });
     set({
       document: {
@@ -292,45 +353,28 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     });
   },
 
-  setPageCellOverride: (row: number, col: number, bgColor: string | undefined) => {
-    const { document: doc } = get();
-    const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) return;
-    get().pushUndo();
-    const key = `${row},${col}`;
-    const existing = page.cellColorOverrides ?? {};
-    let overrides: Record<string, string> | undefined;
-    if (bgColor === undefined) {
-      const rest = Object.fromEntries(Object.entries(existing).filter(([k]) => k !== key));
-      overrides = Object.keys(rest).length > 0 ? rest : undefined;
-    } else {
-      overrides = { ...existing, [key]: bgColor };
-    }
-    set({
-      document: {
-        ...doc,
-        pages: doc.pages.map(p =>
-          p.id === page.id ? { ...p, cellColorOverrides: overrides } : p,
-        ),
-      },
-    });
+  setPageCellOverride: (
+    row: number,
+    col: number,
+    bgColor: string | undefined,
+    options?: PaintMutationOptions,
+  ) => {
+    get().setPageCellOverridesBulk([{ row, col }], bgColor, options);
   },
 
-  setPageCellOverridesBulk: (cells: Array<{ row: number; col: number }>, bgColor: string | undefined) => {
+  setPageCellOverridesBulk: (
+    cells: CellCoord[],
+    bgColor: string | undefined,
+    options?: PaintMutationOptions,
+  ) => {
+    if (cells.length === 0) return;
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
     if (!page) return;
-    get().pushUndo();
-    const existing = { ...(page.cellColorOverrides ?? {}) };
-    for (const { row, col } of cells) {
-      const key = `${row},${col}`;
-      if (bgColor === undefined) {
-        delete existing[key];
-      } else {
-        existing[key] = bgColor;
-      }
+    if (options?.pushUndo !== false) {
+      get().pushUndo();
     }
-    const overrides = Object.keys(existing).length > 0 ? existing : undefined;
+    const overrides = buildOverrideMap(page.cellColorOverrides, cells, bgColor);
     set({
       document: {
         ...doc,
