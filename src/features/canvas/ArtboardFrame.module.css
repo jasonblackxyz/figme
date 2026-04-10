@@ -1,3 +1,10 @@
+.background {
+  position: absolute;
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: -1;
+}
+
 .frame {
   position: absolute;
   border: 1px solid var(--color-border, #c0c0cc);
