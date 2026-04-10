@@ -2,6 +2,7 @@ import { useUiStore } from '@stores/uiStore.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
 import { computeGuides } from '@primitives/layout-engine/guides.ts';
+import { flattenLayerOrder, isEffectivelyHidden } from '@primitives/document-model/hierarchy.ts';
 import type { GridRect } from '@primitives/grid-engine/types.ts';
 import styles from './SmartGuides.module.css';
 
@@ -28,10 +29,11 @@ export function SmartGuides() {
 
   // Collect other rects (non-selected, visible layers)
   const otherRects: GridRect[] = [];
-  for (const id of activePage.layerOrder) {
+  for (const id of flattenLayerOrder(activePage)) {
     if (selectedIds.includes(id)) continue;
     const layer = activePage.layers[id];
-    if (layer && layer.visible) otherRects.push(layer.rect);
+    if (!layer || layer.kind === 'group') continue;
+    if (!isEffectivelyHidden(activePage, id)) otherRects.push(layer.rect);
   }
 
   const result = computeGuides(draggingLayer.rect, otherRects);

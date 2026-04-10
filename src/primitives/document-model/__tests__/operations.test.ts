@@ -40,11 +40,15 @@ describe('createEmptyDocument', () => {
 })
 
 describe('createEmptyPage', () => {
-  it('creates a page with no layers', () => {
+  it('creates a page with a Background layer', () => {
     const page = createEmptyPage('Test Page')
     expect(page.name).toBe('Test Page')
-    expect(Object.keys(page.layers)).toHaveLength(0)
-    expect(page.layerOrder).toHaveLength(0)
+    expect(Object.keys(page.layers)).toHaveLength(1)
+    expect(page.layerOrder).toHaveLength(1)
+    const bgLayer = page.layers[page.layerOrder[0]!]!
+    expect(bgLayer.kind).toBe('group')
+    expect(bgLayer.isBackground).toBe(true)
+    expect(bgLayer.name).toBe('Background')
   })
 })
 
@@ -59,9 +63,9 @@ describe('addLayer', () => {
       'border',
       { borderStyle: 'rounded', padding: { top: 1, right: 1, bottom: 1, left: 1 } },
     )
-    expect(Object.keys(updated.layers)).toHaveLength(1)
-    expect(updated.layerOrder).toHaveLength(1)
-    const layerId = updated.layerOrder[0]!
+    expect(Object.keys(updated.layers)).toHaveLength(2) // Background + new layer
+    expect(updated.layerOrder).toHaveLength(2)
+    const layerId = updated.layerOrder[updated.layerOrder.length - 1]!
     expect(updated.layers[layerId]!.name).toBe('My Box')
     expect(updated.layers[layerId]!.kind).toBe('border-box')
     expect(updated.layers[layerId]!.visible).toBe(true)
@@ -70,7 +74,7 @@ describe('addLayer', () => {
   it('does not mutate the original page', () => {
     const page = createEmptyPage('Test')
     addLayer(page, 'divider', 'Div', { col: 0, row: 0, width: 10, height: 1 }, 'border', {})
-    expect(Object.keys(page.layers)).toHaveLength(0)
+    expect(Object.keys(page.layers)).toHaveLength(1) // Only Background
   })
 })
 
@@ -78,16 +82,16 @@ describe('removeLayer', () => {
   it('removes a layer by ID', () => {
     let page = createEmptyPage('Test')
     page = addLayer(page, 'divider', 'Div', { col: 0, row: 0, width: 10, height: 1 }, 'border', {})
-    const layerId = page.layerOrder[0]!
+    const layerId = page.layerOrder[page.layerOrder.length - 1]!
     const updated = removeLayer(page, layerId)
-    expect(Object.keys(updated.layers)).toHaveLength(0)
-    expect(updated.layerOrder).toHaveLength(0)
+    expect(Object.keys(updated.layers)).toHaveLength(1) // Background remains
+    expect(updated.layerOrder).toHaveLength(1)
   })
 
   it('does nothing for non-existent ID', () => {
     const page = createEmptyPage('Test')
     const updated = removeLayer(page, 'nonexistent')
-    expect(updated.layerOrder).toHaveLength(0)
+    expect(updated.layerOrder).toHaveLength(1) // Background
   })
 })
 
@@ -102,7 +106,7 @@ describe('updateLayer', () => {
       alignment: 'left',
       styleKey: 'text',
     })
-    const layerId = page.layerOrder[0]!
+    const layerId = page.layerOrder[page.layerOrder.length - 1]!
     const updated = updateLayer(page, layerId, { name: 'Renamed', opacity: 0.5 })
     expect(updated.layers[layerId]!.name).toBe('Renamed')
     expect(updated.layers[layerId]!.opacity).toBe(0.5)
@@ -115,7 +119,7 @@ describe('moveLayer', () => {
   it('moves a layer to new coordinates', () => {
     let page = createEmptyPage('Test')
     page = addLayer(page, 'divider', 'Div', { col: 0, row: 0, width: 10, height: 1 }, 'border', {})
-    const layerId = page.layerOrder[0]!
+    const layerId = page.layerOrder[page.layerOrder.length - 1]!
     const updated = moveLayer(page, layerId, 15, 20)
     expect(updated.layers[layerId]!.rect.col).toBe(15)
     expect(updated.layers[layerId]!.rect.row).toBe(20)
@@ -129,10 +133,10 @@ describe('reorderLayers', () => {
     let page = createEmptyPage('Test')
     page = addLayer(page, 'divider', 'A', { col: 0, row: 0, width: 10, height: 1 }, 'border', {})
     page = addLayer(page, 'divider', 'B', { col: 0, row: 2, width: 10, height: 1 }, 'border', {})
-    const [a, b] = page.layerOrder
-    const updated = reorderLayers(page, [b!, a!])
-    expect(updated.layerOrder[0]).toBe(b)
-    expect(updated.layerOrder[1]).toBe(a)
+    const [bg, a, b] = page.layerOrder
+    const updated = reorderLayers(page, [bg!, b!, a!])
+    expect(updated.layerOrder[1]).toBe(b)
+    expect(updated.layerOrder[2]).toBe(a)
   })
 })
 
@@ -195,8 +199,8 @@ describe('JSON roundtrip', () => {
     const json = JSON.stringify(doc)
     const parsed = JSON.parse(json) as typeof doc
     expect(parsed.name).toBe('Roundtrip Test')
-    expect(Object.keys(parsed.pages[0]!.layers)).toHaveLength(1)
-    const layerId = parsed.pages[0]!.layerOrder[0]!
+    expect(Object.keys(parsed.pages[0]!.layers)).toHaveLength(2) // Background + Box
+    const layerId = parsed.pages[0]!.layerOrder[parsed.pages[0]!.layerOrder.length - 1]!
     expect(parsed.pages[0]!.layers[layerId]!.kind).toBe('border-box')
   })
 })

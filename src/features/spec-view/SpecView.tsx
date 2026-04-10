@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
+import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 import styles from './SpecView.module.css';
 
 interface SpecViewProps {
@@ -79,7 +80,7 @@ export function SpecView({ visible, onClose }: SpecViewProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {activePage.layerOrder.map((layerId) => {
+                  {flattenLayerOrder(activePage).map((layerId) => {
                     const layer = activePage.layers[layerId];
                     if (!layer) return null;
                     return (
@@ -95,7 +96,7 @@ export function SpecView({ visible, onClose }: SpecViewProps) {
                       </tr>
                     );
                   })}
-                  {activePage.layerOrder.length === 0 && (
+                  {flattenLayerOrder(activePage).length === 0 && (
                     <tr>
                       <td colSpan={6} style={{ textAlign: 'center', opacity: 0.5 }}>
                         No layers

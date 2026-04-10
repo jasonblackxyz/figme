@@ -2,6 +2,7 @@ import type { FigMeDocument } from '@primitives/document-model/types.ts';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
+import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 
 /**
  * Serialize the full document as formatted JSON.
@@ -95,13 +96,13 @@ export function exportAsMarkdown(doc: FigMeDocument): string {
     md += `| Name | Kind | Position | Size | Style | Visible |\n`;
     md += `|------|------|----------|------|-------|---------|\n`;
 
-    for (const layerId of page.layerOrder) {
+    for (const layerId of flattenLayerOrder(page)) {
       const layer = page.layers[layerId];
       if (!layer) continue;
       md += `| ${layer.name} | ${layer.kind} | ${layer.rect.col},${layer.rect.row} | ${layer.rect.width}x${layer.rect.height} | ${layer.styleKey} | ${layer.visible ? 'Yes' : 'No'} |\n`;
     }
 
-    if (page.layerOrder.length === 0) {
+    if (flattenLayerOrder(page).length === 0) {
       md += `| _(no layers)_ | | | | | |\n`;
     }
     md += `\n`;

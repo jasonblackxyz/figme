@@ -3,6 +3,7 @@ import { useDocumentStore } from '@stores/documentStore.ts';
 import { useToolStore } from '@stores/toolStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { isBatching } from '@features/agent-api/batch.ts';
+import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 
 /**
  * Hook that logs state changes to the console for agent consumption.
@@ -46,7 +47,7 @@ export function useConsoleLogger(): void {
       const nextPage = nextDoc.pages.find((p) => p.id === nextDoc.activePageId);
 
       if (prevPage && nextPage && prevPage.id === nextPage.id) {
-        for (const layerId of nextPage.layerOrder) {
+        for (const layerId of flattenLayerOrder(nextPage)) {
           const prevLayer = prevPage.layers[layerId];
           const nextLayer = nextPage.layers[layerId];
           if (prevLayer && nextLayer && prevLayer !== nextLayer) {
@@ -79,8 +80,8 @@ export function useConsoleLogger(): void {
           name: nextDoc.name,
           pageCount: nextDoc.pages.length,
           activePageId: nextDoc.activePageId,
-          layerCount: activePage?.layerOrder.length ?? 0,
-          layerNames: activePage?.layerOrder.map(id => activePage.layers[id]?.name).filter(Boolean) ?? [],
+          layerCount: activePage ? flattenLayerOrder(activePage).length : 0,
+          layerNames: activePage ? flattenLayerOrder(activePage).map(id => activePage.layers[id]?.name).filter(Boolean) : [],
         },
       });
 

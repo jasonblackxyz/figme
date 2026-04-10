@@ -87,9 +87,9 @@ describe('borderBoxTool', () => {
 
     const doc = useDocumentStore.getState().document;
     const page = doc.pages.find(p => p.id === doc.activePageId)!;
-    expect(page.layerOrder).toHaveLength(1);
+    expect(page.layerOrder).toHaveLength(2);
 
-    const layerId = page.layerOrder[0]!;
+    const layerId = page.layerOrder[page.layerOrder.length - 1]!;
     const layer = page.layers[layerId]!;
     expect(layer.kind).toBe('border-box');
     expect(layer.name).toBe('Border Box');

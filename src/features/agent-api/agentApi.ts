@@ -15,6 +15,7 @@ import {
   removePage,
   setActivePage,
 } from '@primitives/document-model/operations.ts';
+import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 import { STYLE_KEYS } from '@primitives/style-system/palette.ts';
 import { pixelToGrid, gridToPixel, snapToGrid } from '@primitives/grid-engine/coordinates.ts';
 import { rectIntersects, rectContains, innerRect } from '@primitives/grid-engine/geometry.ts';
@@ -53,7 +54,7 @@ function getActivePage(): FigMePage | undefined {
 function getLayers(): Layer[] {
   const page = getActivePage();
   if (!page) return [];
-  return page.layerOrder.map(id => page.layers[id]).filter((l): l is Layer => l != null);
+  return flattenLayerOrder(page).map(id => page.layers[id]).filter((l): l is Layer => l != null);
 }
 
 function applyPageMutation(fn: (page: FigMePage) => FigMePage): void {

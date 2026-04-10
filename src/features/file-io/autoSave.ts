@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
+import { deserializeDocument } from '@primitives/document-model/serialization.ts';
+import type { FigMeDocument } from '@primitives/document-model/types.ts';
 
 export function useAutoSave(intervalMs = 30000): void {
   useEffect(() => {
@@ -16,10 +18,10 @@ export function useAutoSave(intervalMs = 30000): void {
   }, [intervalMs]);
 }
 
-export function loadAutoSave(): ReturnType<typeof JSON.parse> | null {
+export function loadAutoSave(): FigMeDocument | null {
   try {
     const saved = localStorage.getItem('figme_autosave');
-    if (saved) return JSON.parse(saved) as ReturnType<typeof JSON.parse>;
+    if (saved) return deserializeDocument(saved);
   } catch {
     // Invalid JSON or storage unavailable
   }

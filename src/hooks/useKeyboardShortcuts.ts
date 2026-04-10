@@ -114,6 +114,76 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
+      // -- Layer z-order shortcuts (Figma-style) --
+
+      // Cmd+Alt+] / Cmd+Alt+[: bring to front / send to back
+      if (ctrl && e.altKey && e.key === ']') {
+        e.preventDefault();
+        if (useUiStore.getState().selectedLayerIds.length > 0) {
+          useDocumentStore.getState().bringToFront();
+        }
+        return;
+      }
+      if (ctrl && e.altKey && e.key === '[') {
+        e.preventDefault();
+        if (useUiStore.getState().selectedLayerIds.length > 0) {
+          useDocumentStore.getState().sendToBack();
+        }
+        return;
+      }
+
+      // Cmd+] / Cmd+[: bring forward / send backward (one step)
+      if (ctrl && !e.altKey && e.key === ']') {
+        e.preventDefault();
+        if (useUiStore.getState().selectedLayerIds.length > 0) {
+          useDocumentStore.getState().bringForward();
+        }
+        return;
+      }
+      if (ctrl && !e.altKey && e.key === '[') {
+        e.preventDefault();
+        if (useUiStore.getState().selectedLayerIds.length > 0) {
+          useDocumentStore.getState().sendBackward();
+        }
+        return;
+      }
+
+      // Cmd+Shift+G: ungroup (must be before Cmd+G)
+      if (ctrl && e.shiftKey && (e.key === 'G' || e.key === 'g')) {
+        e.preventDefault();
+        if (useUiStore.getState().selectedLayerIds.length > 0) {
+          useDocumentStore.getState().ungroupSelectedLayers();
+        }
+        return;
+      }
+
+      // Cmd+G: group
+      if (ctrl && !e.shiftKey && (e.key === 'G' || e.key === 'g')) {
+        e.preventDefault();
+        if (useUiStore.getState().selectedLayerIds.length > 1) {
+          useDocumentStore.getState().groupSelectedLayers();
+        }
+        return;
+      }
+
+      // Cmd+Shift+L: toggle lock on selection
+      if (ctrl && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
+        e.preventDefault();
+        if (useUiStore.getState().selectedLayerIds.length > 0) {
+          useDocumentStore.getState().toggleLockOnSelection();
+        }
+        return;
+      }
+
+      // Cmd+Shift+H: toggle visibility on selection
+      if (ctrl && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
+        e.preventDefault();
+        if (useUiStore.getState().selectedLayerIds.length > 0) {
+          useDocumentStore.getState().toggleVisibilityOnSelection();
+        }
+        return;
+      }
+
       // Don't process single-key shortcuts if ctrl is held
       if (ctrl) return;
 

@@ -1,6 +1,7 @@
 import { useViewportStore } from '@stores/viewportStore.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
+import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 import styles from './StatusBar.module.css';
 
 export function StatusBar() {
@@ -11,7 +12,7 @@ export function StatusBar() {
 
   const doc = useDocumentStore((s) => s.document);
   const page = doc.pages.find((p) => p.id === doc.activePageId);
-  const layerCount = page ? page.layerOrder.length : 0;
+  const layerCount = page ? flattenLayerOrder(page).length : 0;
 
   const col = cursorGridPos?.col ?? 0;
   const row = cursorGridPos?.row ?? 0;
