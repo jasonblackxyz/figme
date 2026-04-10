@@ -14,6 +14,7 @@ import { useConsoleLogger } from '@hooks/useConsoleLogger.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { AgentBriefing } from '@renderer/AgentBriefing.tsx';
+import { AppErrorBoundary } from '@renderer/AppErrorBoundary.tsx';
 import styles from './styles/layout.module.css';
 
 export function App() {
@@ -54,6 +55,7 @@ export function App() {
   const gridColumns = `${layersPanelOpen ? '240px' : '36px'} 1fr ${propertiesPanelOpen ? '280px' : '36px'}`;
 
   return (
+    <AppErrorBoundary>
     <div
       id="app-root"
       className={styles.shell}
@@ -128,5 +130,6 @@ export function App() {
       <SpecView visible={specViewOpen} onClose={toggleSpecView} />
       <ExportDialog visible={exportDialogOpen} onClose={toggleExportDialog} />
     </div>
+    </AppErrorBoundary>
   );
 }

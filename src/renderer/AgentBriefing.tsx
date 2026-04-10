@@ -7,9 +7,15 @@ interface AgentBriefingProps {
 }
 
 /**
- * Hidden component that embeds a structured JSON briefing for AI agents.
- * The briefing is referenced via aria-describedby on the app root so that
- * Claude in Chrome can discover design context through the accessibility tree.
+ * Hidden component that embeds two structured JSON elements for AI agents:
+ *
+ * 1. #figme-agent-briefing  — static API reference (call signature, style keys, layer kinds with
+ *    full props schemas, DOM selectors). Accessible as window.FigMe.briefing or by ID.
+ *
+ * 2. [data-spec="full-document"] — live document snapshot that re-renders whenever the Zustand
+ *    document store changes. Agents can read current design state without any JS calls.
+ *
+ * Both are referenced via aria-describedby on #app-root so the accessibility tree points to them.
  */
 export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
   const briefing = {
@@ -36,6 +42,7 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
     },
     api: {
       global: 'window.FigMe',
+      briefing: 'window.FigMe.briefing — returns this parsed briefing object',
       stores:
         'FigMe.stores.{document,tool,ui,viewport} — raw Zustand stores, call .getState() for sync access',
       convenience: [
@@ -43,10 +50,24 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
         'getActivePage()',
         'getLayers()',
         'getLayer(id)',
-        'addLayer(kind, name, rect, styleKey, props?)',
+        // addLayer accepts positional args OR a flat object spec:
+        //   addLayer(kind, name, {col,row,width,height}, styleKey, props?)
+        //   addLayer({kind, name?, col, row, width, height, styleKey?, ...props})
+        'addLayer(kind, name, rect, styleKey, props?) | addLayer({kind, col, row, width, height, ...})',
         'removeLayer(id)',
         'updateLayer(id, updates)',
         'moveLayer(id, col, row)',
+        'findLayer(name)',
+        'findLayers({kind?, name?, styleKey?})',
+        'addPage(name) => pageId',
+        'setActivePage(id)',
+        'getPage(id)',
+        'export.toJson()',
+        'export.toMarkdown()',
+        'export.toAscii(pageId?)',
+        'viewport.setZoom(n)',
+        'viewport.resetView()',
+        'viewport.fitToPage()',
       ],
       batch: 'FigMe.batch(() => { ...mutations... }) — single undo entry',
       subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub",
@@ -55,20 +76,89 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
         undo: 'FigMe.stores.document.getState().undo()',
         selectTool: "FigMe.stores.tool.getState().setActiveTool('border-box')",
         setSelection: 'FigMe.stores.ui.getState().setSelectedLayers([id])',
-        zoom: 'FigMe.stores.viewport.getState().setZoom(1.5)',
+        zoom: 'FigMe.viewport.setZoom(1.5)',
+        fitToPage: 'FigMe.viewport.fitToPage()',
         paintCells:
           'FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], hexColor)',
       },
     },
     layerKinds: {
-      'border-box': { desc: 'Rectangular border with optional title/fill/padding', default: 'border' },
-      'text-block': { desc: 'Flowing text with word-wrap and alignment', default: 'text' },
-      'figlet-text': { desc: 'Large ASCII art text using FIGlet fonts', default: 'accentText' },
-      'divider': { desc: 'Horizontal or vertical line', default: 'border' },
-      'image': { desc: 'Image to ASCII conversion (experimental)', default: 'imageMid' },
-      'edge-path': { desc: 'Connector between layers (experimental)', default: 'edge' },
-      'group': { desc: 'Container for child layers', default: 'bg' },
-      'component': { desc: 'Reusable component instance', default: 'bg' },
+      'border-box': {
+        desc: 'Rectangular border with optional title/fill/padding',
+        default: 'border',
+        props: {
+          borderStyle: "'rounded' | 'double' | 'section' | 'custom'",
+          title: 'string — text shown inline in the top border (optional)',
+          titleStyleKey: 'StyleKey — colour of the title text (optional)',
+          bgStyleKey: 'StyleKey — fills the interior background (optional)',
+          padding: '{ top, right, bottom, left } — interior padding in cells',
+          fillPattern: 'string — repeating tile pattern for interior fill (optional)',
+        },
+      },
+      'text-block': {
+        desc: 'Flowing text with word-wrap and alignment',
+        default: 'text',
+        props: {
+          content: 'string — use \\n for explicit line breaks',
+          alignment: "'left' | 'center' | 'right'",
+          styleKey: 'StyleKey — text foreground colour',
+          kerning: '0 | 1 | 2 — extra character spacing (default: 1)',
+          lineSpacing: '0 | 1 — extra blank line between lines (default: 0)',
+          renderMode: "'flow' (word-wrap) | 'literal' (respect \\n only, no wrap)",
+          fontFamily: 'string — inherited from gridConfig, rarely overridden',
+        },
+      },
+      'figlet-text': {
+        desc: 'Large ASCII art text rendered with FIGlet fonts',
+        default: 'accentText',
+        props: {
+          content: 'string — the text to render as ASCII art',
+          fontName: "string — FIGlet font name, e.g. 'standard' | 'big' | 'slant'",
+          alignment: "'left' | 'center' | 'right'",
+          styleKey: 'StyleKey — colour of the ASCII art characters',
+        },
+      },
+      'divider': {
+        desc: 'Horizontal or vertical rule line',
+        default: 'border',
+        props: {
+          _note: 'No properties object — orientation is implicit from rect shape: width=1 → vertical, height=1 → horizontal',
+        },
+      },
+      'image': {
+        desc: 'Image converted to ASCII art (experimental)',
+        default: 'imageMid',
+        props: {
+          src: 'string — data URL or remote URL',
+          renderStyle: "'classic' | 'smooth' | 'braille' | 'contour' | 'hatch'",
+          brightness: 'number — -1 to 1',
+          contrast: 'number — -1 to 1',
+          invert: 'boolean',
+        },
+      },
+      'edge-path': {
+        desc: 'Connector line between two layers (experimental)',
+        default: 'edge',
+        props: {
+          sourceLayerId: 'string — ID of the source layer',
+          targetLayerId: 'string — ID of the target layer',
+          routingStyle: "'manhattan' | 'straight'",
+          waypoints: 'GridPosition[] — [{col, row}] intermediate points',
+          styleKey: 'StyleKey — line colour',
+        },
+      },
+      'group': {
+        desc: 'Container for child layers (use children[] on the layer)',
+        default: 'bg',
+        props: { _note: 'No properties object. Children managed via layer.children[]' },
+      },
+      'component': {
+        desc: 'Reusable component instance',
+        default: 'bg',
+        props: {
+          componentId: 'string — ID of the component definition in document.components',
+        },
+      },
     },
     styleKeys: STYLE_KEYS,
     domSelectors: {
@@ -80,17 +170,26 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
       propertyInput: "[data-property='{name}']",
       actionButton: "[data-action='{name}']",
       pageTab: "[data-page-id='{id}']",
+      // Always-present live document snapshot — updated on every document change
       specViewJson: "[data-spec='full-document']",
       statusBar: "[data-status='{field}']",
-      textEditor: "[data-editing-layer='{id}']",
+      // Valid status field values: cursor-pos, zoom, grid-size, layer-count
     },
   };
 
   return (
-    <script
-      type="application/json"
-      id="figme-agent-briefing"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(briefing) }}
-    />
+    <>
+      <script
+        type="application/json"
+        id="figme-agent-briefing"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(briefing) }}
+      />
+      {/* Live document snapshot — always present, updates on every document change */}
+      <script
+        type="application/json"
+        data-spec="full-document"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(document) }}
+      />
+    </>
   );
 }
