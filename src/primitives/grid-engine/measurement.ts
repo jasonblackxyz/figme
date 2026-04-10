@@ -25,6 +25,10 @@ export function measureCellDimensions(
       // OffscreenCanvas available but returned null context (e.g., jsdom without
       // canvas package). Skip the document-canvas path to avoid console errors
       // from jsdom's not-implemented handler; use the approximate fallback instead.
+      // Trade-off: in a hypothetical environment where OffscreenCanvas 2D is
+      // disabled but HTMLCanvasElement 2D works, we'd miss the more accurate
+      // measurement. This is acceptable — the approximate fallback is the same
+      // value used when no canvas is available at all.
       return { cellWidth: fontSize * 0.6, cellHeight };
     } catch {
       // OffscreenCanvas construction failed — fall through to document canvas

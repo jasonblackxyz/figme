@@ -65,6 +65,12 @@ export function renderGridToElements(
       if (styleRow[c] !== 'bg') lastContentCol = c;
     }
 
+    // All-bg row — emit empty spans, skip cell resolution entirely
+    if (lastContentCol < 0) {
+      result.push({ row: r, spans: [] });
+      continue;
+    }
+
     const spans: GridSpan[] = [];
     let spanStart = 0;
     let spanChars = '';
