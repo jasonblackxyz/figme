@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
 import { STYLE_KEYS } from '@primitives/style-system/palette.ts';
 
@@ -18,6 +18,10 @@ interface AgentBriefingProps {
  * Both are referenced via aria-describedby on #app-root so the accessibility tree points to them.
  */
 export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
+  // Memoize JSON serialisation — the briefing is static (no document data), the live
+  // snapshot changes on every document update. Both can be expensive for large docs.
+  const documentJson = useMemo(() => JSON.stringify(document), [document]);
+
   const briefing = {
     system: 'FigMe \u2014 ASCII Grid Design Tool',
     version: '2.0',
@@ -69,8 +73,9 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
         'viewport.resetView()',
         'viewport.fitToPage()',
       ],
-      batch: 'FigMe.batch(() => { ...mutations... }) — single undo entry',
-      subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub",
+      batch: 'FigMe.batch(() => { ...mutations... }) — single undo entry. ALWAYS use batch() when adding multiple layers.',
+      subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub — WARNING: never call mutation methods (addLayer etc.) inside the 'document' callback; that creates an infinite loop and crashes the tab.",
+      subscribeRecovery: "If a render error occurs, a FIGME_RECOVERY console entry appears with exact recovery commands. Short version: FigMe.stores.document.getState().undo() then click Dismiss.",
       storeExamples: {
         rename: 'FigMe.stores.document.getState().renameLayer(id, name)',
         undo: 'FigMe.stores.document.getState().undo()',
@@ -188,7 +193,7 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
       <script
         type="application/json"
         data-spec="full-document"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(document) }}
+        dangerouslySetInnerHTML={{ __html: documentJson }}
       />
     </>
   );
