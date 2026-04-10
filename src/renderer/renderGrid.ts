@@ -33,7 +33,7 @@ function resolveCell(
   const override = colorOverrides?.[`${r},${c}`];
   return {
     color: override?.color ?? styleDef?.color ?? '#ffffff',
-    bg: override?.bg ?? styleDef?.bg ?? '#000000',
+    bg: override?.bg ?? (styleKey === 'bg' ? 'transparent' : (styleDef?.bg ?? '#000000')),
     fontWeight: styleDef?.fontWeight,
     overrideKey: override ? `${override.color ?? ''}_${override.bg ?? ''}` : '',
   };
