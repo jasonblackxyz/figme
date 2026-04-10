@@ -27,6 +27,16 @@ export function ArtboardFrame({ page, gridConfig }: ArtboardFrameProps) {
         {page.name}
       </div>
       <div
+        className={styles.background}
+        style={{
+          left: x,
+          top: y,
+          width,
+          height,
+          backgroundColor: page.backgroundColor ?? '#ffffff',
+        }}
+      />
+      <div
         className={styles.frame}
         data-testid="artboard-frame"
         style={{

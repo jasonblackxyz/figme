@@ -38,13 +38,13 @@ export function GridRenderer({
     ? {
         fontFamily: gridConfig.fontFamily,
         fontSize: gridConfig.fontSize + 'px',
-        lineHeight: gridConfig.lineHeight,
+        lineHeight: gridConfig.cellHeight + 'px',
         whiteSpace: 'pre' as const,
       }
     : {
         fontFamily: "'IBM Plex Mono', monospace",
         whiteSpace: 'pre' as const,
-        lineHeight: 1.35,
+        lineHeight: '18.9px',
       };
 
   return (
@@ -60,7 +60,12 @@ export function GridRenderer({
       style={fontStyle}
     >
       {rows.map((row) => (
-        <div key={row.row} className="grid-row" data-row={row.row}>
+        <div
+          key={row.row}
+          className="grid-row"
+          data-row={row.row}
+          style={{ display: 'flex', height: gridConfig ? `${gridConfig.cellHeight}px` : '18.9px' }}
+        >
           {row.spans.map((span) => (
             <span
               key={span.key}

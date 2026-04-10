@@ -119,6 +119,7 @@ export interface FigMePage {
   canvasX: number;
   canvasY: number;
   cellColorOverrides?: Record<string, string>;
+  backgroundColor?: string;
 }
 
 export interface SwatchCollection {
