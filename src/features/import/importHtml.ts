@@ -135,7 +135,10 @@ function buildReversePalette(palette: Palette): ReversePalette {
   const map = new Map<string, StyleKey>();
   for (const [key, def] of Object.entries(palette)) {
     const sig = `${def.color};${def.bg};${def.fontWeight ?? ''}`;
-    map.set(sig, key as StyleKey);
+    // First-occurrence wins: when multiple style keys share the same signature
+    // (e.g. 'text' and 'queryText' both resolve to '#1a1a1a;transparent;'),
+    // prefer whichever appears first in palette iteration order.
+    if (!map.has(sig)) map.set(sig, key as StyleKey);
   }
   return map;
 }
