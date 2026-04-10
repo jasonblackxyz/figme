@@ -293,19 +293,7 @@ export function buildApi() {
       resetView: () => useViewportStore.getState().resetView(),
       /** Zoom + pan so the full canvas fits the visible area. */
       fitToPage: () => {
-        const doc = getCurrentDocument();
-        const page = doc.pages.find(p => p.id === doc.activePageId);
-        const config = doc.gridConfig;
-        const cols = page?.canvasColsOverride ?? config.canvasCols;
-        const rows = page?.canvasRowsOverride ?? config.canvasRows;
-        const canvasEl = document.querySelector('[role="application"]') as HTMLElement | null;
-        const vpW = canvasEl?.clientWidth  ?? window.innerWidth  - 460;
-        const vpH = canvasEl?.clientHeight ?? window.innerHeight - 80;
-        const zoom = Math.max(0.1, Math.min(5,
-          Math.min(vpW / (cols * config.cellWidth), vpH / (rows * config.cellHeight)) * 0.9,
-        ));
-        useViewportStore.getState().setZoom(zoom);
-        useViewportStore.getState().setPan(0, 0);
+        useViewportStore.getState().setAutoFitEnabled(true);
       },
     },
 

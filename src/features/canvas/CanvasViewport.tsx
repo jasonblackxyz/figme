@@ -6,6 +6,7 @@ import { useToolStore } from '@stores/toolStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { useComposedBuffer } from '@hooks/useComposedBuffer.ts';
 import { useCanvasInteraction } from './useCanvasInteraction.ts';
+import { useAutoFit } from '@hooks/useAutoFit.ts';
 import { SelectionOverlay } from './SelectionOverlay.tsx';
 import { DrawingPreview } from './DrawingPreview.tsx';
 import { ArtboardFrame } from './ArtboardFrame.tsx';
@@ -17,6 +18,7 @@ import styles from './CanvasViewport.module.css';
 export function CanvasViewport() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { onPointerDown, onPointerMove, onPointerUp, onDoubleClick, onWheel } = useCanvasInteraction(canvasRef);
+  useAutoFit(canvasRef);
 
   const panX = useViewportStore((s) => s.panX);
   const panY = useViewportStore((s) => s.panY);
