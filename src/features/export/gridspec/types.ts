@@ -1,4 +1,5 @@
 import type { StyleDef } from '@primitives/style-system/types.ts';
+import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 
 /** Top-level GridSpec document — the structured export format. */
 export interface GridSpec {
@@ -35,7 +36,7 @@ export interface GridSpecPage {
     chars: string[][];
     styles: string[][];
   };
-  colorOverrides?: Record<string, { color?: string; bg?: string }>;
+  colorOverrides?: ColorOverrideMap;
 }
 
 export interface GridSpecLayer {

@@ -37,7 +37,7 @@ export function computeColorOverrides(page: FigMePage): ColorOverrideMap {
       const { col, row } = layer.rect;
       for (const [relKey, bgColor] of Object.entries(layer.cellColorOverrides)) {
         const [relRow, relCol] = relKey.split(',').map(Number);
-        if (relRow !== undefined && relCol !== undefined) {
+        if (relRow != null && relCol != null && Number.isFinite(relRow) && Number.isFinite(relCol)) {
           const absKey = `${row + relRow},${col + relCol}`;
           colorOverrides[absKey] = {
             ...colorOverrides[absKey],
