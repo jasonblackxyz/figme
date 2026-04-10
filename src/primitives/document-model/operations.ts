@@ -339,6 +339,7 @@ export function groupLayers(
   const rects = layerIds
     .map((id) => page.layers[id]?.rect)
     .filter((r): r is GridRect => r !== undefined);
+  if (rects.length === 0) return page;
   const minCol = Math.min(...rects.map((r) => r.col));
   const minRow = Math.min(...rects.map((r) => r.row));
   const maxCol = Math.max(...rects.map((r) => r.col + r.width));

@@ -134,7 +134,13 @@ export function LayerRow({ layer, isSelected, onSelect, depth, isGroup, isCollap
         ? (page.layers[parentId]?.children ?? [])
         : page.layerOrder;
       const targetIdx = siblings.indexOf(layer.id);
-      const insertIdx = y < 0.5 ? targetIdx + 1 : targetIdx; // reversed display
+      const draggedIdx = siblings.indexOf(draggedId);
+      // Reversed display: top half = "before" in UI = insert after in array
+      let insertIdx = y < 0.5 ? targetIdx + 1 : targetIdx;
+      // Adjust for index shift when dragging within the same sibling list
+      if (draggedIdx !== -1 && draggedIdx < targetIdx) {
+        insertIdx--;
+      }
       updatedPage = moveLayerToGroup(updatedPage, draggedId, parentId, insertIdx);
     }
 
