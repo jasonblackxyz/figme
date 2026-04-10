@@ -185,6 +185,43 @@ describe('viewportStore', () => {
       expect(useViewportStore.getState().autoFitEnabled).toBe(false);
     });
 
+    it('setZoom snaps to auto-fit and re-enables when near fit zoom', () => {
+      // Set up known viewport dimensions so auto-fit computes a known zoom
+      useViewportStore.setState({
+        viewportWidth: 800,
+        viewportHeight: 600,
+        autoFitEnabled: false,
+      });
+      // First, find what auto-fit zoom would be
+      useViewportStore.getState().setAutoFitEnabled(true);
+      const fitZoom = useViewportStore.getState().zoom;
+      // Disable auto-fit and set a manual zoom
+      useViewportStore.setState({ autoFitEnabled: false, zoom: 2 });
+
+      // Now setZoom to a value within 8% of fit zoom — should snap
+      const nearFit = fitZoom * 1.05; // 5% above fit, within 8% threshold
+      useViewportStore.getState().setZoom(nearFit);
+      expect(useViewportStore.getState().autoFitEnabled).toBe(true);
+      expect(useViewportStore.getState().zoom).toBe(fitZoom);
+    });
+
+    it('setZoom does NOT snap when zoom is far below fit zoom', () => {
+      useViewportStore.setState({
+        viewportWidth: 800,
+        viewportHeight: 600,
+        autoFitEnabled: false,
+      });
+      // Get the fit zoom for reference
+      useViewportStore.getState().setAutoFitEnabled(true);
+      const fitZoom = useViewportStore.getState().zoom;
+      useViewportStore.setState({ autoFitEnabled: false, zoom: 2 });
+
+      // Zoom to half of fit — well outside 8% threshold
+      useViewportStore.getState().setZoom(fitZoom * 0.5);
+      expect(useViewportStore.getState().autoFitEnabled).toBe(false);
+      expect(useViewportStore.getState().zoom).not.toBe(fitZoom);
+    });
+
     it('setPan disables auto-fit', () => {
       useViewportStore.getState().setPan(100, 200);
       expect(useViewportStore.getState().autoFitEnabled).toBe(false);
