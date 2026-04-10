@@ -25,18 +25,26 @@ export function renderFiglet(
     outputLines.push('');
   }
 
-  // For each input character, look up its FIGlet representation and append
+  // For each input character, look up its FIGlet representation and append.
+  // Each character's lines are padded to consistent width so subsequent
+  // characters align vertically.
   for (let i = 0; i < text.length; i++) {
     const ch = text[i]!;
     const charCode = ch.charCodeAt(0);
     const charDef = font.characters[charCode];
 
     if (charDef && charDef[0]) {
-      // charDef is [lines] where lines is string[]
       const charLines = charDef[0];
+      // Find the max width across all lines of this character
+      let charWidth = 0;
+      for (let h = 0; h < height; h++) {
+        const len = (charLines[h] ?? '').length;
+        if (len > charWidth) charWidth = len;
+      }
+      // Append each line, padded to charWidth
       for (let h = 0; h < height; h++) {
         const line = charLines[h] ?? '';
-        outputLines[h] += line;
+        outputLines[h] += line.padEnd(charWidth);
       }
     } else {
       // Fallback: render the literal character for missing definitions
