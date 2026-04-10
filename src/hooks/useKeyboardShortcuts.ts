@@ -77,6 +77,13 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
+      // Ctrl+1: fit to page (auto-fit)
+      if (ctrl && e.key === '1') {
+        e.preventDefault();
+        useViewportStore.getState().setAutoFitEnabled(true);
+        return;
+      }
+
       // Ctrl+0: reset view
       if (ctrl && e.key === '0') {
         e.preventDefault();
