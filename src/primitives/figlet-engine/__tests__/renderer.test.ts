@@ -74,4 +74,32 @@ describe('renderFiglet', () => {
     // Should have content from both exclamation marks with space between
     expect(result.lines[0]!.length).toBeGreaterThan(0)
   })
+
+  it('pads uneven character lines so subsequent chars align', () => {
+    // Font where char 'A' has lines of different widths:
+    //   line 0: "/\" (2 chars)
+    //   line 1: "/__\" (4 chars)
+    // Without padding, "AA" would misalign:
+    //   line 0: "/\/\"   (A0 + A0 = 4 chars, second A starts at col 2)
+    //   line 1: "/__\/__\" (A1 + A1 = 8 chars, second A starts at col 4)
+    // With padding, A0 is padded to 4 so both lines start the second A at col 4.
+    const flfContent = [
+      'flf2a$ 2 1 6 0 1',
+      'Test font',
+      '  @',
+      '  @@',
+      // chars 33-64 omitted — 'A' is char 65, so we need stubs for 33-64
+      ...Array.from({ length: 32 }, () => ['x@', 'x@@']).flat(),
+      '/\\@',
+      '/__\\@@',
+    ].join('\n')
+    const font = parseFLF(flfContent)
+
+    const result = renderFiglet('AA', font)
+    // With padding, both A's should start at consistent positions
+    // Line 0: "/\  /\" → second A starts at col 4
+    // Line 1: "/__\/__\" → second A starts at col 4
+    expect(result.lines[0]).toBe('/\\  /\\')
+    expect(result.lines[1]).toBe('/__\\/__\\')
+  })
 })
