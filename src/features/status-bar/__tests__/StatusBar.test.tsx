@@ -34,7 +34,7 @@ describe('StatusBar', () => {
 
   it('renders layer count', () => {
     render(<StatusBar />);
-    const layerEl = screen.getByText('0 layers');
+    const layerEl = screen.getByText('1 layers');
     expect(layerEl).toBeInTheDocument();
     expect(layerEl).toHaveAttribute('data-status', 'layer-count');
   });
@@ -44,7 +44,7 @@ describe('StatusBar', () => {
     expect(screen.getByTestId('status-bar')).toBeInTheDocument();
     expect(screen.getByText('Col 42, Row 13')).toHaveAttribute('data-status', 'cursor-pos');
     expect(screen.getByText('100%')).toHaveAttribute('data-status', 'zoom');
-    expect(screen.getByText('0 layers')).toHaveAttribute('data-status', 'layer-count');
+    expect(screen.getByText('1 layers')).toHaveAttribute('data-status', 'layer-count');
   });
 
   it('updates when zoom changes', () => {

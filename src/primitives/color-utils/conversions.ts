@@ -1,6 +1,7 @@
 import type { HSV, RGB } from './types.ts';
 import type { FigMePage } from '@primitives/document-model/types.ts';
 import type { Palette } from '@primitives/style-system/types.ts';
+import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 
 export function hexToRgb(hex: string): RGB {
   const h = hex.replace('#', '');
@@ -85,7 +86,7 @@ export function extractDocumentColors(page: FigMePage, palette: Palette): string
     }
   }
 
-  for (const layerId of page.layerOrder) {
+  for (const layerId of flattenLayerOrder(page)) {
     const layer = page.layers[layerId];
     if (!layer) continue;
 

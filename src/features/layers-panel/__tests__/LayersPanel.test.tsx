@@ -51,7 +51,10 @@ describe('LayersPanel', () => {
     render(<LayersPanel />);
     const tree = screen.getByRole('tree');
     expect(tree).toBeInTheDocument();
-    expect(tree.children).toHaveLength(0);
+    // createEmptyPage() always includes a Background group layer
+    expect(tree.children).toHaveLength(1);
+    const items = screen.getAllByRole('treeitem');
+    expect(items[0]).toHaveAttribute('aria-label', 'Background');
   });
 
   it('renders layer rows for each layer in correct order', () => {
@@ -59,17 +62,20 @@ describe('LayersPanel', () => {
     render(<LayersPanel />);
 
     const items = screen.getAllByRole('treeitem');
-    expect(items).toHaveLength(2);
+    // 2 user layers + 1 Background layer
+    expect(items).toHaveLength(3);
 
-    // Reversed order: last added (Welcome Text) appears first
+    // Reversed order: last added (Welcome Text) appears first, Background last
     expect(items[0]).toHaveAttribute('aria-label', 'Welcome Text');
     expect(items[1]).toHaveAttribute('aria-label', 'Header Box');
+    expect(items[2]).toHaveAttribute('aria-label', 'Background');
 
     // Verify layer order matches reverse of layerOrder
+    // layerOrder is [bgId, headerId, textId], reversed display: [textId, headerId, bgId]
     const firstId = items[0]!.getAttribute('data-layer-id');
     const secondId = items[1]!.getAttribute('data-layer-id');
-    expect(firstId).toBe(page.layerOrder[1]);
-    expect(secondId).toBe(page.layerOrder[0]);
+    expect(firstId).toBe(page.layerOrder[2]);
+    expect(secondId).toBe(page.layerOrder[1]);
   });
 
   it('has correct aria attributes', () => {
@@ -82,19 +88,23 @@ describe('LayersPanel', () => {
     const items = screen.getAllByRole('treeitem');
     expect(items[0]).toHaveAttribute('aria-selected', 'false');
     expect(items[1]).toHaveAttribute('aria-selected', 'false');
+    expect(items[2]).toHaveAttribute('aria-selected', 'false');
   });
 
   it('marks selected layers with aria-selected', () => {
     const { page } = setupDocWithLayers();
-    const firstLayerId = page.layerOrder[0]!;
-    useUiStore.setState({ selectedLayerIds: [firstLayerId] });
+    // layerOrder[0] is Background; select first user layer (Header Box) at index 1
+    const headerLayerId = page.layerOrder[1]!;
+    useUiStore.setState({ selectedLayerIds: [headerLayerId] });
 
     render(<LayersPanel />);
     const items = screen.getAllByRole('treeitem');
 
-    // First in layerOrder is second in display (reversed)
+    // layerOrder is [bgId, headerId, textId], reversed display: [textId, headerId, bgId]
+    // Header Box is items[1] in display
     expect(items[1]).toHaveAttribute('aria-selected', 'true');
     expect(items[0]).toHaveAttribute('aria-selected', 'false');
+    expect(items[2]).toHaveAttribute('aria-selected', 'false');
   });
 
   it('renders correct data attributes', () => {

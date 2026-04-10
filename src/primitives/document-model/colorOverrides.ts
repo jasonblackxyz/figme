@@ -1,4 +1,5 @@
-import type { FigMePage } from './types.ts';
+import type { FigMePage, Layer } from './types.ts';
+import { flattenLayerOrder, isEffectivelyHidden } from './hierarchy.ts';
 
 export type ColorOverrideMap = Record<string, { color?: string; bg?: string }>;
 
@@ -17,9 +18,10 @@ export function computeColorOverrides(page: FigMePage): ColorOverrideMap {
   }
 
   // Build color overrides from layers (higher z-order overwrites lower)
-  for (const layerId of page.layerOrder) {
-    const layer = page.layers[layerId];
-    if (!layer || !layer.visible) continue;
+  for (const layerId of flattenLayerOrder(page)) {
+    const layer: Layer | undefined = page.layers[layerId];
+    if (!layer || layer.kind === 'group') continue;
+    if (isEffectivelyHidden(page, layerId)) continue;
 
     if (layer.customColors) {
       const { col, row, width, height } = layer.rect;

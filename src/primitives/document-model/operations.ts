@@ -49,15 +49,53 @@ export function addLayer(
 
 /**
  * Remove a layer from a page by ID.
+ * Refuses to remove Background layers. Handles hierarchy cleanup.
  */
 export function removeLayer(page: FigMePage, layerId: string): FigMePage {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { [layerId]: _removed, ...remainingLayers } = page.layers;
-  return {
-    ...page,
-    layers: remainingLayers,
-    layerOrder: page.layerOrder.filter((id) => id !== layerId),
+  const layer = page.layers[layerId];
+  if (!layer) return page;
+  if (layer.isBackground) return page;
+
+  let result = { ...page, layers: { ...page.layers } };
+
+  // Collect IDs to remove (layer + all descendants if group)
+  const toRemove = new Set<string>([layerId]);
+  if (layer.kind === 'group' && layer.children?.length) {
+    const collectDescendants = (ids: string[]) => {
+      for (const id of ids) {
+        toRemove.add(id);
+        const child = page.layers[id];
+        if (child?.kind === 'group' && child.children?.length) {
+          collectDescendants(child.children);
+        }
+      }
+    };
+    collectDescendants(layer.children);
+  }
+
+  // Remove from parent's children if nested
+  if (layer.parentId) {
+    const parent = result.layers[layer.parentId];
+    if (parent?.children) {
+      result.layers[layer.parentId] = {
+        ...parent,
+        children: parent.children.filter((id) => id !== layerId),
+      };
+    }
+  }
+
+  // Remove all collected IDs from layers map
+  for (const id of toRemove) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete result.layers[id];
+  }
+
+  result = {
+    ...result,
+    layerOrder: result.layerOrder.filter((id) => !toRemove.has(id)),
   };
+
+  return result;
 }
 
 /**
@@ -234,17 +272,300 @@ export function createEmptyDocument(
 }
 
 /**
- * Create an empty FigMe page.
+ * Create an empty FigMe page with a default Background layer.
  */
 export function createEmptyPage(name?: string): FigMePage {
+  const bgId = generateId();
+  const bgLayer: Layer = {
+    id: bgId,
+    kind: 'group',
+    name: 'Background',
+    rect: { col: 0, row: 0, width: 0, height: 0 },
+    visible: true,
+    locked: false,
+    opacity: 1,
+    styleKey: 'bg',
+    children: [],
+    isBackground: true,
+    properties: {},
+  };
+
   return {
     id: `page_${Date.now()}_${++idCounter}`,
     name: name ?? 'Untitled Page',
-    layers: {},
-    layerOrder: [],
+    layers: { [bgId]: bgLayer },
+    layerOrder: [bgId],
     canvasX: 0,
     canvasY: 0,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Group / Ungroup
+// ---------------------------------------------------------------------------
+
+/**
+ * Group the given layers into a new group.  The group is inserted at the
+ * position of the frontmost selected element.
+ */
+export function groupLayers(
+  page: FigMePage,
+  layerIds: string[],
+  groupName?: string,
+): FigMePage {
+  if (layerIds.length === 0) return page;
+
+  const layers = { ...page.layers };
+  let layerOrder = [...page.layerOrder];
+
+  // Determine each layer's sibling list and remove from it
+  for (const id of layerIds) {
+    const layer = layers[id];
+    if (!layer) continue;
+    if (layer.parentId) {
+      const parent = layers[layer.parentId];
+      if (parent?.children) {
+        layers[layer.parentId] = {
+          ...parent,
+          children: parent.children.filter((c) => c !== id),
+        };
+      }
+    } else {
+      layerOrder = layerOrder.filter((c) => c !== id);
+    }
+  }
+
+  // Compute bounding rect from children
+  const rects = layerIds
+    .map((id) => page.layers[id]?.rect)
+    .filter((r): r is GridRect => r !== undefined);
+  if (rects.length === 0) return page;
+  const minCol = Math.min(...rects.map((r) => r.col));
+  const minRow = Math.min(...rects.map((r) => r.row));
+  const maxCol = Math.max(...rects.map((r) => r.col + r.width));
+  const maxRow = Math.max(...rects.map((r) => r.row + r.height));
+
+  // Create the group layer
+  const groupId = generateId();
+  const groupLayer: Layer = {
+    id: groupId,
+    kind: 'group',
+    name: groupName ?? 'Group',
+    rect: { col: minCol, row: minRow, width: maxCol - minCol, height: maxRow - minRow },
+    visible: true,
+    locked: false,
+    opacity: 1,
+    styleKey: 'bg',
+    children: layerIds,
+    properties: {},
+  };
+
+  // Set parentId on children
+  for (const id of layerIds) {
+    const child = layers[id];
+    if (child) {
+      layers[id] = { ...child, parentId: groupId };
+    }
+  }
+
+  // Insert group at the position of the frontmost element in the original order
+  const originalOrder = page.layerOrder;
+  let insertIdx = layerOrder.length;
+  for (let i = originalOrder.length - 1; i >= 0; i--) {
+    if (layerIds.includes(originalOrder[i]!)) {
+      // Find where the element _before_ this one ended up in the new order
+      const beforeId = originalOrder.slice(0, i).reverse().find((id) => layerOrder.includes(id));
+      insertIdx = beforeId ? layerOrder.indexOf(beforeId) + 1 : 0;
+      break;
+    }
+  }
+
+  layerOrder.splice(insertIdx, 0, groupId);
+  layers[groupId] = groupLayer;
+
+  return { ...page, layers, layerOrder };
+}
+
+/**
+ * Dissolve a group — its children are spliced into the parent's order
+ * at the group's position.
+ */
+export function ungroupLayers(page: FigMePage, groupId: string): FigMePage {
+  const group = page.layers[groupId];
+  if (!group || group.kind !== 'group' || group.isBackground) return page;
+
+  const children = group.children ?? [];
+  const layers = { ...page.layers };
+
+  // Clear parentId on children (or set to group's parent if nested)
+  for (const childId of children) {
+    const child = layers[childId];
+    if (child) {
+      layers[childId] = group.parentId
+        ? { ...child, parentId: group.parentId }
+        : { ...child, parentId: undefined };
+    }
+  }
+
+  // Splice children into the group's position in its sibling list
+  if (group.parentId) {
+    const parent = layers[group.parentId];
+    if (parent?.children) {
+      const idx = parent.children.indexOf(groupId);
+      const newChildren = [...parent.children];
+      newChildren.splice(idx, 1, ...children);
+      layers[group.parentId] = { ...parent, children: newChildren };
+    }
+  } else {
+    const idx = page.layerOrder.indexOf(groupId);
+    const newOrder = [...page.layerOrder];
+    newOrder.splice(idx, 1, ...children);
+    // Remove the group from layers, return with spliced order
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete layers[groupId];
+    return { ...page, layers, layerOrder: newOrder };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  delete layers[groupId];
+  return { ...page, layers, layerOrder: page.layerOrder.filter((id) => id !== groupId) };
+}
+
+// ---------------------------------------------------------------------------
+// Z-order operations — work within sibling list
+// ---------------------------------------------------------------------------
+
+function getSiblingList(page: FigMePage, layerId: string): { list: string[]; key: 'layerOrder' | 'children'; parentId?: string } {
+  const layer = page.layers[layerId];
+  if (!layer) return { list: [], key: 'layerOrder' };
+  if (layer.parentId) {
+    const parent = page.layers[layer.parentId];
+    return { list: parent?.children ?? [], key: 'children', parentId: layer.parentId };
+  }
+  return { list: page.layerOrder, key: 'layerOrder' };
+}
+
+function applySiblingOrder(page: FigMePage, newList: string[], parentId?: string): FigMePage {
+  if (parentId) {
+    const parent = page.layers[parentId];
+    if (!parent) return page;
+    return {
+      ...page,
+      layers: { ...page.layers, [parentId]: { ...parent, children: newList } },
+    };
+  }
+  return { ...page, layerOrder: newList };
+}
+
+/** Smallest index that a non-background layer can occupy at root level. */
+function bgGuardIndex(page: FigMePage, siblings: string[]): number {
+  const first = siblings[0];
+  if (first && page.layers[first]?.isBackground) return 1;
+  return 0;
+}
+
+export function bringForward(page: FigMePage, layerId: string): FigMePage {
+  if (page.layers[layerId]?.isBackground) return page;
+  const { list, parentId } = getSiblingList(page, layerId);
+  const idx = list.indexOf(layerId);
+  if (idx === -1 || idx >= list.length - 1) return page;
+  const next = [...list];
+  [next[idx], next[idx + 1]] = [next[idx + 1]!, next[idx]!];
+  return applySiblingOrder(page, next, parentId);
+}
+
+export function sendBackward(page: FigMePage, layerId: string): FigMePage {
+  if (page.layers[layerId]?.isBackground) return page;
+  const { list, parentId } = getSiblingList(page, layerId);
+  const idx = list.indexOf(layerId);
+  const minIdx = parentId ? 0 : bgGuardIndex(page, list);
+  if (idx === -1 || idx <= minIdx) return page;
+  const next = [...list];
+  [next[idx], next[idx - 1]] = [next[idx - 1]!, next[idx]!];
+  return applySiblingOrder(page, next, parentId);
+}
+
+export function bringToFront(page: FigMePage, layerId: string): FigMePage {
+  if (page.layers[layerId]?.isBackground) return page;
+  const { list, parentId } = getSiblingList(page, layerId);
+  const idx = list.indexOf(layerId);
+  if (idx === -1 || idx >= list.length - 1) return page;
+  const next = list.filter((id) => id !== layerId);
+  next.push(layerId);
+  return applySiblingOrder(page, next, parentId);
+}
+
+export function sendToBack(page: FigMePage, layerId: string): FigMePage {
+  if (page.layers[layerId]?.isBackground) return page;
+  const { list, parentId } = getSiblingList(page, layerId);
+  const idx = list.indexOf(layerId);
+  const minIdx = parentId ? 0 : bgGuardIndex(page, list);
+  if (idx === -1 || idx <= minIdx) return page;
+  const next = list.filter((id) => id !== layerId);
+  next.splice(minIdx, 0, layerId);
+  return applySiblingOrder(page, next, parentId);
+}
+
+// ---------------------------------------------------------------------------
+// Reparent (drag-and-drop)
+// ---------------------------------------------------------------------------
+
+/**
+ * Move a layer to a different group (or to root if targetGroupId is null).
+ * Validates against circular references.
+ */
+export function moveLayerToGroup(
+  page: FigMePage,
+  layerId: string,
+  targetGroupId: string | null,
+  insertIndex?: number,
+): FigMePage {
+  const layer = page.layers[layerId];
+  if (!layer || layer.isBackground) return page;
+
+  // Prevent circular ref: target must not be a descendant of layerId
+  if (targetGroupId) {
+    let check: string | undefined = targetGroupId;
+    while (check) {
+      if (check === layerId) return page;
+      check = page.layers[check]?.parentId;
+    }
+  }
+
+  let layers = { ...page.layers };
+  let layerOrder = [...page.layerOrder];
+
+  // Remove from current parent
+  if (layer.parentId) {
+    const parent = layers[layer.parentId];
+    if (parent?.children) {
+      layers[layer.parentId] = {
+        ...parent,
+        children: parent.children.filter((id) => id !== layerId),
+      };
+    }
+  } else {
+    layerOrder = layerOrder.filter((id) => id !== layerId);
+  }
+
+  // Insert into target
+  if (targetGroupId) {
+    const target = layers[targetGroupId];
+    if (!target || target.kind !== 'group') return page;
+    const children = [...(target.children ?? [])];
+    const idx = insertIndex !== undefined ? Math.min(insertIndex, children.length) : children.length;
+    children.splice(idx, 0, layerId);
+    layers[targetGroupId] = { ...target, children };
+    layers[layerId] = { ...layer, parentId: targetGroupId };
+  } else {
+    const idx = insertIndex !== undefined ? Math.min(insertIndex, layerOrder.length) : layerOrder.length;
+    // Respect Background position at root
+    const minIdx = bgGuardIndex(page, layerOrder);
+    layerOrder.splice(Math.max(idx, minIdx), 0, layerId);
+    layers[layerId] = { ...layer, parentId: undefined };
+  }
+
+  return { ...page, layers, layerOrder };
 }
 
 /**

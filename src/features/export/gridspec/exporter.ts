@@ -8,6 +8,7 @@ import type {
   ComponentInstanceProperties,
   Layer,
 } from '@primitives/document-model/types.ts';
+import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 import type { Palette, StyleDef } from '@primitives/style-system/types.ts';
 import { BORDER_CHARS } from '@primitives/stamp-system/stamps.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
@@ -52,7 +53,7 @@ export function exportAsGridSpec(doc: FigMeDocument, options?: GridSpecExportOpt
     const rows = page.canvasRowsOverride ?? gridConfig.canvasRows;
     const hasOverride = page.canvasColsOverride != null || page.canvasRowsOverride != null;
 
-    const layers: GridSpecLayer[] = page.layerOrder
+    const layers: GridSpecLayer[] = flattenLayerOrder(page)
       .map((id) => page.layers[id])
       .filter((layer): layer is Layer => layer != null)
       .map((layer) => buildSpecLayer(layer, page.layers, doc));

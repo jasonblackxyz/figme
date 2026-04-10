@@ -1,6 +1,18 @@
 import { create } from 'zustand';
-import type { FigMeDocument, SwatchCollection } from '@primitives/document-model/types.ts';
-import { createEmptyDocument, updateLayer, removeLayer, addLayer } from '@primitives/document-model/operations.ts';
+import type { FigMeDocument, FigMePage, SwatchCollection } from '@primitives/document-model/types.ts';
+import {
+  createEmptyDocument,
+  updateLayer,
+  removeLayer,
+  addLayer,
+  groupLayers,
+  ungroupLayers,
+  bringForward as bringForwardOp,
+  sendBackward as sendBackwardOp,
+  bringToFront as bringToFrontOp,
+  sendToBack as sendToBackOp,
+  moveLayerToGroup as moveLayerToGroupOp,
+} from '@primitives/document-model/operations.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 
 interface CellCoord {
@@ -55,6 +67,15 @@ interface DocumentState {
     bgColor: string | undefined,
     options?: PaintMutationOptions,
   ) => void;
+  groupSelectedLayers: () => void;
+  ungroupSelectedLayers: () => void;
+  bringForward: () => void;
+  sendBackward: () => void;
+  bringToFront: () => void;
+  sendToBack: () => void;
+  moveLayerToGroup: (layerId: string, targetGroupId: string | null, insertIndex?: number) => void;
+  toggleLockOnSelection: () => void;
+  toggleVisibilityOnSelection: () => void;
 }
 
 function buildOverrideMap(
@@ -384,4 +405,118 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       },
     });
   },
+
+  // -- Layer hierarchy actions -----------------------------------------------
+
+  groupSelectedLayers: () => {
+    const doc = get().document;
+    const page = doc.pages.find(p => p.id === doc.activePageId);
+    const selected = useUiStore.getState().selectedLayerIds;
+    if (!page || selected.length < 2) return;
+    get().pushUndo();
+    const updated = groupLayers(page, selected);
+    commitPage(set, doc, page, updated);
+    // Select the new group
+    const newGroupId = updated.layerOrder.find(id => updated.layers[id]?.kind === 'group' && !updated.layers[id]?.isBackground && !page.layerOrder.includes(id));
+    if (newGroupId) useUiStore.getState().setSelectedLayers([newGroupId]);
+  },
+
+  ungroupSelectedLayers: () => {
+    const doc = get().document;
+    const page = doc.pages.find(p => p.id === doc.activePageId);
+    const selected = useUiStore.getState().selectedLayerIds;
+    if (!page || selected.length === 0) return;
+    get().pushUndo();
+    let updated = page;
+    const freedChildren: string[] = [];
+    for (const id of selected) {
+      const layer = updated.layers[id];
+      if (layer?.kind === 'group' && !layer.isBackground) {
+        freedChildren.push(...(layer.children ?? []));
+        updated = ungroupLayers(updated, id);
+      }
+    }
+    commitPage(set, doc, page, updated);
+    useUiStore.getState().setSelectedLayers(freedChildren);
+  },
+
+  bringForward: () => {
+    applyZOrder(get, set, bringForwardOp);
+  },
+
+  sendBackward: () => {
+    applyZOrder(get, set, sendBackwardOp);
+  },
+
+  bringToFront: () => {
+    applyZOrder(get, set, bringToFrontOp);
+  },
+
+  sendToBack: () => {
+    applyZOrder(get, set, sendToBackOp);
+  },
+
+  moveLayerToGroup: (layerId: string, targetGroupId: string | null, insertIndex?: number) => {
+    const doc = get().document;
+    const page = doc.pages.find(p => p.id === doc.activePageId);
+    if (!page) return;
+    get().pushUndo();
+    const updated = moveLayerToGroupOp(page, layerId, targetGroupId, insertIndex);
+    commitPage(set, doc, page, updated);
+  },
+
+  toggleLockOnSelection: () => {
+    const doc = get().document;
+    const page = doc.pages.find(p => p.id === doc.activePageId);
+    const selected = useUiStore.getState().selectedLayerIds;
+    if (!page || selected.length === 0) return;
+    const anyUnlocked = selected.some(id => !page.layers[id]?.locked);
+    get().pushUndo();
+    let updated = page;
+    for (const id of selected) {
+      updated = updateLayer(updated, id, { locked: anyUnlocked });
+    }
+    commitPage(set, doc, page, updated);
+  },
+
+  toggleVisibilityOnSelection: () => {
+    const doc = get().document;
+    const page = doc.pages.find(p => p.id === doc.activePageId);
+    const selected = useUiStore.getState().selectedLayerIds;
+    if (!page || selected.length === 0) return;
+    const anyVisible = selected.some(id => page.layers[id]?.visible);
+    get().pushUndo();
+    let updated = page;
+    for (const id of selected) {
+      updated = updateLayer(updated, id, { visible: !anyVisible });
+    }
+    commitPage(set, doc, page, updated);
+  },
 }));
+
+// Helpers to reduce repetition in store actions
+
+type StoreGet = () => DocumentState;
+type StoreSet = (partial: Partial<DocumentState>) => void;
+
+function commitPage(set: StoreSet, doc: FigMeDocument, oldPage: FigMePage, newPage: FigMePage) {
+  set({
+    document: {
+      ...doc,
+      pages: doc.pages.map(p => p.id === oldPage.id ? newPage : p),
+    },
+  });
+}
+
+function applyZOrder(getState: StoreGet, set: StoreSet, op: (page: FigMePage, layerId: string) => FigMePage) {
+  const doc = getState().document;
+  const page = doc.pages.find(p => p.id === doc.activePageId);
+  const selected = useUiStore.getState().selectedLayerIds;
+  if (!page || selected.length === 0) return;
+  getState().pushUndo();
+  let updated = page;
+  for (const id of selected) {
+    updated = op(updated, id);
+  }
+  commitPage(set, doc, page, updated);
+}

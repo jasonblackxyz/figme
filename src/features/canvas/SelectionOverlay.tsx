@@ -5,6 +5,7 @@ import { useUiStore } from '@stores/uiStore.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
 import { updateLayer } from '@primitives/document-model/operations.ts';
+import { isEffectivelyLocked } from '@primitives/document-model/hierarchy.ts';
 import { HANDLES, computeResizeDragDelta, computeResizedRect } from './resizeHandles.ts';
 import type { ResizeHandle } from './resizeHandles.ts';
 import styles from './SelectionOverlay.module.css';
@@ -34,7 +35,7 @@ export function SelectionOverlay({ gridConfig, panX, panY }: SelectionOverlayPro
   const selectedLayerId = selectedLayerIds.length === 1 ? selectedLayerIds[0]! : null;
   const selectedLayer = selectedLayerId && page ? page.layers[selectedLayerId] : null;
 
-  const showHandles = Boolean(selectedLayer && !selectedLayer.locked);
+  const showHandles = Boolean(selectedLayer && selectedLayerId && page && !isEffectivelyLocked(page, selectedLayerId));
 
   const onHandlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>, handle: ResizeHandle, layerId: string) => {
@@ -49,7 +50,7 @@ export function SelectionOverlay({ gridConfig, panX, panY }: SelectionOverlayPro
         (p) => p.id === docState.document.activePageId,
       );
       const layer = currentPage?.layers[layerId];
-      if (!layer || !currentPage || layer.locked) return;
+      if (!layer || !currentPage || isEffectivelyLocked(currentPage, layerId)) return;
 
       const origRect: GridRect = { ...layer.rect };
 
@@ -85,7 +86,7 @@ export function SelectionOverlay({ gridConfig, panX, panY }: SelectionOverlayPro
         const pg = ds.document.pages.find((p) => p.id === ds.document.activePageId);
         if (!pg) return;
         const currentLayer = pg.layers[layerId];
-        if (!currentLayer || currentLayer.locked) return;
+        if (!currentLayer || isEffectivelyLocked(pg, layerId)) return;
 
         const updatedPage = updateLayer(pg, layerId, { rect: newRect });
         const updatedDoc = {

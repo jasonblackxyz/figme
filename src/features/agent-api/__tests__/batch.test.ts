@@ -46,23 +46,23 @@ describe('batch()', () => {
     unsub();
     // The document-change notification should fire exactly once (final setDocument at batch end)
     expect(listener).toHaveBeenCalledTimes(1);
-    // All three layers should be present
-    expect(api.getLayers()).toHaveLength(3);
+    // All three layers should be present (+ 1 Background layer)
+    expect(api.getLayers()).toHaveLength(4);
   });
 
   it('supports read-after-write within a batch', () => {
     api.batch(() => {
       api.addLayer('border-box', 'First', { col: 0, row: 0, width: 10, height: 5 }, 'border');
 
-      // getLayers() inside batch should see the layer just added
+      // getLayers() inside batch should see the layer just added (+ 1 Background layer)
       const layers = api.getLayers();
-      expect(layers).toHaveLength(1);
-      expect(layers[0]!.name).toBe('First');
+      expect(layers).toHaveLength(2);
+      expect(layers[1]!.name).toBe('First');
 
       // getDocument() inside batch should also reflect the pending state
       const doc = api.getDocument();
       const page = doc.pages.find(p => p.id === doc.activePageId);
-      expect(page?.layerOrder).toHaveLength(1);
+      expect(page?.layerOrder).toHaveLength(2);
     });
   });
 
@@ -77,13 +77,13 @@ describe('batch()', () => {
         api.addLayer('border-box', 'Inner', { col: 15, row: 0, width: 10, height: 5 }, 'border');
       });
 
-      // After inner batch completes, layers should still be accumulating
-      expect(api.getLayers()).toHaveLength(2);
+      // After inner batch completes, layers should still be accumulating (+ 1 Background layer)
+      expect(api.getLayers()).toHaveLength(3);
     });
 
     unsub();
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(api.getLayers()).toHaveLength(2);
+    expect(api.getLayers()).toHaveLength(3);
   });
 
   it('discards changes on error (transactional rollback)', () => {
@@ -99,9 +99,9 @@ describe('batch()', () => {
     }).toThrow('intentional error');
 
     unsub();
-    // Document should be unchanged — the layer was discarded
+    // Document should be unchanged — the layer was discarded (Background layer still present)
     expect(useDocumentStore.getState().document).toBe(docBefore);
-    expect(api.getLayers()).toHaveLength(0);
+    expect(api.getLayers()).toHaveLength(1);
     // No document-change notification should have fired
     expect(listener).toHaveBeenCalledTimes(0);
   });
@@ -115,25 +115,25 @@ describe('batch()', () => {
     unsub();
     // Outside batch, each mutation fires the subscriber directly
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(api.getLayers()).toHaveLength(1);
+    expect(api.getLayers()).toHaveLength(2);
   });
 
   it('single undo reverts all mutations from one batch', () => {
-    // Add a layer outside batch first
+    // Add a layer outside batch first (+ 1 Background layer)
     api.addLayer('border-box', 'Pre', { col: 0, row: 0, width: 10, height: 5 }, 'border');
-    expect(api.getLayers()).toHaveLength(1);
+    expect(api.getLayers()).toHaveLength(2);
 
     // Batch-add two more layers
     api.batch(() => {
       api.addLayer('border-box', 'Batch1', { col: 15, row: 0, width: 10, height: 5 }, 'border');
       api.addLayer('border-box', 'Batch2', { col: 30, row: 0, width: 10, height: 5 }, 'border');
     });
-    expect(api.getLayers()).toHaveLength(3);
+    expect(api.getLayers()).toHaveLength(4);
 
     // Single undo should revert the entire batch
     useDocumentStore.getState().undo();
-    expect(api.getLayers()).toHaveLength(1);
-    expect(api.getLayers()[0]!.name).toBe('Pre');
+    expect(api.getLayers()).toHaveLength(2);
+    expect(api.getLayers()[1]!.name).toBe('Pre');
   });
 
   it('addPage works inside batch', () => {
@@ -141,8 +141,8 @@ describe('batch()', () => {
       api.addLayer('border-box', 'OnPage1', { col: 0, row: 0, width: 10, height: 5 }, 'border');
       const newPageId = api.addPage('Page 2');
       expect(newPageId).toBeTruthy();
-      // After addPage, active page switches — getLayers returns empty for new page
-      expect(api.getLayers()).toHaveLength(0);
+      // After addPage, active page switches — getLayers returns Background layer for new page
+      expect(api.getLayers()).toHaveLength(1);
     });
 
     // Both pages should exist

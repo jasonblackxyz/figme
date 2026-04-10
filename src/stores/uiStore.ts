@@ -33,9 +33,12 @@ interface UiState {
   setOpenColorPickerId: (id: string | null) => void;
   setBrushSize: (size: 1 | 2 | 3) => void;
   setEraserMode: (v: boolean) => void;
+  collapsedGroupIds: string[];
+  toggleGroupCollapsed: (id: string) => void;
+  isGroupCollapsed: (id: string) => boolean;
 }
 
-export const useUiStore = create<UiState>((set) => ({
+export const useUiStore = create<UiState>((set, get) => ({
   selectedLayerIds: [],
   hoveredLayerId: null,
   layersPanelOpen: true,
@@ -71,4 +74,12 @@ export const useUiStore = create<UiState>((set) => ({
   setOpenColorPickerId: (id: string | null) => set({ openColorPickerId: id }),
   setBrushSize: (size: 1 | 2 | 3) => set({ brushSize: size }),
   setEraserMode: (v: boolean) => set({ eraserMode: v }),
+  collapsedGroupIds: [],
+  toggleGroupCollapsed: (id: string) =>
+    set((s) => ({
+      collapsedGroupIds: s.collapsedGroupIds.includes(id)
+        ? s.collapsedGroupIds.filter((gid) => gid !== id)
+        : [...s.collapsedGroupIds, id],
+    })),
+  isGroupCollapsed: (id: string) => get().collapsedGroupIds.includes(id),
 }));

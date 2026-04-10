@@ -2,6 +2,7 @@ import type { ToolHandler } from './types.ts';
 import type { GridPosition } from '@primitives/grid-engine/types.ts';
 import { rectIntersects } from '@primitives/grid-engine/geometry.ts';
 import { moveLayer } from '@primitives/document-model/operations.ts';
+import { flattenLayerOrder, isEffectivelyLocked, isEffectivelyHidden } from '@primitives/document-model/hierarchy.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { hitTestLayers } from './hitTest.ts';
@@ -116,9 +117,10 @@ export const selectTool: ToolHandler = {
         const page = doc.pages.find((p) => p.id === doc.activePageId);
         if (page) {
           const hits: string[] = [];
-          for (const layerId of page.layerOrder) {
+          for (const layerId of flattenLayerOrder(page)) {
             const layer = page.layers[layerId];
-            if (!layer || !layer.visible || layer.locked) continue;
+            if (!layer || layer.kind === 'group') continue;
+            if (isEffectivelyHidden(page, layerId) || isEffectivelyLocked(page, layerId)) continue;
             if (rectIntersects(marquee, layer.rect)) {
               hits.push(layer.id);
             }

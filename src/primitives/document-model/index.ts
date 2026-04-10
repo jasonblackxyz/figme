@@ -28,7 +28,20 @@ export {
   detachComponent,
   createEmptyDocument,
   createEmptyPage,
+  groupLayers,
+  ungroupLayers,
+  bringForward,
+  sendBackward,
+  bringToFront,
+  sendToBack,
+  moveLayerToGroup,
 } from './operations.ts'
+export {
+  flattenLayerOrder,
+  isEffectivelyLocked,
+  isEffectivelyHidden,
+  getDepth,
+} from './hierarchy.ts'
 export { serializeDocument, deserializeDocument } from './serialization.ts'
 export type { ColorOverrideMap } from './colorOverrides.ts'
 export { computeColorOverrides } from './colorOverrides.ts'

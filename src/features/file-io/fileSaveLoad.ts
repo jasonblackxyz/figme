@@ -1,4 +1,5 @@
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import { deserializeDocument } from '@primitives/document-model/serialization.ts';
 import { downloadFile } from '@features/export/downloadFile.ts';
 
 /**
@@ -49,7 +50,7 @@ export async function loadDocument(): Promise<FigMeDocument | null> {
       if (!handle) return null;
       const file = await handle.getFile();
       const text = await file.text();
-      return JSON.parse(text) as FigMeDocument;
+      return deserializeDocument(text);
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return null;
     }
@@ -65,7 +66,7 @@ export async function loadDocument(): Promise<FigMeDocument | null> {
       if (!file) { resolve(null); return; }
       const text = await file.text();
       try {
-        resolve(JSON.parse(text) as FigMeDocument);
+        resolve(deserializeDocument(text));
       } catch {
         resolve(null);
       }

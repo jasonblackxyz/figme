@@ -1,4 +1,5 @@
-import type { FigMePage } from '@primitives/document-model/types.ts';
+import type { FigMePage, Layer } from '@primitives/document-model/types.ts';
+import { flattenLayerOrder, isEffectivelyHidden } from '@primitives/document-model/hierarchy.ts';
 import type {
   BorderBoxProperties,
   TextBlockProperties,
@@ -27,9 +28,10 @@ import { getFigletFont } from '@primitives/figlet-engine/fonts/index.ts';
 export function composePageBuffer(page: FigMePage, gridConfig: GridConfig, skipLayerId?: string | null): StampBuffer {
   let buffer = createBuffer(gridConfig.canvasCols, gridConfig.canvasRows);
 
-  for (const layerId of page.layerOrder) {
-    const layer = page.layers[layerId];
-    if (!layer || !layer.visible) continue;
+  for (const layerId of flattenLayerOrder(page)) {
+    const layer: Layer | undefined = page.layers[layerId];
+    if (!layer || layer.kind === 'group') continue;
+    if (isEffectivelyHidden(page, layerId)) continue;
     if (skipLayerId && layer.id === skipLayerId) continue;
 
     let layerBuffer: StampBuffer | null = null;

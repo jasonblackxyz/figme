@@ -102,6 +102,7 @@ export interface Layer {
   styleKey: StyleKey;
   children?: string[];
   parentId?: string;
+  isBackground?: boolean;
   properties: LayerProperties;
   autoLayout?: AutoLayoutConfig;
   customColors?: { color?: string; bg?: string };

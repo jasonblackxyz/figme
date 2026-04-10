@@ -45,7 +45,7 @@ describe('drawTool', () => {
       'border',
       boxProps,
     );
-    const layerId = updatedPage.layerOrder[0]!;
+    const layerId = updatedPage.layerOrder[updatedPage.layerOrder.length - 1]!;
 
     useDocumentStore.setState({
       document: {

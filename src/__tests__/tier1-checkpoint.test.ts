@@ -71,7 +71,7 @@ describe('Tier 1 Checkpoint', () => {
     doc = { ...doc, pages: [updatedPage1, doc.pages[1]!] }
 
     expect(doc.pages).toHaveLength(2)
-    expect(Object.keys(doc.pages[0]!.layers)).toHaveLength(1)
+    expect(Object.keys(doc.pages[0]!.layers)).toHaveLength(2) // Background + 1 user layer
     expect(doc.name).toBe('Checkpoint Test')
   })
 
@@ -276,8 +276,8 @@ describe('Tier 1 Checkpoint', () => {
     expect(modalBottomSpan).toBeDefined()
 
     // Document model has correct layer count
-    expect(Object.keys(doc.pages[0]!.layers)).toHaveLength(2)
-    expect(doc.pages[0]!.layerOrder).toHaveLength(2)
+    expect(Object.keys(doc.pages[0]!.layers)).toHaveLength(3) // Background + 2 user layers
+    expect(doc.pages[0]!.layerOrder).toHaveLength(3)
   })
 
   it('flows text through a border-box using the Text Flow Engine', () => {

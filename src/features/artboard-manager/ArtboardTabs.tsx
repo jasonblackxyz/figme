@@ -18,7 +18,10 @@ export function ArtboardTabs() {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Close context menu on outside click
   useEffect(() => {
@@ -35,6 +38,31 @@ export function ArtboardTabs() {
       inputRef.current.select();
     }
   }, [editingPageId]);
+
+  // Detect overflow for scroll arrows
+  const updateOverflow = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setShowLeftArrow(el.scrollLeft > 0);
+    setShowRightArrow(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateOverflow();
+    el.addEventListener('scroll', updateOverflow);
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateOverflow) : null;
+    observer?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateOverflow);
+      observer?.disconnect();
+    };
+  }, [updateOverflow, doc.pages.length]);
+
+  const scrollTabs = useCallback((direction: number) => {
+    scrollRef.current?.scrollBy({ left: direction * 120, behavior: 'smooth' });
+  }, []);
 
   const handleTabClick = useCallback(
     (pageId: string) => {
@@ -112,47 +140,67 @@ export function ArtboardTabs() {
 
   return (
     <>
-      <div className={styles.tabBar} data-component="artboard-tabs" role="tablist">
-        {doc.pages.map(page => {
-          const isActive = page.id === doc.activePageId;
-          const isEditing = page.id === editingPageId;
+      <div className={styles.tabBarWrapper}>
+        {showLeftArrow && (
+          <button
+            className={`${styles.scrollArrow} ${styles.scrollArrowLeft}`}
+            onClick={() => scrollTabs(-1)}
+            aria-label="Scroll tabs left"
+          >
+            {'\u2039'}
+          </button>
+        )}
+        <div ref={scrollRef} className={styles.tabBar} data-component="artboard-tabs" role="tablist">
+          {doc.pages.map(page => {
+            const isActive = page.id === doc.activePageId;
+            const isEditing = page.id === editingPageId;
 
-          return (
-            <button
-              key={page.id}
-              role="tab"
-              aria-selected={isActive}
-              className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
-              onClick={() => handleTabClick(page.id)}
-              onDoubleClick={() => handleDoubleClick(page)}
-              onContextMenu={e => handleContextMenu(e, page.id)}
-              data-page-id={page.id}
-            >
-              {isEditing ? (
-                <input
-                  ref={inputRef}
-                  className={styles.tabInput}
-                  value={editingName}
-                  onChange={e => setEditingName(e.target.value)}
-                  onBlur={commitRename}
-                  onKeyDown={handleRenameKeyDown}
-                  onClick={e => e.stopPropagation()}
-                  data-field="page-name"
-                />
-              ) : (
-                page.name
-              )}
-            </button>
-          );
-        })}
-        <button
-          className={styles.addButton}
-          onClick={handleAddPage}
-          aria-label="Add page"
-          title="Add page"
-        >
-          +
-        </button>
+            return (
+              <button
+                key={page.id}
+                role="tab"
+                aria-selected={isActive}
+                className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
+                onClick={() => handleTabClick(page.id)}
+                onDoubleClick={() => handleDoubleClick(page)}
+                onContextMenu={e => handleContextMenu(e, page.id)}
+                data-page-id={page.id}
+              >
+                {isEditing ? (
+                  <input
+                    ref={inputRef}
+                    className={styles.tabInput}
+                    value={editingName}
+                    onChange={e => setEditingName(e.target.value)}
+                    onBlur={commitRename}
+                    onKeyDown={handleRenameKeyDown}
+                    onClick={e => e.stopPropagation()}
+                    data-field="page-name"
+                  />
+                ) : (
+                  page.name
+                )}
+              </button>
+            );
+          })}
+          <button
+            className={styles.addButton}
+            onClick={handleAddPage}
+            aria-label="Add page"
+            title="Add page"
+          >
+            +
+          </button>
+        </div>
+        {showRightArrow && (
+          <button
+            className={`${styles.scrollArrow} ${styles.scrollArrowRight}`}
+            onClick={() => scrollTabs(1)}
+            aria-label="Scroll tabs right"
+          >
+            {'\u203A'}
+          </button>
+        )}
       </div>
 
       {contextMenu && (

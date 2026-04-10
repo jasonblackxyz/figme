@@ -1,4 +1,5 @@
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import { deserializeDocument } from '@primitives/document-model/serialization.ts';
 import { importGridSpec } from './importGridSpec.ts';
 import { importHtml } from './importHtml.ts';
 import { importMarkdown } from './importMarkdown.ts';
@@ -26,8 +27,8 @@ export async function importFile(): Promise<FigMeDocument | null> {
     if (name.endsWith('.md')) {
       return importMarkdown(text);
     }
-    // .figme or .json — raw FigMeDocument JSON
-    return JSON.parse(text) as FigMeDocument;
+    // .figme or .json — raw FigMeDocument JSON (with migration)
+    return deserializeDocument(text);
   } catch {
     return null;
   }
