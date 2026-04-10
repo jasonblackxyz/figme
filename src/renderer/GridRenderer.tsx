@@ -75,6 +75,13 @@ export function GridRenderer({
                 color: span.color,
                 backgroundColor: span.bg,
                 fontWeight: span.fontWeight,
+                // Extend background 1px right and down to cover sub-pixel gaps
+                // from fractional cell dimensions (e.g. 8.4px × 18.9px).
+                // Later DOM siblings paint on top, so overlap shows correct color.
+                // Skip for transparent spans — no visible gap to cover.
+                boxShadow: span.bg !== 'transparent'
+                  ? `1px 0 0 ${span.bg}, 0 1px 0 ${span.bg}`
+                  : undefined,
               }}
             >
               {span.text}
