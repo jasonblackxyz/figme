@@ -31,7 +31,7 @@ export class AppErrorBoundary extends Component<Props, State> {
       message: error.message,
       recoverCommands: [
         'FigMe.stores.document.getState().undo()',
-        'document.querySelector("[data-error-boundary]") && document.querySelector("button").click()',
+        'document.querySelector("[data-error-boundary] button").click()',
       ],
       note: 'Call the first command, then click the Dismiss button (or run the second command).',
     });

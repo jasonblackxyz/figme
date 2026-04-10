@@ -184,7 +184,9 @@ export function buildApi() {
       if (isBatching()) {
         setPendingDocument(finalDoc);
       } else {
-        useDocumentStore.getState().setDocument(finalDoc);
+        const store = useDocumentStore.getState();
+        store.pushUndo();
+        store.setDocument(finalDoc);
       }
     },
     getPage(id: string): FigMePage | undefined {

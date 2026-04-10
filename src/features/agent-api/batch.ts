@@ -49,8 +49,9 @@ export function setPendingDocument(doc: FigMeDocument): void {
  */
 export function batch(fn: () => void): void {
   if (depth === 0) {
-    useDocumentStore.getState().pushUndo();
-    pendingDoc = useDocumentStore.getState().document;
+    const store = useDocumentStore.getState();
+    store.pushUndo();
+    pendingDoc = store.document;
   }
   depth++;
   try {
