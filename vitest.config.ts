@@ -22,6 +22,9 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
+        // Intentional cap for dev machines. On CI runners with fewer cores
+        // vitest clamps to (cpuCount - 1) automatically, so this is safe.
+        // Revisit if a CI environment is added with many available cores.
         maxForks: 4,
       },
     },
