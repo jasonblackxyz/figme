@@ -17,6 +17,17 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        // Intentional cap for dev machines. On CI runners with fewer cores
+        // vitest clamps to (cpuCount - 1) automatically, so this is safe.
+        // Revisit if a CI environment is added with many available cores.
+        maxForks: 4,
+      },
+    },
     coverage: {
       provider: 'v8',
       include: ['src/primitives/**/*.ts'],

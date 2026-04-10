@@ -1,6 +1,7 @@
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { Palette } from '@primitives/style-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
+import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 
 /**
  * Render a StampBuffer to an HTMLCanvasElement as a PNG-ready image.
@@ -10,6 +11,7 @@ export async function renderBufferToCanvas(
   buffer: StampBuffer,
   palette: Palette,
   gridConfig: GridConfig,
+  colorOverrides?: ColorOverrideMap,
 ): Promise<HTMLCanvasElement> {
   await document.fonts.ready;
 
@@ -47,14 +49,15 @@ export async function renderBufferToCanvas(
       if (!styleDef) continue;
 
       const x = c * cellWidth;
+      const override = colorOverrides?.[`${r},${c}`];
 
       // Background
-      ctx.fillStyle = styleDef.bg;
+      ctx.fillStyle = override?.bg ?? styleDef.bg;
       ctx.fillRect(x, y, cellWidth, cellHeight);
 
       // Character (skip spaces for performance)
       if (ch !== ' ') {
-        ctx.fillStyle = styleDef.color;
+        ctx.fillStyle = override?.color ?? styleDef.color;
         ctx.font = styleDef.fontWeight ? boldFont : normalFont;
         ctx.fillText(ch, x, y + baselineOffset);
       }

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { Palette } from '@primitives/style-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
-import type { ColorOverrideMap } from '@hooks/useComposedBuffer.ts';
+import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 import { renderGridToElements } from './renderGrid.ts';
 
 interface GridRendererProps {
