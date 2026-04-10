@@ -6,8 +6,22 @@ import { downloadFile } from './downloadFile.ts';
 import { downloadBlob } from './downloadBlob.ts';
 import { renderBufferToCanvas } from './renderToCanvas.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
-import { createBuffer } from '@primitives/stamp-system/buffer.ts';
+import { computeColorOverrides } from '@primitives/document-model/colorOverrides.ts';
+import type { FigMeDocument } from '@primitives/document-model/types.ts';
 import styles from './ExportDialog.module.css';
+
+function getActivePageExportConfig(doc: FigMeDocument) {
+  const activePage = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
+  if (!activePage) return null;
+
+  const cols = activePage.canvasColsOverride ?? doc.gridConfig.canvasCols;
+  const rows = activePage.canvasRowsOverride ?? doc.gridConfig.canvasRows;
+  const pageGridConfig = { ...doc.gridConfig, canvasCols: cols, canvasRows: rows };
+  const buffer = composePageBuffer(activePage, pageGridConfig);
+  const colorOverrides = computeColorOverrides(activePage);
+
+  return { activePage, cols, rows, pageGridConfig, buffer, colorOverrides };
+}
 
 interface ExportDialogProps {
   visible: boolean;
@@ -69,31 +83,25 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
   }, [onClose]);
 
   const handlePngExport = useCallback(async () => {
-    const activePage = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
-    if (!activePage) return;
+    const config = getActivePageExportConfig(doc);
+    if (!config) return;
 
-    const cols = activePage.canvasColsOverride ?? doc.gridConfig.canvasCols;
-    const rows = activePage.canvasRowsOverride ?? doc.gridConfig.canvasRows;
-    const pageGridConfig = { ...doc.gridConfig, canvasCols: cols, canvasRows: rows };
-
-    const buffer = composePageBuffer(activePage, pageGridConfig);
-    const canvas = await renderBufferToCanvas(buffer, doc.palette, doc.gridConfig);
+    const canvas = await renderBufferToCanvas(config.buffer, doc.palette, config.pageGridConfig, config.colorOverrides);
 
     canvas.toBlob((blob) => {
       if (blob) {
         const name = doc.name || 'untitled';
-        downloadBlob(blob, `${name}_${cols}x${rows}.png`);
+        downloadBlob(blob, `${name}_${config.cols}x${config.rows}.png`);
       }
     }, 'image/png');
     onClose();
   }, [doc, onClose]);
 
   const handleHtmlExport = useCallback(() => {
-    const buffer = createBuffer(
-      doc.gridConfig.canvasCols,
-      doc.gridConfig.canvasRows,
-    );
-    const html = exportAsHtml(doc, buffer);
+    const config = getActivePageExportConfig(doc);
+    if (!config) return;
+
+    const html = exportAsHtml(doc, config.buffer, config.pageGridConfig, config.colorOverrides);
     downloadFile(html, `${doc.name || 'untitled'}.html`, 'text/html');
     onClose();
   }, [doc, onClose]);

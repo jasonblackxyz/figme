@@ -35,6 +35,7 @@ export interface GridSpecPage {
     chars: string[][];
     styles: string[][];
   };
+  colorOverrides?: Record<string, { color?: string; bg?: string }>;
 }
 
 export interface GridSpecLayer {

@@ -11,6 +11,7 @@ import type {
 import type { Palette, StyleDef } from '@primitives/style-system/types.ts';
 import { BORDER_CHARS } from '@primitives/stamp-system/stamps.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
+import { computeColorOverrides } from '@primitives/document-model/colorOverrides.ts';
 import type { GridSpec, GridSpecPage, GridSpecLayer, GridSpecResolved, GridSpecComponent } from './types.ts';
 
 export interface GridSpecExportOptions {
@@ -74,6 +75,10 @@ export function exportAsGridSpec(doc: FigMeDocument, options?: GridSpecExportOpt
         chars: buffer.chars,
         styles: buffer.styles as string[][],
       };
+      const overrides = computeColorOverrides(page);
+      if (Object.keys(overrides).length > 0) {
+        specPage.colorOverrides = overrides;
+      }
     }
 
     return specPage;
