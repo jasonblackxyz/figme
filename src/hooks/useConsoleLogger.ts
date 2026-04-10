@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useToolStore } from '@stores/toolStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
+import { isBatching } from '@features/agent-api/batch.ts';
 
 /**
  * Hook that logs state changes to the console for agent consumption.
@@ -31,6 +32,10 @@ export function useConsoleLogger(): void {
 
     // Subscribe to document changes
     const unsubDoc = useDocumentStore.subscribe((state) => {
+      // Defense-in-depth: skip logging during a batch — batch() defers setDocument()
+      // so this shouldn't fire, but guard against regressions
+      if (isBatching()) return;
+
       const prevDoc = prevDocRef.current;
       const nextDoc = state.document;
 
@@ -63,10 +68,20 @@ export function useConsoleLogger(): void {
         }
       }
 
+      // Log a summary only — avoid serialising the full document on every change.
+      // Agents that need full document state should read window.FigMe.getDocument()
+      // or the live [data-spec="full-document"] DOM element instead.
+      const activePage = nextDoc.pages.find(p => p.id === nextDoc.activePageId);
       console.log('FIGME_STATE', {
         action: 'document_change',
         timestamp: Date.now(),
-        document: nextDoc,
+        document: {
+          name: nextDoc.name,
+          pageCount: nextDoc.pages.length,
+          activePageId: nextDoc.activePageId,
+          layerCount: activePage?.layerOrder.length ?? 0,
+          layerNames: activePage?.layerOrder.map(id => activePage.layers[id]?.name).filter(Boolean) ?? [],
+        },
       });
 
       prevDocRef.current = nextDoc;

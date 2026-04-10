@@ -2,7 +2,7 @@ import { useDocumentStore } from '@stores/documentStore.ts';
 import { useToolStore } from '@stores/toolStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
-import type { FigMePage, Layer, LayerKind, LayerProperties } from '@primitives/document-model/types.ts';
+import type { FigMeDocument, FigMePage, Layer, LayerKind, LayerProperties } from '@primitives/document-model/types.ts';
 import type { GridRect } from '@primitives/grid-engine/types.ts';
 import type { StyleKey } from '@primitives/style-system/types.ts';
 import {
@@ -21,7 +21,7 @@ import { rectIntersects, rectContains, innerRect } from '@primitives/grid-engine
 import { computeTextFlow } from '@primitives/text-flow/compute.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
 import { exportAsJson, exportAsMarkdown } from '@features/export/exporters.ts';
-import { batch, isBatching } from './batch.ts';
+import { batch, isBatching, getPendingDocument, setPendingDocument } from './batch.ts';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -36,8 +36,17 @@ const LAYER_KINDS: LayerKind[] = [
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Get the current document, preferring the pending batch state when inside a batch().
+ * All read helpers and mutation paths should use this instead of store.getState().document
+ * so that mutations within a batch are visible to subsequent reads.
+ */
+function getCurrentDocument(): FigMeDocument {
+  return getPendingDocument() ?? useDocumentStore.getState().document;
+}
+
 function getActivePage(): FigMePage | undefined {
-  const doc = useDocumentStore.getState().document;
+  const doc = getCurrentDocument();
   return doc.pages.find(p => p.id === doc.activePageId);
 }
 
@@ -48,15 +57,22 @@ function getLayers(): Layer[] {
 }
 
 function applyPageMutation(fn: (page: FigMePage) => FigMePage): void {
-  const store = useDocumentStore.getState();
-  const doc = store.document;
+  const doc = getCurrentDocument();
   const page = doc.pages.find(p => p.id === doc.activePageId);
   if (!page) return;
-  if (!isBatching()) store.pushUndo();
-  store.setDocument({
+
+  const nextDoc = {
     ...doc,
     pages: doc.pages.map(p => (p.id === page.id ? fn(p) : p)),
-  });
+  };
+
+  if (isBatching()) {
+    setPendingDocument(nextDoc);
+  } else {
+    const store = useDocumentStore.getState();
+    store.pushUndo();
+    store.setDocument(nextDoc);
+  }
 }
 
 function defaultPropsForKind(kind: LayerKind): LayerProperties {
@@ -66,7 +82,7 @@ function defaultPropsForKind(kind: LayerKind): LayerProperties {
     case 'text-block':
       return {
         content: 'Text',
-        fontFamily: useDocumentStore.getState().document.gridConfig.fontFamily,
+        fontFamily: getCurrentDocument().gridConfig.fontFamily,
         kerning: 1 as const,
         lineSpacing: 0 as const,
         alignment: 'left' as const,
@@ -124,7 +140,7 @@ export function buildApi() {
     },
 
     // Read helpers
-    getDocument: () => useDocumentStore.getState().document,
+    getDocument: () => getCurrentDocument(),
     getActivePage,
     getLayers,
     getLayer(id: string): Layer | undefined {
@@ -144,22 +160,35 @@ export function buildApi() {
 
     // Page helpers
     addPage(name: string): string {
-      const store = useDocumentStore.getState();
-      const updated = addPage(store.document, name);
+      const doc = getCurrentDocument();
+      const updated = addPage(doc, name);
       const newId = updated.pages[updated.pages.length - 1]!.id;
-      store.pushUndo();
-      store.setDocument({ ...updated, activePageId: newId });
+      const finalDoc = { ...updated, activePageId: newId };
+
+      if (isBatching()) {
+        setPendingDocument(finalDoc);
+      } else {
+        const store = useDocumentStore.getState();
+        store.pushUndo();
+        store.setDocument(finalDoc);
+      }
       return newId;
     },
     setActivePage(id: string): void {
-      const store = useDocumentStore.getState();
-      if (!store.document.pages.find(p => p.id === id)) {
+      const doc = getCurrentDocument();
+      if (!doc.pages.find(p => p.id === id)) {
         throw new Error(`FigMe.setActivePage: no page with id "${id}"`);
       }
-      store.setDocument({ ...store.document, activePageId: id });
+      const finalDoc = { ...doc, activePageId: id };
+
+      if (isBatching()) {
+        setPendingDocument(finalDoc);
+      } else {
+        useDocumentStore.getState().setDocument(finalDoc);
+      }
     },
     getPage(id: string): FigMePage | undefined {
-      return useDocumentStore.getState().document.pages.find(p => p.id === id);
+      return getCurrentDocument().pages.find(p => p.id === id);
     },
 
     // Layer mutations — supports positional or object-spec call form:
@@ -224,6 +253,18 @@ export function buildApi() {
       applyPageMutation(page => removeLayerOp(page, id));
     },
     updateLayer(id: string, updates: Partial<Layer>): void {
+      // Guard: 'kind' must remain a valid LayerKind string if supplied
+      if ('kind' in updates && !LAYER_KINDS.includes(updates.kind as LayerKind)) {
+        throw new Error(
+          `FigMe.updateLayer: invalid kind "${String(updates.kind)}". Valid values: ${LAYER_KINDS.join(', ')}`,
+        );
+      }
+      // Guard: 'styleKey' must be a known style key if supplied
+      if ('styleKey' in updates && !STYLE_KEYS.includes(updates.styleKey as StyleKey)) {
+        throw new Error(
+          `FigMe.updateLayer: invalid styleKey "${String(updates.styleKey)}". Use FigMe.styles.keys for the full list.`,
+        );
+      }
       applyPageMutation(page => updateLayerOp(page, id, updates));
     },
     moveLayer(id: string, col: number, row: number): void {
@@ -237,10 +278,10 @@ export function buildApi() {
     styles: {
       keys: STYLE_KEYS as readonly string[],
       get palette() {
-        return useDocumentStore.getState().document.palette;
+        return getCurrentDocument().palette;
       },
       resolve(key: StyleKey) {
-        return useDocumentStore.getState().document.palette[key];
+        return getCurrentDocument().palette[key];
       },
     },
 
@@ -250,7 +291,7 @@ export function buildApi() {
       resetView: () => useViewportStore.getState().resetView(),
       /** Zoom + pan so the full canvas fits the visible area. */
       fitToPage: () => {
-        const doc = useDocumentStore.getState().document;
+        const doc = getCurrentDocument();
         const page = doc.pages.find(p => p.id === doc.activePageId);
         const config = doc.gridConfig;
         const cols = page?.canvasColsOverride ?? config.canvasCols;
@@ -267,6 +308,9 @@ export function buildApi() {
     },
 
     // Event subscription
+    // WARNING: Do NOT call mutation methods (addLayer, updateLayer, etc.) inside the 'document'
+    // callback — that will create an infinite loop and crash the tab. Use subscribe only for
+    // observation. Call unsub() when done to avoid memory leaks.
     subscribe(
       event: 'document' | 'selection' | 'tool',
       cb: (value: unknown) => void,
@@ -303,18 +347,18 @@ export function buildApi() {
     // Export (returns data, no download dialog)
     export: {
       toJson(): string {
-        const doc = useDocumentStore.getState().document;
+        const doc = getCurrentDocument();
         console.log('FIGME_EXPORT', { format: 'json', timestamp: Date.now() });
         return exportAsJson(doc);
       },
       toMarkdown(): string {
-        const doc = useDocumentStore.getState().document;
+        const doc = getCurrentDocument();
         console.log('FIGME_EXPORT', { format: 'markdown', timestamp: Date.now() });
         return exportAsMarkdown(doc);
       },
       /** Returns the rendered ASCII characters for the active (or specified) page as a plain string. */
       toAscii(pageId?: string): string {
-        const doc = useDocumentStore.getState().document;
+        const doc = getCurrentDocument();
         const page = pageId
           ? doc.pages.find(p => p.id === pageId)
           : doc.pages.find(p => p.id === doc.activePageId);

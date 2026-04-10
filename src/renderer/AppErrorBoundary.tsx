@@ -23,7 +23,18 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('[FigMe] Render error — use FigMe.stores.document.getState().undo() to recover:', error, info);
+    console.error('[FigMe] Render error — to recover, run this in the console then click Dismiss:', error, info);
+    // Log the exact recovery commands as a structured entry agents can detect and act on
+    console.log('FIGME_RECOVERY', {
+      action: 'render_error',
+      timestamp: Date.now(),
+      message: error.message,
+      recoverCommands: [
+        'FigMe.stores.document.getState().undo()',
+        'document.querySelector("[data-error-boundary]") && document.querySelector("button").click()',
+      ],
+      note: 'Call the first command, then click the Dismiss button (or run the second command).',
+    });
   }
 
   render(): ReactNode {
@@ -63,12 +74,13 @@ export class AppErrorBoundary extends Component<Props, State> {
           >
             {this.state.error?.message ?? 'Unknown error'}
           </div>
-          <div style={{ color: '#999', fontSize: 12 }}>
-            To recover: call{' '}
-            <code style={{ color: '#60a5fa' }}>
+          <div style={{ color: '#999', fontSize: 12, textAlign: 'center' }}>
+            To recover: run{' '}
+            <code style={{ color: '#60a5fa', display: 'block', margin: '4px 0', padding: '4px 8px', background: '#111', borderRadius: 3 }}>
               FigMe.stores.document.getState().undo()
-            </code>{' '}
-            in the console, then click Dismiss.
+            </code>
+            in the console, then click Dismiss below.
+            A <code style={{ color: '#fbbf24' }}>FIGME_RECOVERY</code> console entry lists the exact commands.
           </div>
           <button
             onClick={() => this.setState({ hasError: false, error: null })}
