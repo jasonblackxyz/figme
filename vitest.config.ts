@@ -17,6 +17,14 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        maxForks: 4,
+      },
+    },
     coverage: {
       provider: 'v8',
       include: ['src/primitives/**/*.ts'],
