@@ -2,6 +2,9 @@ import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
 import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 
+/** Style key for empty/background cells — matches the default in createBuffer(). */
+const BG_STYLE: StyleKey = 'bg';
+
 /**
  * A span segment: consecutive cells with the same style, merged into one element.
  * `startCol` is the first column, `text` is the concatenated characters.
@@ -33,7 +36,7 @@ function resolveCell(
   const override = colorOverrides?.[`${r},${c}`];
   return {
     color: override?.color ?? styleDef?.color ?? '#ffffff',
-    bg: override?.bg ?? (styleKey === 'bg' ? 'transparent' : (styleDef?.bg ?? '#000000')),
+    bg: override?.bg ?? (styleKey === BG_STYLE ? 'transparent' : (styleDef?.bg ?? '#000000')),
     fontWeight: styleDef?.fontWeight,
     overrideKey: override ? `${override.color ?? ''}_${override.bg ?? ''}` : '',
   };
@@ -62,7 +65,7 @@ export function renderGridToElements(
     // cells. Interior bg cells (holes between content) are still included.
     let lastContentCol = -1;
     for (let c = 0; c < buffer.width; c++) {
-      if (styleRow[c] !== 'bg') lastContentCol = c;
+      if (styleRow[c] !== BG_STYLE) lastContentCol = c;
     }
 
     // All-bg row — emit empty spans, skip cell resolution entirely
