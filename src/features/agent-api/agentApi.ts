@@ -41,6 +41,12 @@ function getActivePage(): FigMePage | undefined {
   return doc.pages.find(p => p.id === doc.activePageId);
 }
 
+function getLayers(): Layer[] {
+  const page = getActivePage();
+  if (!page) return [];
+  return page.layerOrder.map(id => page.layers[id]).filter((l): l is Layer => l != null);
+}
+
 function applyPageMutation(fn: (page: FigMePage) => FigMePage): void {
   const store = useDocumentStore.getState();
   const doc = store.document;
@@ -120,20 +126,16 @@ export function buildApi() {
     // Read helpers
     getDocument: () => useDocumentStore.getState().document,
     getActivePage,
-    getLayers(): Layer[] {
-      const page = getActivePage();
-      if (!page) return [];
-      return page.layerOrder.map(id => page.layers[id]).filter((l): l is Layer => l != null);
-    },
+    getLayers,
     getLayer(id: string): Layer | undefined {
       const page = getActivePage();
       return page?.layers[id];
     },
     findLayer(name: string): Layer | undefined {
-      return this.getLayers().find(l => l.name === name);
+      return getLayers().find(l => l.name === name);
     },
     findLayers(query: { kind?: LayerKind; name?: string; styleKey?: StyleKey }): Layer[] {
-      return this.getLayers().filter(l =>
+      return getLayers().filter(l =>
         (!query.kind || l.kind === query.kind) &&
         (!query.name || l.name === query.name) &&
         (!query.styleKey || l.styleKey === query.styleKey),
@@ -191,8 +193,10 @@ export function buildApi() {
       } else {
         k = kindOrSpec;
         n = name ?? kindOrSpec;
-        r = rect!;
-        sk = styleKey!;
+        if (!rect) throw new Error('FigMe.addLayer: rect is required for positional form — pass {col, row, width, height}');
+        if (!styleKey) throw new Error('FigMe.addLayer: styleKey is required for positional form');
+        r = rect;
+        sk = styleKey;
         props = properties;
       }
 
