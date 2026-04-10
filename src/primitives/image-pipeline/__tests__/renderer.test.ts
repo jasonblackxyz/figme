@@ -1,4 +1,4 @@
-import { brightnessGridToAscii } from '../renderer.ts';
+import { brightnessGridToAscii, renderImageToAscii } from '../renderer.ts';
 
 describe('brightnessGridToAscii', () => {
   describe('classic style', () => {
@@ -116,5 +116,22 @@ describe('brightnessGridToAscii', () => {
       expect(result.width).toBe(0);
       expect(result.height).toBe(0);
     });
+  });
+});
+
+// renderImageToAscii is a Tier-2 stub (deferred per CLAUDE.md @experimental).
+// This test documents the stub contract so future implementers have a clear baseline.
+describe('renderImageToAscii', () => {
+  it('returns empty stub result (Tier 2 placeholder)', () => {
+    const result = renderImageToAscii({
+      src: 'test.png',
+      style: 'classic',
+      targetCols: 10,
+      targetRows: 5,
+      brightness: 0,
+      contrast: 1,
+      invert: false,
+    });
+    expect(result).toEqual({ chars: [], width: 0, height: 0 });
   });
 });
