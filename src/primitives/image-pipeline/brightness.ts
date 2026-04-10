@@ -196,31 +196,40 @@ function measureWithCanvas(
   const ctx = canvas.getContext('2d');
   if (ctx === null) return null;
 
-  // Clear to black (all zeros)
-  ctx.fillStyle = 'black';
-  ctx.fillRect(0, 0, cellWidth, cellHeight);
+  // Wrap canvas operations in try/catch: in environments where the context is a
+  // partial stub (e.g., jsdom test mocks that only implement measureText), any
+  // missing method will throw a TypeError. We treat that as "canvas unavailable"
+  // and return null so the fallback lookup table is used instead.
+  try {
+    // Clear to black (all zeros)
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, cellWidth, cellHeight);
 
-  // Draw character in white
-  ctx.fillStyle = 'white';
-  ctx.font = `${fontSize}px "${fontFamily}", monospace`;
-  ctx.textBaseline = 'top';
-  ctx.fillText(char, 0, 0);
+    // Draw character in white
+    ctx.fillStyle = 'white';
+    ctx.font = `${fontSize}px "${fontFamily}", monospace`;
+    ctx.textBaseline = 'top';
+    ctx.fillText(char, 0, 0);
 
-  // Read pixels and count white ones
-  const imageData = ctx.getImageData(0, 0, cellWidth, cellHeight);
-  const pixels = imageData.data;
-  const totalPixels = cellWidth * cellHeight;
+    // Read pixels and count white ones
+    const imageData = ctx.getImageData(0, 0, cellWidth, cellHeight);
+    const pixels = imageData.data;
+    const totalPixels = cellWidth * cellHeight;
 
-  if (totalPixels === 0) return 0;
+    if (totalPixels === 0) return 0;
 
-  let filledPixels = 0;
-  // Every 4th value starting from index 0 is the red channel
-  for (let i = 0; i < pixels.length; i += 4) {
-    const r = pixels[i];
-    if (r !== undefined && r > 128) {
-      filledPixels++;
+    let filledPixels = 0;
+    // Every 4th value starting from index 0 is the red channel
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i];
+      if (r !== undefined && r > 128) {
+        filledPixels++;
+      }
     }
-  }
 
-  return filledPixels / totalPixels;
+    return filledPixels / totalPixels;
+  } catch {
+    // Context is incomplete or unavailable — fall back to lookup table
+    return null;
+  }
 }

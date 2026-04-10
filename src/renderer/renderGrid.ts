@@ -58,6 +58,13 @@ export function renderGridToElements(
     const styleRow = buffer.styles[r];
     if (!charRow || !styleRow) continue;
 
+    // Find the rightmost non-bg column so we stop before trailing background
+    // cells. Interior bg cells (holes between content) are still included.
+    let lastContentCol = -1;
+    for (let c = 0; c < buffer.width; c++) {
+      if (styleRow[c] !== 'bg') lastContentCol = c;
+    }
+
     const spans: GridSpan[] = [];
     let spanStart = 0;
     let spanChars = '';
@@ -66,7 +73,7 @@ export function renderGridToElements(
       ? resolveCell(r, 0, currentStyleKey, palette, colorOverrides)
       : undefined;
 
-    for (let c = 0; c < buffer.width; c++) {
+    for (let c = 0; c <= lastContentCol; c++) {
       const styleKey = styleRow[c];
       const char = charRow[c] ?? ' ';
 
