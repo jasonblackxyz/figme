@@ -1,6 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
-import { STYLE_KEYS } from '@primitives/style-system/palette.ts';
 
 interface AgentBriefingProps {
   document: FigMeDocument;
@@ -9,8 +8,8 @@ interface AgentBriefingProps {
 /**
  * Hidden component that embeds two structured JSON elements for AI agents:
  *
- * 1. #figme-agent-briefing  — static API reference (call signature, style keys, layer kinds with
- *    full props schemas, DOM selectors). Accessible as window.FigMe.briefing or by ID.
+ * 1. #figme-agent-briefing  — static API reference (layer kinds with props schemas,
+ *    recipes, warnings, DOM selectors). Accessible as window.FigMe.briefing or by ID.
  *
  * 2. [data-spec="full-document"] — live document snapshot that re-renders whenever the Zustand
  *    document store changes. Agents can read current design state without any JS calls.
@@ -26,7 +25,7 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
     system: 'FigMe \u2014 ASCII Grid Design Tool',
     version: '2.0',
     purpose:
-      'Design tool for composing ASCII character grid interfaces. Designs target the readme-app rendering engine.',
+      'Design tool for composing ASCII character grid interfaces. All colours are specified as hex values (e.g. \'#ffffff\'). You have full creative control over the colour palette.',
     gridSystem: {
       description:
         'The canvas is a 2D grid of monospace character cells. Every position is addressed by (col, row). There are no sub-cell positions.',
@@ -46,23 +45,20 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
     },
     api: {
       global: 'window.FigMe',
-      briefing: 'window.FigMe.briefing — returns this parsed briefing object',
+      briefing: 'window.FigMe.briefing \u2014 returns this parsed briefing object',
       stores:
-        'FigMe.stores.{document,tool,ui,viewport} — raw Zustand stores, call .getState() for sync access',
+        'FigMe.stores.{document,tool,ui,viewport} \u2014 raw Zustand stores, call .getState() for sync access',
       convenience: [
         'getDocument()',
         'getActivePage()',
         'getLayers()',
         'getLayer(id)',
-        // addLayer accepts positional args OR a flat object spec:
-        //   addLayer(kind, name, {col,row,width,height}, styleKey, props?)
-        //   addLayer({kind, name?, col, row, width, height, styleKey?, ...props})
-        'addLayer(kind, name, rect, styleKey, props?) | addLayer({kind, col, row, width, height, ...})',
+        "addLayer({kind, col, row, width, height, color?, bg?, ...props}) \u2014 returns layerId",
         'removeLayer(id)',
         'updateLayer(id, updates)',
         'moveLayer(id, col, row)',
         'findLayer(name)',
-        'findLayers({kind?, name?, styleKey?})',
+        'findLayers({kind?, name?})',
         'addPage(name) => pageId',
         'setActivePage(id)',
         'getPage(id)',
@@ -73,9 +69,9 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
         'viewport.resetView()',
         'viewport.fitToPage()',
       ],
-      batch: 'FigMe.batch(() => { ...mutations... }) — single undo entry. ALWAYS use batch() when adding multiple layers.',
-      subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub — WARNING: never call mutation methods (addLayer etc.) inside the 'document' callback; that creates an infinite loop and crashes the tab.",
-      subscribeRecovery: "If a render error occurs, a FIGME_RECOVERY console entry appears with exact recovery commands. Short version: FigMe.stores.document.getState().undo() then click Dismiss.",
+      batch: 'FigMe.batch(() => { ...mutations... }) \u2014 single undo entry. ALWAYS use batch() when adding multiple layers.',
+      subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub \u2014 WARNING: never call mutation methods (addLayer etc.) inside the 'document' callback; that creates an infinite loop and crashes the tab.",
+      subscribeRecovery: 'If a render error occurs, a FIGME_RECOVERY console entry appears with exact recovery commands. Short version: FigMe.stores.document.getState().undo() then click Dismiss.',
       storeExamples: {
         rename: 'FigMe.stores.document.getState().renameLayer(id, name)',
         undo: 'FigMe.stores.document.getState().undo()',
@@ -83,89 +79,135 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
         setSelection: 'FigMe.stores.ui.getState().setSelectedLayers([id])',
         zoom: 'FigMe.viewport.setZoom(1.5)',
         fitToPage: 'FigMe.viewport.fitToPage()',
+        setLayerColors: "FigMe.updateLayer(id, {customColors: {color: '#fff', bg: '#000'}})",
         paintCells:
-          'FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], hexColor)',
+          "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor')",
+        paintPage:
+          "FigMe.stores.document.getState().setPageCellOverridesBulk([{row,col}], '#hexColor')",
       },
     },
     layerKinds: {
       'border-box': {
         desc: 'Rectangular border with optional title/fill/padding',
-        default: 'border',
         props: {
           borderStyle: "'rounded' | 'double' | 'section' | 'custom'",
-          title: 'string — text shown inline in the top border (optional)',
-          titleStyleKey: 'StyleKey — colour of the title text (optional)',
-          bgStyleKey: 'StyleKey — fills the interior background (optional)',
-          padding: '{ top, right, bottom, left } — interior padding in cells',
-          fillPattern: 'string — repeating tile pattern for interior fill (optional)',
+          title: 'string \u2014 text shown inline in the top border (optional)',
+          padding: '{ top, right, bottom, left } \u2014 interior padding in cells',
+          fillPattern: 'string \u2014 repeating tile pattern for interior fill (optional)',
         },
       },
       'text-block': {
         desc: 'Flowing text with word-wrap and alignment',
-        default: 'text',
         props: {
-          content: 'string — use \\n for explicit line breaks',
+          content: 'string \u2014 use \\n for explicit line breaks',
           alignment: "'left' | 'center' | 'right'",
-          styleKey: 'StyleKey — text foreground colour',
-          kerning: '0 | 1 | 2 — extra character spacing (default: 1)',
-          lineSpacing: '0 | 1 — extra blank line between lines (default: 0)',
+          kerning: '0 | 1 | 2 \u2014 character spacing (default: 0, compact)',
+          lineSpacing: '0 | 1 \u2014 extra blank line between lines (default: 0)',
           renderMode: "'flow' (word-wrap) | 'literal' (respect \\n only, no wrap)",
-          fontFamily: 'string — inherited from gridConfig, rarely overridden',
+          fontFamily: 'string \u2014 inherited from gridConfig, rarely overridden',
         },
       },
       'figlet-text': {
         desc: 'Large ASCII art text rendered with FIGlet fonts',
-        default: 'accentText',
         props: {
-          content: 'string — the text to render as ASCII art',
-          fontName: "string — FIGlet font name, e.g. 'standard' | 'big' | 'slant'",
+          content: 'string \u2014 the text to render as ASCII art',
+          fontName: "string \u2014 'standard' | 'small' | 'banner' | 'slant' | 'big'",
           alignment: "'left' | 'center' | 'right'",
-          styleKey: 'StyleKey — colour of the ASCII art characters',
         },
       },
       'divider': {
         desc: 'Horizontal or vertical rule line',
-        default: 'border',
         props: {
-          _note: 'No properties object — orientation is implicit from rect shape: width=1 → vertical, height=1 → horizontal',
+          _note: 'No properties object \u2014 orientation is implicit from rect shape: width=1 \u2192 vertical, height=1 \u2192 horizontal',
         },
       },
       'image': {
         desc: 'Image converted to ASCII art (experimental)',
-        default: 'imageMid',
         props: {
-          src: 'string — data URL or remote URL',
+          src: 'string \u2014 data URL or remote URL',
           renderStyle: "'classic' | 'smooth' | 'braille' | 'contour' | 'hatch'",
-          brightness: 'number — -1 to 1',
-          contrast: 'number — -1 to 1',
+          brightness: 'number \u2014 -1 to 1',
+          contrast: 'number \u2014 -1 to 1',
           invert: 'boolean',
         },
       },
       'edge-path': {
-        desc: 'Connector line between two layers (experimental)',
-        default: 'edge',
+        desc: 'EXPERIMENTAL \u2014 connector line between two layers. May cause rendering issues. Prefer text-block layers with box-drawing characters.',
         props: {
-          sourceLayerId: 'string — ID of the source layer',
-          targetLayerId: 'string — ID of the target layer',
+          sourceLayerId: 'string \u2014 ID of the source layer',
+          targetLayerId: 'string \u2014 ID of the target layer',
           routingStyle: "'manhattan' | 'straight'",
-          waypoints: 'GridPosition[] — [{col, row}] intermediate points',
-          styleKey: 'StyleKey — line colour',
+          waypoints: 'GridPosition[] \u2014 [{col, row}] intermediate points',
         },
       },
       'group': {
         desc: 'Container for child layers (use children[] on the layer)',
-        default: 'bg',
         props: { _note: 'No properties object. Children managed via layer.children[]' },
       },
       'component': {
         desc: 'Reusable component instance',
-        default: 'bg',
         props: {
-          componentId: 'string — ID of the component definition in document.components',
+          componentId: 'string \u2014 ID of the component definition in document.components',
         },
       },
     },
-    styleKeys: STYLE_KEYS,
+    colorSystem: {
+      description: 'All colours are specified as hex strings. Pass color and bg in addLayer() or use updateLayer() with customColors.',
+      addLayer: "FigMe.addLayer({kind:'border-box', col:2, row:2, width:20, height:8, color:'#ffffff', bg:'#1a1a2e'})",
+      updateLayer: "FigMe.updateLayer(id, {customColors: {color:'#e0e0e0', bg:'#0d1117'}})",
+      perCell: "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row:0,col:0},{row:0,col:1}], '#ff6600')",
+      pageBackground: "FigMe.stores.document.getState().setPageCellOverridesBulk([{row:0,col:0}], '#0d1117')",
+    },
+    recipes: {
+      note: 'These are core tool operations. You are encouraged to use these as building blocks and explore the full API for your unique design needs.',
+      operations: [
+        {
+          name: 'Place a bordered region',
+          code: "FigMe.addLayer({kind:'border-box', col:2, row:2, width:40, height:10, color:'#6b6b80', bg:'#1a1a2e'})",
+          notes: 'borderStyle options: rounded, double, section, custom. Use title prop for inline header text.',
+        },
+        {
+          name: 'Place text',
+          code: "FigMe.addLayer({kind:'text-block', col:4, row:4, width:36, height:3, color:'#e0e0e0', content:'Your text here'})",
+          notes: 'kerning: 0 (compact, default), 1 (spaced), 2 (wide). alignment: left/center/right.',
+        },
+        {
+          name: 'Place decorative text',
+          code: "FigMe.addLayer({kind:'figlet-text', col:2, row:1, width:60, height:8, color:'#2563eb', content:'Title', fontName:'standard'})",
+          notes: "Fonts: 'standard', 'small', 'banner', 'slant', 'big'.",
+        },
+        {
+          name: 'Set colors on layers and cells',
+          code: "FigMe.updateLayer(id, {customColors: {color:'#fff', bg:'#000'}})",
+          notes: "Per-cell: FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor'). Page-level: setPageCellOverridesBulk([{row,col}], '#hexColor').",
+        },
+        {
+          name: 'Verify the design',
+          code: 'FigMe.export.toAscii()',
+          notes: 'Returns rendered ASCII string. Also: FigMe.getLayers() for layer list, FigMe.getDocument() for full state.',
+        },
+        {
+          name: 'Batch operations',
+          code: 'FigMe.batch(() => { FigMe.addLayer(...); FigMe.addLayer(...); })',
+          notes: 'ALWAYS wrap multiple mutations in batch(). Single undo entry, single render, prevents layer loss.',
+        },
+        {
+          name: 'Organize layers',
+          code: 'FigMe.stores.ui.getState().setSelectedLayers([id1, id2]); FigMe.stores.document.getState().groupSelectedLayers();',
+          notes: 'Z-order: bringToFront(), sendToBack(), bringForward(), sendBackward() on document store.',
+        },
+        {
+          name: 'Read state and undo',
+          code: 'FigMe.getDocument(); FigMe.stores.document.getState().undo();',
+          notes: 'getLayers() returns all layers. findLayer(name) finds by name. findLayers({kind}) filters by type.',
+        },
+      ],
+    },
+    warnings: [
+      'edge-path layers are experimental and frequently crash the renderer. Use text-block layers with box-drawing characters (\u2502\u2500\u250c\u2514\u251c\u2524\u25c6\u25cf) for connections instead.',
+      "Never call mutation methods (addLayer, updateLayer, etc.) inside FigMe.subscribe('document') callbacks \u2014 this creates an infinite loop.",
+      'Always wrap multiple mutations in FigMe.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
+    ],
     domSelectors: {
       toolbar: "[data-component='toolbar']",
       toolButton: "[data-tool='{type}']",

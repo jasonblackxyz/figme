@@ -135,6 +135,19 @@ export function CommonProperties({ layer }: Props) {
           isOverride={!!layer.customColors?.bg}
         />
 
+        {layer.cellColorOverrides && Object.keys(layer.cellColorOverrides).length > 0 && (
+          <div className={styles.field}>
+            <label className={styles.fieldLabel}>Cell Overrides</label>
+            <span style={{ flex: 1, fontSize: '11px' }}>{Object.keys(layer.cellColorOverrides).length} cells</span>
+            <button
+              style={{ fontSize: '10px', padding: '1px 6px', cursor: 'pointer' }}
+              onClick={() => applyUpdate(layer.id, { cellColorOverrides: undefined })}
+            >
+              Clear All
+            </button>
+          </div>
+        )}
+
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Opacity</label>
           <input

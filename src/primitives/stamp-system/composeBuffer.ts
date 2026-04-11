@@ -80,7 +80,7 @@ export function composePageBuffer(page: FigMePage, gridConfig: GridConfig, skipL
         const props = layer.properties as EdgePathProperties;
         const sourceLyr = page.layers[props.sourceLayerId];
         const targetLyr = page.layers[props.targetLayerId];
-        if (sourceLyr && targetLyr) {
+        if (sourceLyr && targetLyr && sourceLyr.rect.width > 0 && sourceLyr.rect.height > 0 && targetLyr.rect.width > 0 && targetLyr.rect.height > 0) {
           layerBuffer = stampEdge(
             sourceLyr.rect,
             targetLyr.rect,
