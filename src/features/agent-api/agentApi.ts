@@ -33,6 +33,18 @@ const LAYER_KINDS: LayerKind[] = [
   'image', 'edge-path', 'group', 'component',
 ];
 
+/** Internal default styleKey per layer kind — agents never see these. */
+const DEFAULT_STYLE_FOR_KIND: Record<LayerKind, StyleKey> = {
+  'border-box': 'border',
+  'text-block': 'text',
+  'figlet-text': 'accentText',
+  'divider': 'border',
+  'image': 'imageMid',
+  'edge-path': 'edge',
+  'group': 'bg',
+  'component': 'bg',
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -60,7 +72,10 @@ function getLayers(): Layer[] {
 function applyPageMutation(fn: (page: FigMePage) => FigMePage): void {
   const doc = getCurrentDocument();
   const page = doc.pages.find(p => p.id === doc.activePageId);
-  if (!page) return;
+  if (!page) {
+    console.warn('FigMe: no active page \u2014 mutation skipped.');
+    return;
+  }
 
   const nextDoc = {
     ...doc,
@@ -84,7 +99,7 @@ function defaultPropsForKind(kind: LayerKind): LayerProperties {
       return {
         content: 'Text',
         fontFamily: getCurrentDocument().gridConfig.fontFamily,
-        kerning: 1 as const,
+        kerning: 0 as const,
         lineSpacing: 0 as const,
         alignment: 'left' as const,
         styleKey: 'text' as StyleKey,
@@ -114,6 +129,11 @@ interface AddLayerSpec {
   row: number;
   width: number;
   height: number;
+  /** Direct hex color for foreground (e.g. '#ffffff'). */
+  color?: string;
+  /** Direct hex color for background (e.g. '#1a1a2e'). */
+  bg?: string;
+  /** @internal Accepted for backward compatibility but not documented to agents. */
   styleKey?: StyleKey;
   [key: string]: unknown;
 }
@@ -194,9 +214,9 @@ export function buildApi() {
       return getCurrentDocument().pages.find(p => p.id === id);
     },
 
-    // Layer mutations — supports positional or object-spec call form:
-    //   addLayer('border-box', 'name', {col,row,width,height}, 'border', props?)
-    //   addLayer({ kind:'border-box', col:2, row:2, width:20, height:5, styleKey:'border', ...props })
+    // Layer mutations — supports object-spec (preferred) or positional call form:
+    //   addLayer({kind:'border-box', col:2, row:2, width:20, height:5, color:'#fff', bg:'#000', ...props})
+    //   addLayer('border-box', 'name', {col,row,width,height}, styleKey?, props?)  [backward compat]
     addLayer(
       kindOrSpec: LayerKind | AddLayerSpec,
       name?: string,
@@ -209,14 +229,24 @@ export function buildApi() {
       let r: GridRect;
       let sk: StyleKey;
       let props: LayerProperties | undefined;
+      let customColors: { color?: string; bg?: string } | undefined;
 
       if (typeof kindOrSpec === 'object' && kindOrSpec !== null) {
-        // Object-spec overload
-        const { kind, name: objName, col, row, width, height, styleKey: objSk, ...rest } = kindOrSpec;
+        // Object-spec overload (preferred)
+        const { kind, name: objName, col, row, width, height, color, bg, styleKey: objSk, ...rest } = kindOrSpec;
         k = kind;
         n = objName ?? kind;
         r = { col, row, width, height };
-        sk = (objSk ?? 'text') as StyleKey;
+        // Derive internal styleKey from kind; accept explicit styleKey for backward compat
+        sk = objSk && STYLE_KEYS.includes(objSk as StyleKey)
+          ? objSk as StyleKey
+          : DEFAULT_STYLE_FOR_KIND[kind] ?? 'text';
+        // Build customColors from color/bg
+        if (color || bg) {
+          customColors = {};
+          if (color) customColors.color = color;
+          if (bg) customColors.bg = bg;
+        }
         // Merge remaining keys into default props for this kind
         const defaults = defaultPropsForKind(kind);
         props = Object.keys(rest).length > 0
@@ -225,10 +255,12 @@ export function buildApi() {
       } else {
         k = kindOrSpec;
         n = name ?? kindOrSpec;
-        if (!rect) throw new Error('FigMe.addLayer: rect is required for positional form — pass {col, row, width, height}');
-        if (!styleKey) throw new Error('FigMe.addLayer: styleKey is required for positional form');
+        if (!rect) throw new Error('FigMe.addLayer: rect is required for positional form \u2014 pass {col, row, width, height}');
         r = rect;
-        sk = styleKey;
+        // styleKey is optional in positional form; derive from kind if not provided
+        sk = styleKey && STYLE_KEYS.includes(styleKey as StyleKey)
+          ? styleKey
+          : DEFAULT_STYLE_FOR_KIND[k] ?? 'text';
         props = properties;
       }
 
@@ -238,55 +270,63 @@ export function buildApi() {
           `FigMe.addLayer: invalid kind "${String(k)}". Valid values: ${LAYER_KINDS.join(', ')}`,
         );
       }
-      if (!STYLE_KEYS.includes(sk as StyleKey)) {
-        throw new Error(
-          `FigMe.addLayer: invalid styleKey "${String(sk)}". Use FigMe.styles.keys for the full list.`,
+      if (k === 'edge-path') {
+        console.warn(
+          'FigMe.addLayer: edge-path is experimental and may cause rendering issues. Consider using text-block layers with box-drawing characters (\u2502\u2500\u250c\u2514\u251c\u2524) for connections.',
         );
       }
 
       let newId: string | undefined;
       applyPageMutation(page => {
-        const updated = addLayerOp(page, k, n, r, sk, props ?? defaultPropsForKind(k));
+        let updated = addLayerOp(page, k, n, r, sk, props ?? defaultPropsForKind(k));
         newId = updated.layerOrder[updated.layerOrder.length - 1];
+        if (customColors && newId) {
+          updated = updateLayerOp(updated, newId, { customColors });
+        }
         return updated;
       });
       return newId;
     },
     removeLayer(id: string): void {
-      applyPageMutation(page => removeLayerOp(page, id));
+      const page = getActivePage();
+      if (page && !page.layers[id]) {
+        console.warn(`FigMe.removeLayer: layer "${id}" not found on active page.`);
+        return;
+      }
+      applyPageMutation(p => removeLayerOp(p, id));
     },
     updateLayer(id: string, updates: Partial<Layer>): void {
+      const page = getActivePage();
+      if (page && !page.layers[id]) {
+        console.warn(`FigMe.updateLayer: layer "${id}" not found on active page.`);
+        return;
+      }
       // Guard: 'kind' must remain a valid LayerKind string if supplied
       if ('kind' in updates && !LAYER_KINDS.includes(updates.kind as LayerKind)) {
         throw new Error(
           `FigMe.updateLayer: invalid kind "${String(updates.kind)}". Valid values: ${LAYER_KINDS.join(', ')}`,
         );
       }
-      // Guard: 'styleKey' must be a known style key if supplied
+      // Warn on invalid styleKey but don't throw — agents primarily use customColors now
       if ('styleKey' in updates && !STYLE_KEYS.includes(updates.styleKey as StyleKey)) {
-        throw new Error(
-          `FigMe.updateLayer: invalid styleKey "${String(updates.styleKey)}". Use FigMe.styles.keys for the full list.`,
+        console.warn(
+          `FigMe.updateLayer: unknown styleKey "${String(updates.styleKey)}" ignored. Use customColors: {color, bg} for direct hex colors.`,
         );
+        delete (updates as Record<string, unknown>).styleKey;
       }
-      applyPageMutation(page => updateLayerOp(page, id, updates));
+      applyPageMutation(p => updateLayerOp(p, id, updates));
     },
     moveLayer(id: string, col: number, row: number): void {
-      applyPageMutation(page => moveLayerOp(page, id, col, row));
+      const page = getActivePage();
+      if (page && !page.layers[id]) {
+        console.warn(`FigMe.moveLayer: layer "${id}" not found on active page.`);
+        return;
+      }
+      applyPageMutation(p => moveLayerOp(p, id, col, row));
     },
 
     // Batch
     batch,
-
-    // Styles
-    styles: {
-      keys: STYLE_KEYS as readonly string[],
-      get palette() {
-        return getCurrentDocument().palette;
-      },
-      resolve(key: StyleKey) {
-        return getCurrentDocument().palette[key];
-      },
-    },
 
     // Viewport convenience helpers
     viewport: {

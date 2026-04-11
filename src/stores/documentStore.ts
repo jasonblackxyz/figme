@@ -141,9 +141,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   toggleLayerVisibility: (layerId: string) => {
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) return;
+    if (!page) { console.warn('FigMe store: toggleLayerVisibility skipped \u2014 no active page.'); return; }
     const layer = page.layers[layerId];
-    if (!layer) return;
+    if (!layer) { console.warn(`FigMe store: toggleLayerVisibility skipped \u2014 layer "${layerId}" not found.`); return; }
     get().pushUndo();
     const updatedPage = updateLayer(page, layerId, { visible: !layer.visible });
     set({
@@ -157,9 +157,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   toggleLayerLock: (layerId: string) => {
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) return;
+    if (!page) { console.warn('FigMe store: toggleLayerLock skipped \u2014 no active page.'); return; }
     const layer = page.layers[layerId];
-    if (!layer) return;
+    if (!layer) { console.warn(`FigMe store: toggleLayerLock skipped \u2014 layer "${layerId}" not found.`); return; }
     get().pushUndo();
     const updatedPage = updateLayer(page, layerId, { locked: !layer.locked });
     set({
@@ -173,9 +173,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   renameLayer: (layerId: string, name: string) => {
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) return;
+    if (!page) { console.warn('FigMe store: renameLayer skipped \u2014 no active page.'); return; }
     const layer = page.layers[layerId];
-    if (!layer) return;
+    if (!layer) { console.warn(`FigMe store: renameLayer skipped \u2014 layer "${layerId}" not found.`); return; }
     get().pushUndo();
     const updatedPage = updateLayer(page, layerId, { name });
     set({
@@ -256,7 +256,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   updateLayerColors: (layerId: string, customColors: { color?: string; bg?: string } | undefined) => {
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page || !page.layers[layerId]) return;
+    if (!page) { console.warn('FigMe store: updateLayerColors skipped \u2014 no active page.'); return; }
+    if (!page.layers[layerId]) { console.warn(`FigMe store: updateLayerColors skipped \u2014 layer "${layerId}" not found.`); return; }
     get().pushUndo();
     const updatedPage = updateLayer(page, layerId, { customColors });
     set({
@@ -286,9 +287,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     if (cells.length === 0) return;
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) return;
+    if (!page) { console.warn('FigMe store: setLayerCellOverridesBulk skipped \u2014 no active page.'); return; }
     const layer = page.layers[layerId];
-    if (!layer) return;
+    if (!layer) { console.warn(`FigMe store: setLayerCellOverridesBulk skipped \u2014 layer "${layerId}" not found.`); return; }
     if (options?.pushUndo !== false) {
       get().pushUndo();
     }
