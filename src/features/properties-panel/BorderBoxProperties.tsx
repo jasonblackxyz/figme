@@ -30,6 +30,7 @@ export function BorderBoxProperties({ layer }: Props) {
   const doc = useDocumentStore(s => s.document);
   const STYLES = ['rounded', 'double', 'section', 'custom'] as const;
 
+  const padding = props.padding ?? { top: 0, right: 0, bottom: 0, left: 0 };
   const bgStyleKey = props.bgStyleKey ?? 'nodeBg';
   const bgStyleDef = doc.palette[bgStyleKey];
   const fillColor = bgStyleDef?.bg ?? '#000000';
@@ -83,14 +84,14 @@ export function BorderBoxProperties({ layer }: Props) {
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Padding</label>
           <div className={styles.inlineGroup}>
-            <input className={styles.smallInput} type="number" value={props.padding.top} data-property="padding-top"
-              onChange={(e) => applyPropsUpdate(layer.id, { padding: { ...props.padding, top: parseInt(e.target.value) || 0 } })} />
-            <input className={styles.smallInput} type="number" value={props.padding.right} data-property="padding-right"
-              onChange={(e) => applyPropsUpdate(layer.id, { padding: { ...props.padding, right: parseInt(e.target.value) || 0 } })} />
-            <input className={styles.smallInput} type="number" value={props.padding.bottom} data-property="padding-bottom"
-              onChange={(e) => applyPropsUpdate(layer.id, { padding: { ...props.padding, bottom: parseInt(e.target.value) || 0 } })} />
-            <input className={styles.smallInput} type="number" value={props.padding.left} data-property="padding-left"
-              onChange={(e) => applyPropsUpdate(layer.id, { padding: { ...props.padding, left: parseInt(e.target.value) || 0 } })} />
+            <input className={styles.smallInput} type="number" value={padding.top} data-property="padding-top"
+              onChange={(e) => applyPropsUpdate(layer.id, { padding: { ...padding, top: parseInt(e.target.value) || 0 } })} />
+            <input className={styles.smallInput} type="number" value={padding.right} data-property="padding-right"
+              onChange={(e) => applyPropsUpdate(layer.id, { padding: { ...padding, right: parseInt(e.target.value) || 0 } })} />
+            <input className={styles.smallInput} type="number" value={padding.bottom} data-property="padding-bottom"
+              onChange={(e) => applyPropsUpdate(layer.id, { padding: { ...padding, bottom: parseInt(e.target.value) || 0 } })} />
+            <input className={styles.smallInput} type="number" value={padding.left} data-property="padding-left"
+              onChange={(e) => applyPropsUpdate(layer.id, { padding: { ...padding, left: parseInt(e.target.value) || 0 } })} />
           </div>
         </div>
       </div>
