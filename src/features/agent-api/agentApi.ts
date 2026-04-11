@@ -312,7 +312,9 @@ export function buildApi() {
         console.warn(
           `FigMe.updateLayer: unknown styleKey "${String(updates.styleKey)}" ignored. Use customColors: {color, bg} for direct hex colors.`,
         );
-        delete (updates as Record<string, unknown>).styleKey;
+        const { styleKey: _ignored, ...safeUpdates } = updates;
+        applyPageMutation(p => updateLayerOp(p, id, safeUpdates));
+        return;
       }
       applyPageMutation(p => updateLayerOp(p, id, updates));
     },
