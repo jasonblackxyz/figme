@@ -25,8 +25,8 @@ export function createBuffer(width: number, height: number): StampBuffer {
 
 /**
  * Merge an overlay buffer onto a base buffer at the given position.
- * All cells from the overlay overwrite the base (including spaces).
- * Use `transparent` option to skip cells that match the default style.
+ * Cells with the default 'bg' style are treated as transparent and skipped,
+ * allowing lower-layer content to show through empty areas of upper layers.
  * Returns a new buffer (does not mutate the base).
  */
 export function mergeBuffers(
@@ -47,7 +47,7 @@ export function mergeBuffers(
 
       const overlayChar = overlay.chars[r]?.[c];
       const overlayStyle = overlay.styles[r]?.[c];
-      if (overlayChar !== undefined && overlayStyle !== undefined) {
+      if (overlayChar !== undefined && overlayStyle !== undefined && overlayStyle !== 'bg') {
         result.chars[targetRow]![targetCol] = overlayChar;
         result.styles[targetRow]![targetCol] = overlayStyle;
       }

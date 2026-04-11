@@ -19,7 +19,7 @@ export interface BorderBoxProperties {
   titleStyleKey?: StyleKey;
   bgStyleKey?: StyleKey;
   fillPattern?: string;
-  padding: { top: number; right: number; bottom: number; left: number };
+  padding?: { top: number; right: number; bottom: number; left: number };
   scrollable?: boolean;
   totalContentRows?: number;
 }
