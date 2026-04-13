@@ -146,7 +146,7 @@ interface AddLayerSpec {
 // ---------------------------------------------------------------------------
 
 export function buildApi() {
-  return {
+  const api = {
     version: { api: '1.0', app: 'FigMe 2.0' },
 
     // Raw store access for operations the convenience layer doesn't cover
@@ -373,7 +373,7 @@ export function buildApi() {
           contentLines.push(lineStr);
         }
         content = contentLines.join('\n');
-      } else if (spec.content) {
+      } else if (spec.content != null) {
         // Content mode: monochrome ASCII art
         content = spec.content;
         if (spec.color || spec.bg) {
@@ -396,12 +396,12 @@ export function buildApi() {
 
       // Auto-compute dimensions from content
       const contentLines = content.split('\n');
-      const width = Math.max(...contentLines.map(l => l.length), 1);
+      const width = contentLines.reduce((m, l) => Math.max(m, l.length), 1);
       const height = contentLines.length;
 
       const canvasProps: CanvasProperties = { content, cellColors };
 
-      return this.addLayer({
+      return api.addLayer({
         kind: 'canvas',
         name: spec.name ?? 'canvas',
         col: spec.col,
@@ -484,4 +484,5 @@ export function buildApi() {
       },
     },
   };
+  return api;
 }
