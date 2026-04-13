@@ -5,6 +5,7 @@ import type {
   TextBlockProperties,
   FigletTextProperties,
   EdgePathProperties,
+  CanvasProperties,
 } from '@primitives/document-model/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { StampBuffer } from './types.ts';
@@ -19,6 +20,7 @@ import {
 import { stampTextBlock } from './stampText.ts';
 import { stampFigletText } from './stampFiglet.ts';
 import { stampEdge } from './stampEdge.ts';
+import { stampCanvas } from './stampCanvas.ts';
 import { getFigletFont } from '@primitives/figlet-engine/fonts/index.ts';
 
 /**
@@ -89,6 +91,11 @@ export function composePageBuffer(page: FigMePage, gridConfig: GridConfig, skipL
             gridConfig.canvasRows,
           );
         }
+        break;
+      }
+      case 'canvas': {
+        const props = layer.properties as CanvasProperties;
+        layerBuffer = stampCanvas(props, layer.rect);
         break;
       }
       case 'image':
