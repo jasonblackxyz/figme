@@ -1,5 +1,4 @@
 import type { StyleDef } from '@primitives/style-system/types.ts';
-import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 
 /** Top-level GridSpec document — the structured export format. */
 export interface GridSpec {
@@ -32,11 +31,7 @@ export interface GridSpecPage {
   name: string;
   gridOverride?: { cols: number; rows: number };
   layers: GridSpecLayer[];
-  buffer?: {
-    chars: string[][];
-    styles: string[][];
-  };
-  colorOverrides?: ColorOverrideMap;
+  buffer?: GridSpecCompactBuffer;
 }
 
 export interface GridSpecLayer {
@@ -116,4 +111,14 @@ export interface GridSpecComponent {
   description: string;
   sourceLayerIds: string[];
   sourceLayerNames: string[];
+}
+
+/** Compact pre-resolved buffer: chars as strings-per-row, colors as indexed palette. */
+export interface GridSpecCompactBuffer {
+  /** One string per row — concatenated characters. */
+  chars: string[];
+  /** Indexed palette of unique resolved cell styles. */
+  colorPalette: StyleDef[];
+  /** Per-row arrays of palette indices, one index per cell. */
+  colorMap: number[][];
 }
