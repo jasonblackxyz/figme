@@ -10,7 +10,8 @@ export type LayerKind =
   | 'image'
   | 'edge-path'
   | 'group'
-  | 'component';
+  | 'component'
+  | 'canvas';
 
 export interface BorderBoxProperties {
   borderStyle: 'rounded' | 'double' | 'section' | 'custom';
@@ -63,6 +64,13 @@ export interface ComponentInstanceProperties {
   componentId: string;
 }
 
+export interface CanvasProperties {
+  /** Raw multiline ASCII art, '\n'-separated. Spaces are transparent. */
+  content: string;
+  /** Per-cell color overrides keyed by "relRow,relCol" — supports fg + bg hex. */
+  cellColors: Record<string, { color?: string; bg?: string }>;
+}
+
 export interface CustomBorderChars {
   tl: string;
   t: string;
@@ -89,6 +97,7 @@ export type LayerProperties =
   | ImageProperties
   | EdgePathProperties
   | ComponentInstanceProperties
+  | CanvasProperties
   | Record<string, never>;
 
 export interface Layer {

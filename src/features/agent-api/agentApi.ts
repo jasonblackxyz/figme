@@ -2,7 +2,7 @@ import { useDocumentStore } from '@stores/documentStore.ts';
 import { useToolStore } from '@stores/toolStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
-import type { FigMeDocument, FigMePage, Layer, LayerKind, LayerProperties } from '@primitives/document-model/types.ts';
+import type { FigMeDocument, FigMePage, Layer, LayerKind, LayerProperties, CanvasProperties } from '@primitives/document-model/types.ts';
 import type { GridRect } from '@primitives/grid-engine/types.ts';
 import type { StyleKey } from '@primitives/style-system/types.ts';
 import {
@@ -30,7 +30,7 @@ import { batch, isBatching, getPendingDocument, setPendingDocument } from './bat
 
 const LAYER_KINDS: LayerKind[] = [
   'border-box', 'text-block', 'figlet-text', 'divider',
-  'image', 'edge-path', 'group', 'component',
+  'image', 'edge-path', 'group', 'component', 'canvas',
 ];
 
 /** Internal default styleKey per layer kind — agents never see these. */
@@ -43,6 +43,7 @@ const DEFAULT_STYLE_FOR_KIND: Record<LayerKind, StyleKey> = {
   'edge-path': 'edge',
   'group': 'bg',
   'component': 'bg',
+  'canvas': 'text',
 };
 
 // ---------------------------------------------------------------------------
@@ -115,6 +116,8 @@ function defaultPropsForKind(kind: LayerKind): LayerProperties {
       return { sourceLayerId: '', targetLayerId: '', routingStyle: 'manhattan' as const, waypoints: [], styleKey: 'edge' as StyleKey };
     case 'component':
       return { componentId: '' };
+    case 'canvas':
+      return { content: '', cellColors: {} };
   }
 }
 
@@ -143,7 +146,7 @@ interface AddLayerSpec {
 // ---------------------------------------------------------------------------
 
 export function buildApi() {
-  return {
+  const api = {
     version: { api: '1.0', app: 'FigMe 2.0' },
 
     // Raw store access for operations the convenience layer doesn't cover
@@ -330,6 +333,86 @@ export function buildApi() {
     // Batch
     batch,
 
+    // Freeform painting — the primary creative tool for agents.
+    // Accepts either lines (per-span colors) or content (monochrome).
+    paint(spec: {
+      name?: string;
+      col: number;
+      row: number;
+      lines?: Array<Array<{ text: string; color?: string; bg?: string }>>;
+      content?: string;
+      color?: string;
+      bg?: string;
+    }): string | undefined {
+      let content: string;
+      const cellColors: Record<string, { color?: string; bg?: string }> = {};
+
+      if (spec.lines) {
+        // Lines mode: convert spans into flat content + per-cell colors
+        const contentLines: string[] = [];
+        for (let row = 0; row < spec.lines.length; row++) {
+          const spans = spec.lines[row]!;
+          let lineStr = '';
+          for (const span of spans) {
+            const startCol = lineStr.length;
+            lineStr += span.text;
+            // Write per-cell colors for non-space characters
+            const spanColor = span.color ?? spec.color;
+            const spanBg = span.bg ?? spec.bg;
+            if (spanColor || spanBg) {
+              for (let i = 0; i < span.text.length; i++) {
+                if (span.text[i] !== ' ') {
+                  const entry: { color?: string; bg?: string } = {};
+                  if (spanColor) entry.color = spanColor;
+                  if (spanBg) entry.bg = spanBg;
+                  cellColors[`${row},${startCol + i}`] = entry;
+                }
+              }
+            }
+          }
+          contentLines.push(lineStr);
+        }
+        content = contentLines.join('\n');
+      } else if (spec.content != null) {
+        // Content mode: monochrome ASCII art
+        content = spec.content;
+        if (spec.color || spec.bg) {
+          const lines = content.split('\n');
+          for (let row = 0; row < lines.length; row++) {
+            const line = lines[row] ?? '';
+            for (let col = 0; col < line.length; col++) {
+              if (line[col] !== ' ') {
+                const entry: { color?: string; bg?: string } = {};
+                if (spec.color) entry.color = spec.color;
+                if (spec.bg) entry.bg = spec.bg;
+                cellColors[`${row},${col}`] = entry;
+              }
+            }
+          }
+        }
+      } else {
+        throw new Error('FigMe.paint: provide either "lines" (per-span colors) or "content" (plain string).');
+      }
+
+      // Auto-compute dimensions from content
+      const contentLines = content.split('\n');
+      const width = contentLines.reduce((m, l) => Math.max(m, l.length), 1);
+      const height = contentLines.length;
+
+      const canvasProps: CanvasProperties = { content, cellColors };
+
+      return api.addLayer({
+        kind: 'canvas',
+        name: spec.name ?? 'canvas',
+        col: spec.col,
+        row: spec.row,
+        width,
+        height,
+        content: canvasProps.content,
+        cellColors: canvasProps.cellColors,
+      } as AddLayerSpec);
+    },
+
     // Viewport convenience helpers
     viewport: {
       setZoom: (zoom: number) => useViewportStore.getState().setZoom(zoom),
@@ -401,4 +484,5 @@ export function buildApi() {
       },
     },
   };
+  return api;
 }

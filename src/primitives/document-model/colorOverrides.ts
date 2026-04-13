@@ -1,4 +1,4 @@
-import type { FigMePage, Layer } from './types.ts';
+import type { FigMePage, Layer, CanvasProperties } from './types.ts';
 import { flattenLayerOrder, isEffectivelyHidden } from './hierarchy.ts';
 
 export type ColorOverrideMap = Record<string, { color?: string; bg?: string }>;
@@ -45,6 +45,24 @@ export function computeColorOverrides(page: FigMePage): ColorOverrideMap {
             ...colorOverrides[absKey],
             bg: bgColor,
           };
+        }
+      }
+    }
+
+    // Canvas layers: per-cell fg + bg from CanvasProperties.cellColors
+    if (layer.kind === 'canvas') {
+      const canvasProps = layer.properties as CanvasProperties;
+      if (canvasProps.cellColors) {
+        const { col, row } = layer.rect;
+        for (const [relKey, colors] of Object.entries(canvasProps.cellColors)) {
+          const [relRow, relCol] = relKey.split(',').map(Number);
+          if (relRow != null && relCol != null && Number.isFinite(relRow) && Number.isFinite(relCol)) {
+            const absKey = `${row + relRow},${col + relCol}`;
+            colorOverrides[absKey] = {
+              ...colorOverrides[absKey],
+              ...colors,
+            };
+          }
         }
       }
     }
