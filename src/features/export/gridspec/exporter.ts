@@ -10,10 +10,12 @@ import type {
 } from '@primitives/document-model/types.ts';
 import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 import type { Palette, StyleDef } from '@primitives/style-system/types.ts';
+import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import { BORDER_CHARS } from '@primitives/stamp-system/stamps.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
 import { computeColorOverrides } from '@primitives/document-model/colorOverrides.ts';
-import type { GridSpec, GridSpecPage, GridSpecLayer, GridSpecResolved, GridSpecComponent } from './types.ts';
+import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
+import type { GridSpec, GridSpecPage, GridSpecLayer, GridSpecResolved, GridSpecComponent, GridSpecCompactBuffer } from './types.ts';
 
 export interface GridSpecExportOptions {
   includeBuffer?: boolean;
@@ -72,14 +74,8 @@ export function exportAsGridSpec(doc: FigMeDocument, options?: GridSpecExportOpt
         canvasRows: rows,
       };
       const buffer = composePageBuffer(page, pageGridConfig);
-      specPage.buffer = {
-        chars: buffer.chars,
-        styles: buffer.styles as string[][],
-      };
       const overrides = computeColorOverrides(page);
-      if (Object.keys(overrides).length > 0) {
-        specPage.colorOverrides = overrides;
-      }
+      specPage.buffer = buildCompactBuffer(buffer, palette as Palette, overrides);
     }
 
     return specPage;
@@ -125,6 +121,49 @@ export function exportAsGridSpec(doc: FigMeDocument, options?: GridSpecExportOpt
  */
 export function exportGridSpecAsJson(doc: FigMeDocument, options?: GridSpecExportOptions): string {
   return JSON.stringify(exportAsGridSpec(doc, options), null, 2);
+}
+
+function buildCompactBuffer(
+  buffer: StampBuffer,
+  palette: Palette,
+  colorOverrides: ColorOverrideMap,
+): GridSpecCompactBuffer {
+  const paletteEntries: Array<{ color: string; bg: string; fontWeight?: number }> = [];
+  const signatureToIndex = new Map<string, number>();
+
+  const chars: string[] = [];
+  const colorMap: number[][] = [];
+
+  for (let r = 0; r < buffer.height; r++) {
+    const charRow = buffer.chars[r];
+    const styleRow = buffer.styles[r];
+    chars.push(charRow ? charRow.join('') : '');
+
+    const indexRow: number[] = [];
+    for (let c = 0; c < buffer.width; c++) {
+      const styleKey = styleRow?.[c] ?? '';
+      const styleDef = (palette as Record<string, StyleDef | undefined>)[styleKey];
+      const override = colorOverrides[`${r},${c}`];
+
+      const color = override?.color ?? styleDef?.color ?? '#ffffff';
+      const bg = override?.bg ?? styleDef?.bg ?? '#000000';
+      const fontWeight = styleDef?.fontWeight;
+
+      const sig = `${color}|${bg}|${fontWeight ?? ''}`;
+      let idx = signatureToIndex.get(sig);
+      if (idx === undefined) {
+        idx = paletteEntries.length;
+        signatureToIndex.set(sig, idx);
+        const entry: { color: string; bg: string; fontWeight?: number } = { color, bg };
+        if (fontWeight) entry.fontWeight = fontWeight;
+        paletteEntries.push(entry);
+      }
+      indexRow.push(idx);
+    }
+    colorMap.push(indexRow);
+  }
+
+  return { chars, colorPalette: paletteEntries, colorMap };
 }
 
 function buildSpecLayer(
