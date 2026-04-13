@@ -49,10 +49,11 @@ export async function saveToDB(doc: FigMeDocument): Promise<void> {
     const store = tx.objectStore(STORE_NAME);
     const countReq = store.count();
     await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
       countReq.onsuccess = () => {
         const total = countReq.result;
         if (total <= MAX_SAVES) {
-          resolve();
           return;
         }
         const toDelete = total - MAX_SAVES;
@@ -64,8 +65,6 @@ export async function saveToDB(doc: FigMeDocument): Promise<void> {
             c.delete();
             deleted++;
             c.continue();
-          } else {
-            resolve();
           }
         };
         cursor.onerror = () => reject(cursor.error);
