@@ -23,6 +23,11 @@ export function App() {
   useClipboard();
   useConsoleLogger();
 
+  // Recover persisted document on mount
+  useEffect(() => {
+    useDocumentStore.getState().initializeFromPersistence();
+  }, []);
+
   const document = useDocumentStore((s) => s.document);
   const specViewOpen = useUiStore((s) => s.specViewOpen);
   const toggleSpecView = useUiStore((s) => s.toggleSpecView);

@@ -1,29 +1,27 @@
 import { useEffect } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
-import { deserializeDocument } from '@primitives/document-model/serialization.ts';
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import { saveToDB, saveToLocalStorage } from './persistenceDb.ts';
 
-export function useAutoSave(intervalMs = 30000): void {
+export function useAutoSave(intervalMs = 10000): void {
   useEffect(() => {
     const timer = setInterval(() => {
       const doc = useDocumentStore.getState().document;
-      try {
-        localStorage.setItem('figme_autosave', JSON.stringify(doc));
-      } catch {
-        // Storage full or unavailable -- silently skip
-      }
+      // Synchronous localStorage write (fast, always available)
+      saveToLocalStorage(doc);
+      // Async IndexedDB write (fire-and-forget, larger capacity)
+      saveToDB(doc).catch(() => {});
     }, intervalMs);
 
-    return () => clearInterval(timer);
-  }, [intervalMs]);
-}
+    // Flush to localStorage on tab close — synchronous so it completes
+    // before the page unloads (IndexedDB is async and may not finish)
+    const handleBeforeUnload = () => {
+      saveToLocalStorage(useDocumentStore.getState().document);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
-export function loadAutoSave(): FigMeDocument | null {
-  try {
-    const saved = localStorage.getItem('figme_autosave');
-    if (saved) return deserializeDocument(saved);
-  } catch {
-    // Invalid JSON or storage unavailable
-  }
-  return null;
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [intervalMs]);
 }

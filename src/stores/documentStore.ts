@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { FigMeDocument, FigMePage, SwatchCollection } from '@primitives/document-model/types.ts';
+import { loadPersistedDocument } from '@features/file-io/persistenceDb.ts';
 import {
   createEmptyDocument,
   updateLayer,
@@ -29,6 +30,7 @@ interface DocumentState {
   undoStack: FigMeDocument[];
   redoStack: FigMeDocument[];
   setDocument: (doc: FigMeDocument) => void;
+  initializeFromPersistence: () => Promise<void>;
   undo: () => void;
   redo: () => void;
   pushUndo: () => void;
@@ -106,6 +108,13 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
   setDocument: (doc: FigMeDocument) => {
     set({ document: doc });
+  },
+
+  initializeFromPersistence: async () => {
+    const doc = await loadPersistedDocument();
+    if (doc) {
+      set({ document: doc, undoStack: [], redoStack: [] });
+    }
   },
 
   pushUndo: () => {
