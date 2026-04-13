@@ -23,6 +23,14 @@ export function App() {
   useClipboard();
   useConsoleLogger();
 
+  // Recover persisted document on mount. Ref guard prevents double-fire in StrictMode.
+  const persistenceInitialized = useRef(false);
+  useEffect(() => {
+    if (persistenceInitialized.current) return;
+    persistenceInitialized.current = true;
+    useDocumentStore.getState().initializeFromPersistence();
+  }, []);
+
   const document = useDocumentStore((s) => s.document);
   const specViewOpen = useUiStore((s) => s.specViewOpen);
   const toggleSpecView = useUiStore((s) => s.toggleSpecView);
