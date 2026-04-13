@@ -167,8 +167,8 @@ describe('exportAsGridSpec with includeBuffer', () => {
       expect(typeof entry.bg).toBe('string');
     }
 
-    // no colorOverrides on the page
-    expect((page as Record<string, unknown>)['colorOverrides']).toBeUndefined();
+    // buffer is the only color data — no separate colorOverrides field exists on the type
+    expect('colorOverrides' in page).toBe(false);
   });
 
   it('deduplicates colors into a compact palette', () => {

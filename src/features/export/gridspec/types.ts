@@ -113,18 +113,12 @@ export interface GridSpecComponent {
   sourceLayerNames: string[];
 }
 
-export interface GridSpecCellStyle {
-  color: string;
-  bg: string;
-  fontWeight?: number;
-}
-
 /** Compact pre-resolved buffer: chars as strings-per-row, colors as indexed palette. */
 export interface GridSpecCompactBuffer {
   /** One string per row — concatenated characters. */
   chars: string[];
   /** Indexed palette of unique resolved cell styles. */
-  colorPalette: GridSpecCellStyle[];
+  colorPalette: StyleDef[];
   /** Per-row arrays of palette indices, one index per cell. */
   colorMap: number[][];
 }

@@ -13,8 +13,7 @@ import type { Palette, StyleDef } from '@primitives/style-system/types.ts';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import { BORDER_CHARS } from '@primitives/stamp-system/stamps.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
-import { computeColorOverrides } from '@primitives/document-model/colorOverrides.ts';
-import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
+import { computeColorOverrides, type ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 import type { GridSpec, GridSpecPage, GridSpecLayer, GridSpecResolved, GridSpecComponent, GridSpecCompactBuffer } from './types.ts';
 
 export interface GridSpecExportOptions {
@@ -128,7 +127,7 @@ function buildCompactBuffer(
   palette: Palette,
   colorOverrides: ColorOverrideMap,
 ): GridSpecCompactBuffer {
-  const paletteEntries: Array<{ color: string; bg: string; fontWeight?: number }> = [];
+  const paletteEntries: StyleDef[] = [];
   const signatureToIndex = new Map<string, number>();
 
   const chars: string[] = [];
@@ -141,8 +140,8 @@ function buildCompactBuffer(
 
     const indexRow: number[] = [];
     for (let c = 0; c < buffer.width; c++) {
-      const styleKey = styleRow?.[c] ?? '';
-      const styleDef = (palette as Record<string, StyleDef | undefined>)[styleKey];
+      const styleKey = styleRow?.[c];
+      const styleDef = resolveStyle(palette, styleKey);
       const override = colorOverrides[`${r},${c}`];
 
       const color = override?.color ?? styleDef?.color ?? '#ffffff';
@@ -154,7 +153,7 @@ function buildCompactBuffer(
       if (idx === undefined) {
         idx = paletteEntries.length;
         signatureToIndex.set(sig, idx);
-        const entry: { color: string; bg: string; fontWeight?: number } = { color, bg };
+        const entry: StyleDef = { color, bg };
         if (fontWeight) entry.fontWeight = fontWeight;
         paletteEntries.push(entry);
       }
