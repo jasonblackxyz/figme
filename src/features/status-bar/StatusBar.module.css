@@ -10,23 +10,3 @@
   gap: 16px;
   font-family: 'IBM Plex Mono', monospace;
 }
-
-.exportButton {
-  margin-left: auto;
-  height: 18px;
-  padding: 0 10px;
-  border: 1px solid var(--color-border, #c0c0cc);
-  border-radius: 3px;
-  background: transparent;
-  color: var(--color-text-dim, #6b6b80);
-  cursor: pointer;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  line-height: 1;
-  transition: background 0.1s, color 0.1s;
-}
-
-.exportButton:hover {
-  background: var(--color-surface-raised, rgba(0, 0, 0, 0.04));
-  color: var(--color-text, #1a1a2e);
-}
