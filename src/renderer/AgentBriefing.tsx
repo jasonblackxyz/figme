@@ -184,13 +184,13 @@ function buildFullBriefing(document: FigMeDocument) {
         },
         {
           name: 'Freeform painting (monochrome)',
-          code: "FigMe.paint({col:2, row:2, content:'\u256d\u2500\u2500\u2500\u2500\u2500\u256e\\n\u2502 Hi  \u2502\\n\u2570\u2500\u2500\u2500\u2500\u2500\u256f', color:'#ffffff'})",
-          notes: "Spaces are transparent \u2014 lower layers show through. ASCII export works natively.",
+          code: "FigMe.paint({col:2, row:2, content:'\\u256d\\u2500\\u2500\\u2500\\u2500\\u2500\\u256e\\n\\u2502 Hi  \\u2502\\n\\u2570\\u2500\\u2500\\u2500\\u2500\\u2500\\u256f', color:'#ffffff'})",
+          notes: 'Spaces are transparent \u2014 lower layers show through. ASCII export works natively.',
         },
         {
           name: 'Freeform painting (per-span colors)',
-          code: "FigMe.paint({col:2, row:2, lines:[[{text:'\u2591\u2591\u2591', color:'#3d3a34'}, {text:'\u2588\u2588\u2588', color:'#8b3a2a'}]]})",
-          notes: "Each span has its own color. No coordinate math needed \u2014 colors are inline with the text.",
+          code: "FigMe.paint({col:2, row:2, lines:[[{text:'\\u2591\\u2591\\u2591', color:'#3d3a34'}, {text:'\\u2588\\u2588\\u2588', color:'#8b3a2a'}]]})",
+          notes: 'Each span has its own color. No coordinate math needed \u2014 colors are inline with the text.',
         },
         {
           name: 'Verify the design',

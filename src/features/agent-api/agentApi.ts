@@ -462,6 +462,9 @@ export function buildApi() {
 
     // Agent briefing mode toggle
     setAgentMode(mode: 'full' | 'raw'): void {
+      if (mode !== 'full' && mode !== 'raw') {
+        throw new Error(`FigMe.setAgentMode: invalid mode "${String(mode)}". Valid values: full, raw`);
+      }
       useUiStore.getState().setAgentBriefingMode(mode);
     },
     getAgentMode(): 'full' | 'raw' {
