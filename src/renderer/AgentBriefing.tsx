@@ -1,29 +1,20 @@
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import { useUiStore } from '@stores/uiStore.ts';
 
 interface AgentBriefingProps {
   document: FigMeDocument;
 }
 
-/**
- * Hidden component that embeds two structured JSON elements for AI agents:
- *
- * 1. #figme-agent-briefing  — static API reference (layer kinds with props schemas,
- *    recipes, warnings, DOM selectors). Accessible as window.FigMe.briefing or by ID.
- *
- * 2. [data-spec="full-document"] — live document snapshot that re-renders whenever the Zustand
- *    document store changes. Agents can read current design state without any JS calls.
- *
- * Both are referenced via aria-describedby on #app-root so the accessibility tree points to them.
- */
-export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
-  // Memoize JSON serialisation — the briefing is static (no document data), the live
-  // snapshot changes on every document update. Both can be expensive for large docs.
-  const documentJson = useMemo(() => JSON.stringify(document), [document]);
+// ---------------------------------------------------------------------------
+// Briefing builders
+// ---------------------------------------------------------------------------
 
-  const briefing = {
+function buildFullBriefing(document: FigMeDocument) {
+  return {
     system: 'FigMe \u2014 ASCII Grid Design Tool',
     version: '2.0',
+    mode: 'full' as const,
     purpose:
       'Design tool for composing ASCII character grid interfaces. All colours are specified as hex values (e.g. \'#ffffff\'). You have full creative control over the colour palette.',
     gridSystem: {
@@ -69,6 +60,8 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
         'viewport.setZoom(n)',
         'viewport.resetView()',
         'viewport.fitToPage()',
+        "setAgentMode('full' | 'raw') \u2014 switch agent briefing mode",
+        "getAgentMode() \u2014 returns current briefing mode ('full' or 'raw')",
       ],
       batch: 'FigMe.batch(() => { ...mutations... }) \u2014 single undo entry. ALWAYS use batch() when adding multiple layers.',
       subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub \u2014 WARNING: never call mutation methods (addLayer etc.) inside the 'document' callback; that creates an infinite loop and crashes the tab.",
@@ -191,12 +184,12 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
         },
         {
           name: 'Freeform painting (monochrome)',
-          code: "FigMe.paint({col:2, row:2, content:'\\u256d\\u2500\\u2500\\u2500\\u2500\\u2500\\u256e\\n\\u2502 Hi  \\u2502\\n\\u2570\\u2500\\u2500\\u2500\\u2500\\u2500\\u256f', color:'#ffffff'})",
+          code: "FigMe.paint({col:2, row:2, content:'\u256d\u2500\u2500\u2500\u2500\u2500\u256e\\n\u2502 Hi  \u2502\\n\u2570\u2500\u2500\u2500\u2500\u2500\u256f', color:'#ffffff'})",
           notes: "Spaces are transparent \u2014 lower layers show through. ASCII export works natively.",
         },
         {
           name: 'Freeform painting (per-span colors)',
-          code: "FigMe.paint({col:2, row:2, lines:[[{text:'\\u2591\\u2591\\u2591', color:'#3d3a34'}, {text:'\\u2588\\u2588\\u2588', color:'#8b3a2a'}]]})",
+          code: "FigMe.paint({col:2, row:2, lines:[[{text:'\u2591\u2591\u2591', color:'#3d3a34'}, {text:'\u2588\u2588\u2588', color:'#8b3a2a'}]]})",
           notes: "Each span has its own color. No coordinate math needed \u2014 colors are inline with the text.",
         },
         {
@@ -241,13 +234,149 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
       // Valid status field values: cursor-pos, zoom, grid-size, layer-count
     },
   };
+}
+
+function buildRawBriefing(document: FigMeDocument) {
+  return {
+    system: 'FigMe \u2014 ASCII Grid Design Tool',
+    version: '2.0',
+    mode: 'raw' as const,
+    purpose:
+      'Freeform ASCII art canvas. You have complete creative freedom \u2014 use FigMe.paint() to place any characters (box-drawing, block elements, Unicode symbols, custom shapes) with per-cell hex colours. There are no predefined templates or layer types. Design from scratch.',
+    gridSystem: {
+      description:
+        'The canvas is a 2D grid of monospace character cells. Every position is addressed by (col, row). There are no sub-cell positions. Spaces are transparent \u2014 lower layers show through.',
+      defaults: {
+        fontFamily: document.gridConfig.fontFamily,
+        fontSize: document.gridConfig.fontSize,
+        lineHeight: document.gridConfig.lineHeight,
+        cellWidth: document.gridConfig.cellWidth,
+        cellHeight: document.gridConfig.cellHeight,
+      },
+    },
+    document: {
+      name: document.name,
+      pageCount: document.pages.length,
+      activePageId: document.activePageId,
+    },
+    api: {
+      global: 'window.FigMe',
+      briefing: 'window.FigMe.briefing \u2014 returns this parsed briefing object',
+      convenience: [
+        'getDocument()',
+        'getActivePage()',
+        'getLayers()',
+        'getLayer(id)',
+        'removeLayer(id)',
+        'moveLayer(id, col, row)',
+        'findLayer(name)',
+        "paint({col, row, lines?, content?, color?, bg?, name?}) \u2014 freeform character painting with per-span colors. Returns layerId",
+        'export.toAscii(pageId?) \u2014 rendered ASCII string for verification',
+        'export.toJson()',
+        "setAgentMode('full' | 'raw') \u2014 switch agent briefing mode",
+        "getAgentMode() \u2014 returns current briefing mode ('full' or 'raw')",
+      ],
+      batch: 'FigMe.batch(() => { ...mutations... }) \u2014 single undo entry. ALWAYS use batch() when placing multiple paint layers.',
+      subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub \u2014 WARNING: never call mutation methods inside the 'document' callback; that creates an infinite loop and crashes the tab.",
+      subscribeRecovery: 'If a render error occurs, a FIGME_RECOVERY console entry appears with exact recovery commands. Short version: FigMe.stores.document.getState().undo() then click Dismiss.',
+      storeExamples: {
+        undo: 'FigMe.stores.document.getState().undo()',
+        zoom: 'FigMe.viewport.setZoom(1.5)',
+        fitToPage: 'FigMe.viewport.fitToPage()',
+        paintCells:
+          "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor')",
+        paintPage:
+          "FigMe.stores.document.getState().setPageCellOverridesBulk([{row,col}], '#hexColor')",
+      },
+    },
+    colorSystem: {
+      description: 'All colours are hex strings (e.g. \'#ffffff\', \'#1a1a2e\'). Pass color (foreground) and bg (background) to paint().',
+      perCell: "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row:0,col:0},{row:0,col:1}], '#ff6600')",
+      pageBackground: "FigMe.stores.document.getState().setPageCellOverridesBulk([{row:0,col:0}], '#0d1117')",
+    },
+    recipes: {
+      note: 'Use paint() for all design work. You have complete creative freedom over characters, layout, and colours.',
+      operations: [
+        {
+          name: 'Freeform painting (monochrome)',
+          code: "FigMe.paint({col:2, row:2, content:'\u256d\u2500\u2500\u2500\u2500\u2500\u256e\\n\u2502 Hi  \u2502\\n\u2570\u2500\u2500\u2500\u2500\u2500\u256f', color:'#ffffff'})",
+          notes: 'Spaces are transparent. Use any Unicode characters \u2014 box-drawing (\u2500\u2502\u256d\u256e\u256f\u2570), blocks (\u2588\u2591\u2592\u2593), symbols, etc.',
+        },
+        {
+          name: 'Freeform painting (per-span colors)',
+          code: "FigMe.paint({col:2, row:2, lines:[[{text:'\u2591\u2591\u2591', color:'#3d3a34'}, {text:'\u2588\u2588\u2588', color:'#8b3a2a'}]]})",
+          notes: 'Each span in a line has its own color and bg. No coordinate math needed \u2014 colours are inline with the text.',
+        },
+        {
+          name: 'Verify the design',
+          code: 'FigMe.export.toAscii()',
+          notes: 'Returns rendered ASCII string. Also: FigMe.getLayers() for layer list.',
+        },
+        {
+          name: 'Batch operations',
+          code: 'FigMe.batch(() => { FigMe.paint(...); FigMe.paint(...); })',
+          notes: 'ALWAYS wrap multiple paint() calls in batch(). Single undo entry, single render.',
+        },
+        {
+          name: 'Read state and undo',
+          code: 'FigMe.getDocument(); FigMe.stores.document.getState().undo();',
+          notes: 'getLayers() returns all layers. findLayer(name) finds by name.',
+        },
+      ],
+    },
+    warnings: [
+      "Never call mutation methods (paint, removeLayer, etc.) inside FigMe.subscribe('document') callbacks \u2014 this creates an infinite loop.",
+      'Always wrap multiple mutations in FigMe.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
+    ],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+/**
+ * Hidden component that embeds two structured JSON elements for AI agents:
+ *
+ * 1. #figme-agent-briefing  — API reference. In 'full' mode: layer kinds, recipes,
+ *    DOM selectors. In 'raw' mode: stripped to paint() + grid info only.
+ *
+ * 2. [data-spec="full-document"] — live document snapshot that re-renders whenever the Zustand
+ *    document store changes. Agents can read current design state without any JS calls.
+ *
+ * Both are referenced via aria-describedby on #app-root so the accessibility tree points to them.
+ */
+export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
+  const mode = useUiStore((s) => s.agentBriefingMode);
+  const isFirstRender = useRef(true);
+
+  const briefing = useMemo(
+    () => mode === 'raw' ? buildRawBriefing(document) : buildFullBriefing(document),
+    [mode, document],
+  );
+
+  const briefingJson = useMemo(() => JSON.stringify(briefing), [briefing]);
+  const documentJson = useMemo(() => JSON.stringify(document), [document]);
+
+  // Log mode changes to console (skip initial render)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    console.log('FIGME_STATE', {
+      action: 'agent_mode_change',
+      timestamp: Date.now(),
+      agentBriefingMode: mode,
+    });
+  }, [mode]);
 
   return (
     <>
       <script
         type="application/json"
         id="figme-agent-briefing"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(briefing) }}
+        dangerouslySetInnerHTML={{ __html: briefingJson }}
       />
       {/* Live document snapshot — always present, updates on every document change */}
       <script

@@ -460,6 +460,14 @@ export function buildApi() {
       setActivePage,
     },
 
+    // Agent briefing mode toggle
+    setAgentMode(mode: 'full' | 'raw'): void {
+      useUiStore.getState().setAgentBriefingMode(mode);
+    },
+    getAgentMode(): 'full' | 'raw' {
+      return useUiStore.getState().agentBriefingMode;
+    },
+
     // Export (returns data, no download dialog)
     export: {
       toJson(): string {

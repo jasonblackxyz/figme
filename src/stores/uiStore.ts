@@ -17,6 +17,7 @@ interface UiState {
   openColorPickerId: string | null;
   brushSize: 1 | 2 | 3;
   eraserMode: boolean;
+  agentBriefingMode: 'full' | 'raw';
   setSelectedLayers: (ids: string[]) => void;
   setHoveredLayer: (id: string | null) => void;
   toggleLayersPanel: () => void;
@@ -33,6 +34,8 @@ interface UiState {
   setOpenColorPickerId: (id: string | null) => void;
   setBrushSize: (size: 1 | 2 | 3) => void;
   setEraserMode: (v: boolean) => void;
+  setAgentBriefingMode: (mode: 'full' | 'raw') => void;
+  toggleAgentBriefingMode: () => void;
   collapsedGroupIds: string[];
   toggleGroupCollapsed: (id: string) => void;
   isGroupCollapsed: (id: string) => boolean;
@@ -55,6 +58,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   openColorPickerId: null,
   brushSize: 1 as 1 | 2 | 3,
   eraserMode: false,
+  agentBriefingMode: 'full' as 'full' | 'raw',
 
   setSelectedLayers: (ids: string[]) => set({ selectedLayerIds: ids }),
   setHoveredLayer: (id: string | null) => set({ hoveredLayerId: id }),
@@ -74,6 +78,9 @@ export const useUiStore = create<UiState>((set, get) => ({
   setOpenColorPickerId: (id: string | null) => set({ openColorPickerId: id }),
   setBrushSize: (size: 1 | 2 | 3) => set({ brushSize: size }),
   setEraserMode: (v: boolean) => set({ eraserMode: v }),
+  setAgentBriefingMode: (mode: 'full' | 'raw') => set({ agentBriefingMode: mode }),
+  toggleAgentBriefingMode: () =>
+    set((s) => ({ agentBriefingMode: s.agentBriefingMode === 'full' ? 'raw' : 'full' })),
   collapsedGroupIds: [],
   toggleGroupCollapsed: (id: string) =>
     set((s) => ({
