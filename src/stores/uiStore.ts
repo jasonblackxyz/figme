@@ -7,6 +7,7 @@ interface UiState {
   propertiesPanelOpen: boolean;
   specViewOpen: boolean;
   exportDialogOpen: boolean;
+  clearCanvasDialogOpen: boolean;
   isDragging: boolean;
   dragStartPos: { col: number; row: number } | null;
   marqueeRect: { col: number; row: number; width: number; height: number } | null;
@@ -23,6 +24,7 @@ interface UiState {
   togglePropertiesPanel: () => void;
   toggleSpecView: () => void;
   toggleExportDialog: () => void;
+  toggleClearCanvasDialog: () => void;
   setIsDragging: (v: boolean) => void;
   setDragStartPos: (pos: { col: number; row: number } | null) => void;
   setMarqueeRect: (rect: { col: number; row: number; width: number; height: number } | null) => void;
@@ -45,6 +47,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   propertiesPanelOpen: true,
   specViewOpen: false,
   exportDialogOpen: false,
+  clearCanvasDialogOpen: false,
   isDragging: false,
   dragStartPos: null,
   marqueeRect: null,
@@ -64,6 +67,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     set((s) => ({ propertiesPanelOpen: !s.propertiesPanelOpen })),
   toggleSpecView: () => set((s) => ({ specViewOpen: !s.specViewOpen })),
   toggleExportDialog: () => set((s) => ({ exportDialogOpen: !s.exportDialogOpen })),
+  toggleClearCanvasDialog: () => set((s) => ({ clearCanvasDialogOpen: !s.clearCanvasDialogOpen })),
   setIsDragging: (v: boolean) => set({ isDragging: v }),
   setDragStartPos: (pos: { col: number; row: number } | null) => set({ dragStartPos: pos }),
   setMarqueeRect: (rect: { col: number; row: number; width: number; height: number } | null) => set({ marqueeRect: rect }),

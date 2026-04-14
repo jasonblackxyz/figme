@@ -10,3 +10,27 @@
   gap: 16px;
   font-family: 'IBM Plex Mono', monospace;
 }
+
+.clearButton {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--color-text-dim, #6b6b80);
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  white-space: nowrap;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+
+.clearButton:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
