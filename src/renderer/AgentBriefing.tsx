@@ -112,7 +112,7 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
         desc: 'Large ASCII art text rendered with FIGlet fonts',
         props: {
           content: 'string \u2014 the text to render as ASCII art',
-          fontName: "string \u2014 'standard' | 'small' | 'banner' | 'slant' | 'big'",
+          fontName: "string \u2014 'koholint' | 'standard' | 'small' | 'banner' | 'slant' | 'big' | 'kompaktblk' | 'six-fo' | 'ublk'",
           alignment: "'left' | 'center' | 'right'",
         },
       },
@@ -181,8 +181,8 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
         },
         {
           name: 'Place decorative text',
-          code: "FigMe.addLayer({kind:'figlet-text', col:2, row:1, width:60, height:8, color:'#2563eb', content:'Title', fontName:'standard'})",
-          notes: "Fonts: 'standard', 'small', 'banner', 'slant', 'big'.",
+          code: "FigMe.addLayer({kind:'figlet-text', col:2, row:1, width:60, height:8, color:'#2563eb', content:'Title', fontName:'koholint'})",
+          notes: "Fonts: 'koholint' (default), 'standard', 'small', 'banner', 'slant', 'big', 'kompaktblk', 'six-fo', 'ublk'.",
         },
         {
           name: 'Set colors on layers and cells',

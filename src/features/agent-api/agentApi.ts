@@ -106,7 +106,7 @@ function defaultPropsForKind(kind: LayerKind): LayerProperties {
         styleKey: 'text' as StyleKey,
       };
     case 'figlet-text':
-      return { content: 'Hello', fontName: 'standard', alignment: 'left' as const, styleKey: 'accentText' as StyleKey };
+      return { content: 'Hello', fontName: 'koholint', alignment: 'left' as const, styleKey: 'accentText' as StyleKey };
     case 'divider':
     case 'group':
       return {} as LayerProperties;

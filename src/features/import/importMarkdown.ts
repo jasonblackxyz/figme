@@ -177,7 +177,7 @@ function defaultPropertiesForKind(kind: LayerKind, styleKey: string): LayerPrope
     case 'figlet-text':
       return {
         content: '',
-        fontName: 'standard',
+        fontName: 'koholint',
         alignment: 'left',
         styleKey,
       } as FigletTextProperties;
