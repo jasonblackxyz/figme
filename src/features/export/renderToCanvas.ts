@@ -40,7 +40,14 @@ export async function renderBufferToCanvas(
     const styleRow = buffer.styles[r];
     if (!charRow || !styleRow) continue;
 
-    const y = r * cellHeight;
+    // Edge-aligned integer rows: compute each boundary independently so adjacent
+    // cells share an exact pixel edge, absorbing fractional drift naturally.
+    // Prevents sub-pixel antialiasing that produces horizontal gray bars.
+    const y = Math.round(r * cellHeight);
+    const h =
+      r === buffer.height - 1
+        ? canvasHeight - y
+        : Math.round((r + 1) * cellHeight) - y;
 
     for (let c = 0; c < buffer.width; c++) {
       const ch = charRow[c] ?? ' ';
@@ -48,12 +55,17 @@ export async function renderBufferToCanvas(
       const styleDef = palette[styleKey];
       if (!styleDef) continue;
 
-      const x = c * cellWidth;
+      // Edge-aligned integer columns: same technique, prevents vertical bars.
+      const x = Math.round(c * cellWidth);
+      const w =
+        c === buffer.width - 1
+          ? canvasWidth - x
+          : Math.round((c + 1) * cellWidth) - x;
       const override = colorOverrides?.[`${r},${c}`];
 
       // Background
       ctx.fillStyle = override?.bg ?? styleDef.bg;
-      ctx.fillRect(x, y, cellWidth, cellHeight);
+      ctx.fillRect(x, y, w, h);
 
       // Character (skip spaces for performance)
       if (ch !== ' ') {
