@@ -11,8 +11,40 @@
   font-family: 'IBM Plex Mono', monospace;
 }
 
-.clearButton {
+.modeButton {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--color-text-dim, #6b6b80);
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  white-space: nowrap;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.modeButton:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.modeActive {
+  border-color: var(--color-accent, #2563eb);
+  color: var(--color-accent, #2563eb);
+}
+
+.modeActive:hover {
+  color: var(--color-accent, #2563eb);
+}
+
+.clearButton {
   display: flex;
   align-items: center;
   justify-content: center;

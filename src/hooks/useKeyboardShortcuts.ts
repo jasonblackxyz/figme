@@ -61,6 +61,13 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
+      // Ctrl+Shift+M: toggle agent briefing mode (full/raw)
+      if (ctrl && e.shiftKey && (e.key === 'M' || e.key === 'm')) {
+        e.preventDefault();
+        useUiStore.getState().toggleAgentBriefingMode();
+        return;
+      }
+
       // Ctrl+O: import file
       if (ctrl && !e.shiftKey && e.key === 'o') {
         e.preventDefault();
