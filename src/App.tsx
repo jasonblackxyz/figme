@@ -6,6 +6,7 @@ import { Toolbar } from '@features/toolbar/Toolbar.tsx';
 import { StatusBar } from '@features/status-bar/StatusBar.tsx';
 import { SpecView } from '@features/spec-view/SpecView.tsx';
 import { ExportDialog } from '@features/export/ExportDialog.tsx';
+import { ClearCanvasDialog } from '@features/clear-canvas/ClearCanvasDialog.tsx';
 import { useAutoSave } from '@features/file-io/autoSave.ts';
 import { importFile } from '@features/import/importFile.ts';
 import { useClipboard } from '@features/clipboard/useClipboard.ts';
@@ -36,6 +37,8 @@ export function App() {
   const toggleSpecView = useUiStore((s) => s.toggleSpecView);
   const exportDialogOpen = useUiStore((s) => s.exportDialogOpen);
   const toggleExportDialog = useUiStore((s) => s.toggleExportDialog);
+  const clearCanvasDialogOpen = useUiStore((s) => s.clearCanvasDialogOpen);
+  const toggleClearCanvasDialog = useUiStore((s) => s.toggleClearCanvasDialog);
   const layersPanelOpen = useUiStore((s) => s.layersPanelOpen);
   const propertiesPanelOpen = useUiStore((s) => s.propertiesPanelOpen);
   const toggleLayersPanel = useUiStore((s) => s.toggleLayersPanel);
@@ -137,6 +140,7 @@ export function App() {
       <StatusBar />
       <SpecView visible={specViewOpen} onClose={toggleSpecView} />
       <ExportDialog visible={exportDialogOpen} onClose={toggleExportDialog} />
+      <ClearCanvasDialog visible={clearCanvasDialogOpen} onClose={toggleClearCanvasDialog} />
     </div>
     </AppErrorBoundary>
   );

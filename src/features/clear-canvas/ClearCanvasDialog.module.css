@@ -1,0 +1,110 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 59;
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: var(--color-surface, #e8e8ee);
+  border: 1px solid var(--color-border, #c0c0cc);
+  border-radius: 8px;
+  z-index: 60;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--color-border, #c0c0cc);
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text, #1a1a2e);
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--color-text-dim, #6b6b80);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  background: var(--color-hover, rgba(0, 0, 0, 0.06));
+  color: var(--color-text, #1a1a2e);
+}
+
+.body {
+  padding: 16px 20px 20px;
+}
+
+.message {
+  font-size: 12px;
+  color: var(--color-text-dim, #6b6b80);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancelButton {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border, #c0c0cc);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-dim, #6b6b80);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+
+.cancelButton:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.clearButton {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid #dc2626;
+  border-radius: 4px;
+  background: #dc2626;
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  transition: background 0.1s;
+}
+
+.clearButton:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
