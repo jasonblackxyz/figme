@@ -37,6 +37,7 @@ interface DocumentState {
   toggleLayerVisibility: (layerId: string) => void;
   toggleLayerLock: (layerId: string) => void;
   renameLayer: (layerId: string, name: string) => void;
+  clearActivePage: () => void;
   deleteSelectedLayers: () => void;
   duplicateSelectedLayers: () => void;
   updateLayerColors: (layerId: string, customColors: { color?: string; bg?: string } | undefined) => void;
@@ -193,6 +194,22 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         pages: doc.pages.map(p => p.id === page.id ? updatedPage : p),
       },
     });
+  },
+
+  clearActivePage: () => {
+    const { document: doc } = get();
+    const page = doc.pages.find(p => p.id === doc.activePageId);
+    if (!page) return;
+    const nonBackgroundIds = page.layerOrder.filter(id => !page.layers[id]?.isBackground);
+    if (nonBackgroundIds.length === 0) return;
+    get().pushUndo();
+    let updatedPage = page;
+    for (const id of nonBackgroundIds) {
+      updatedPage = removeLayer(updatedPage, id);
+    }
+    updatedPage = { ...updatedPage, cellColorOverrides: undefined };
+    commitPage(set, doc, page, updatedPage);
+    useUiStore.getState().setSelectedLayers([]);
   },
 
   deleteSelectedLayers: () => {

@@ -13,6 +13,7 @@ export function StatusBar() {
   const layerCount = page ? flattenLayerOrder(page).length : 0;
   const agentBriefingMode = useUiStore((s) => s.agentBriefingMode);
   const toggleAgentBriefingMode = useUiStore((s) => s.toggleAgentBriefingMode);
+  const toggleClearCanvasDialog = useUiStore((s) => s.toggleClearCanvasDialog);
 
   const col = cursorGridPos?.col ?? 0;
   const row = cursorGridPos?.row ?? 0;
@@ -30,6 +31,13 @@ export function StatusBar() {
         data-action="toggle-agent-mode"
       >
         Agent: {agentBriefingMode === 'raw' ? 'Raw' : 'Full'}
+      </button>
+      <button
+        className={styles.clearButton}
+        onClick={toggleClearCanvasDialog}
+        title="Clear all layers on the current page"
+      >
+        Clear Canvas
       </button>
     </footer>
   );
