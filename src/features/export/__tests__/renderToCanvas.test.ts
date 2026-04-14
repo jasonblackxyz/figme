@@ -85,7 +85,7 @@ describe('renderBufferToCanvas', () => {
       ctx as unknown as CanvasRenderingContext2D,
     );
 
-    await renderBufferToCanvas(buffer, palette, fractionalConfig);
+    const canvas = await renderBufferToCanvas(buffer, palette, fractionalConfig);
 
     // Every fillRect call (background fill + all cell rects) must use integer arguments.
     for (const call of ctx.fillRect.mock.calls) {
@@ -93,6 +93,13 @@ describe('renderBufferToCanvas', () => {
         expect(Number.isInteger(arg)).toBe(true);
       }
     }
+
+    const cellCalls = ctx.fillRect.mock.calls.slice(1);
+    const maxRight = Math.max(...cellCalls.map(([x, , w]) => x + w));
+    const maxBottom = Math.max(...cellCalls.map(([, y, , h]) => y + h));
+
+    expect(maxRight).toBe(canvas.width);
+    expect(maxBottom).toBe(canvas.height);
   });
 
   it('renders cell backgrounds and text at raw grid coordinates', async () => {

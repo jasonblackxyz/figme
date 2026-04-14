@@ -44,7 +44,10 @@ export async function renderBufferToCanvas(
     // cells share an exact pixel edge, absorbing fractional drift naturally.
     // Prevents sub-pixel antialiasing that produces horizontal gray bars.
     const y = Math.round(r * cellHeight);
-    const h = Math.round((r + 1) * cellHeight) - y;
+    const h =
+      r === buffer.height - 1
+        ? canvasHeight - y
+        : Math.round((r + 1) * cellHeight) - y;
 
     for (let c = 0; c < buffer.width; c++) {
       const ch = charRow[c] ?? ' ';
@@ -54,7 +57,10 @@ export async function renderBufferToCanvas(
 
       // Edge-aligned integer columns: same technique, prevents vertical bars.
       const x = Math.round(c * cellWidth);
-      const w = Math.round((c + 1) * cellWidth) - x;
+      const w =
+        c === buffer.width - 1
+          ? canvasWidth - x
+          : Math.round((c + 1) * cellWidth) - x;
       const override = colorOverrides?.[`${r},${c}`];
 
       // Background
