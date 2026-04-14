@@ -5,6 +5,10 @@ import { SMALL_FLF } from './small.ts';
 import { BANNER_FLF } from './banner.ts';
 import { SLANT_FLF } from './slant.ts';
 import { BIG_FLF } from './big.ts';
+import { KOHOLINT_FLF } from './koholint.ts';
+import { KOMPAKTBLK_FLF } from './kompaktblk.ts';
+import { SIX_FO_FLF } from './six-fo.ts';
+import { UBLK_FLF } from './ublk.ts';
 
 const fontCache = new Map<string, FigletFont>();
 
@@ -14,6 +18,10 @@ const FONT_SOURCES: Record<string, string> = {
   banner: BANNER_FLF,
   slant: SLANT_FLF,
   big: BIG_FLF,
+  koholint: KOHOLINT_FLF,
+  kompaktblk: KOMPAKTBLK_FLF,
+  'six-fo': SIX_FO_FLF,
+  ublk: UBLK_FLF,
 };
 
 /**
@@ -39,6 +47,6 @@ export function getFigletFont(name: string): FigletFont | null {
 /**
  * List of all available built-in font names.
  */
-export const AVAILABLE_FONTS = ['standard', 'small', 'banner', 'slant', 'big'] as const;
+export const AVAILABLE_FONTS = ['standard', 'small', 'banner', 'slant', 'big', 'koholint', 'kompaktblk', 'six-fo', 'ublk'] as const;
 
 export type FontName = (typeof AVAILABLE_FONTS)[number];

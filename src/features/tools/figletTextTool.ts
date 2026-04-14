@@ -26,7 +26,7 @@ export const figletTextTool: ToolHandler = {
     const rect = { col: gridPos.col, row: gridPos.row, width: 40, height: 8 };
     const props: FigletTextProperties = {
       content: 'Hello',
-      fontName: 'standard',
+      fontName: 'koholint',
       alignment: 'left',
       styleKey: 'accentText',
     };
