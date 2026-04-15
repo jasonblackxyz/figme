@@ -1,8 +1,7 @@
-import { clearTabFromDB, cleanupLegacyDB, enforceGlobalCap } from './persistenceDb.ts';
+import { clearTabFromDB, cleanupLegacyDB, enforceGlobalCap, LEGACY_LOCAL_STORAGE_KEY } from './persistenceDb.ts';
 
 const HEARTBEAT_PREFIX = 'figme_heartbeat_';
 const AUTOSAVE_PREFIX = 'figme_autosave_';
-const LEGACY_LOCAL_STORAGE_KEY = 'figme_autosave';
 const LEGACY_MIGRATED_KEY = 'figme_v2_migrated';
 const STALE_THRESHOLD_MS = 60_000; // 60 seconds
 

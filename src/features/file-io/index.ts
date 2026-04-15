@@ -8,8 +8,6 @@ export {
   loadLegacyDocument,
   clearDB,
   clearTabFromDB,
-  cleanupLegacyDB,
-  enforceGlobalCap,
 } from './persistenceDb.ts';
 export { getTabId } from './tabSession.ts';
 export {

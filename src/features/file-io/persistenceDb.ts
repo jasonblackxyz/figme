@@ -5,7 +5,7 @@ const DB_NAME = 'figme-persistence';
 const DB_VERSION = 2;
 const STORE_NAME = 'saves';
 const MAX_SAVES = 5;
-const LEGACY_LOCAL_STORAGE_KEY = 'figme_autosave';
+export const LEGACY_LOCAL_STORAGE_KEY = 'figme_autosave';
 
 function localStorageKey(tabId: string): string {
   return `figme_autosave_${tabId}`;
