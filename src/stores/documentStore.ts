@@ -1,6 +1,15 @@
 import { create } from 'zustand';
 import type { FigMeDocument, FigMePage, SwatchCollection } from '@primitives/document-model/types.ts';
-import { loadPersistedDocument } from '@features/file-io/persistenceDb.ts';
+import {
+  loadPersistedDocument,
+  loadLegacyDocument,
+  saveToDB,
+  saveToLocalStorage,
+} from '@features/file-io/persistenceDb.ts';
+import {
+  isLegacyMigrated,
+  cleanupLegacySaves,
+} from '@features/file-io/staleCleanup.ts';
 import {
   createEmptyDocument,
   updateLayer,
@@ -30,7 +39,7 @@ interface DocumentState {
   undoStack: FigMeDocument[];
   redoStack: FigMeDocument[];
   setDocument: (doc: FigMeDocument) => void;
-  initializeFromPersistence: () => Promise<void>;
+  initializeFromPersistence: (tabId: string) => Promise<void>;
   undo: () => void;
   redo: () => void;
   pushUndo: () => void;
@@ -111,8 +120,22 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     set({ document: doc });
   },
 
-  initializeFromPersistence: async () => {
-    const doc = await loadPersistedDocument();
+  initializeFromPersistence: async (tabId: string) => {
+    // Try loading this tab's persisted document
+    let doc = await loadPersistedDocument(tabId);
+
+    // Migration: if no tab-scoped save exists, check for legacy v1 data
+    if (!doc && !isLegacyMigrated()) {
+      doc = await loadLegacyDocument();
+      if (doc) {
+        // Adopt legacy document under this tab's scope
+        saveToLocalStorage(doc, tabId);
+        saveToDB(doc, tabId).catch(() => {});
+      }
+      // Mark migration done regardless (prevents re-checking on future new tabs)
+      cleanupLegacySaves().catch(() => {});
+    }
+
     if (doc) {
       set({ document: doc, undoStack: [], redoStack: [] });
     }

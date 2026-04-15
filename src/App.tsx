@@ -8,6 +8,8 @@ import { SpecView } from '@features/spec-view/SpecView.tsx';
 import { ExportDialog } from '@features/export/ExportDialog.tsx';
 import { ClearCanvasDialog } from '@features/clear-canvas/ClearCanvasDialog.tsx';
 import { useAutoSave } from '@features/file-io/autoSave.ts';
+import { getTabId } from '@features/file-io/tabSession.ts';
+import { cleanupStaleTabs } from '@features/file-io/staleCleanup.ts';
 import { importFile } from '@features/import/importFile.ts';
 import { useClipboard } from '@features/clipboard/useClipboard.ts';
 import { useKeyboardShortcuts } from '@hooks/useKeyboardShortcuts.ts';
@@ -29,7 +31,10 @@ export function App() {
   useEffect(() => {
     if (persistenceInitialized.current) return;
     persistenceInitialized.current = true;
-    useDocumentStore.getState().initializeFromPersistence();
+    const tabId = getTabId();
+    useDocumentStore.getState().initializeFromPersistence(tabId);
+    // Clean up stale saves from closed tabs (non-blocking, delayed)
+    setTimeout(() => { cleanupStaleTabs().catch(() => {}); }, 5000);
   }, []);
 
   const document = useDocumentStore((s) => s.document);
