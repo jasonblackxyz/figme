@@ -5,5 +5,16 @@ export {
   loadLatestFromDB,
   loadFromLocalStorage,
   loadPersistedDocument,
+  loadLegacyDocument,
   clearDB,
+  clearTabFromDB,
+  cleanupLegacyDB,
+  enforceGlobalCap,
 } from './persistenceDb.ts';
+export { getTabId } from './tabSession.ts';
+export {
+  writeHeartbeat,
+  cleanupStaleTabs,
+  cleanupLegacySaves,
+  isLegacyMigrated,
+} from './staleCleanup.ts';

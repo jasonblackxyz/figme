@@ -56,6 +56,16 @@ vi.mock('@features/file-io/autoSave.ts', () => ({
   useAutoSave: () => undefined,
 }));
 
+vi.mock('@features/file-io/tabSession.ts', () => ({
+  getTabId: () => 'test-tab',
+}));
+
+vi.mock('@features/file-io/staleCleanup.ts', () => ({
+  cleanupStaleTabs: () => Promise.resolve(),
+  isLegacyMigrated: () => true,
+  cleanupLegacySaves: () => Promise.resolve(),
+}));
+
 vi.mock('@features/clipboard/useClipboard.ts', () => ({
   useClipboard: () => undefined,
 }));
