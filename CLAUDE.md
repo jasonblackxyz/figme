@@ -7,7 +7,7 @@ ASCII-grid design tool for the readme-app ecosystem. The readme-app renders its 
 FigMe serves two consumers simultaneously:
 
 - **Human PM** — visual drag-and-drop canvas, layers panel, property inspector, zoom/pan
-- **AI coding agent (Claude in Chrome)** — reads designs via DOM structure, accessibility tree, `data-*` attributes, Spec View JSON panel, and `FIGME_STATE` console logs. No canvas rendering — everything is semantic HTML so the agent never needs screenshots.
+- **AI coding agent (Claude in Chrome)** — reads designs via DOM structure, per-cell `data-col` / `data-row` attributes, a live `[data-spec="full-document"]` JSON panel, and `FIGME_STATE` / `FIGME_PROPERTY_CHANGE` console events. Mutates designs via `window.FigMe.*` (see `src/features/agent-api/`). A **raw briefing mode** (UI store `agentBriefingMode: 'full' | 'raw'`) swaps the default constrained briefing for unconstrained capability docs — per user preference, raw mode must remain purely descriptive, never prescriptive. No canvas rendering — everything is semantic HTML so the agent never needs screenshots.
 
 ## Core Domain Constraint
 
@@ -37,7 +37,8 @@ App (src/App.tsx)             — shell layout (CSS Grid: toolbar, layers, canva
 | `grid-engine` | Cell measurement, pixel↔grid conversion, snapping, rect math, viewport presets |
 | `stamp-system` | StampBuffer (chars[][] + styles[][]) — the intermediate representation between logic and rendering. Border stamps (rounded/double/section/custom), fill, merge |
 | `style-system` | 56 StyleKey palette mirroring readme-app's theme. StyleDef = {color, bg, fontWeight?} |
-| `document-model` | Layer/Page/Document CRUD. LayerKinds: border-box, text-block, figlet-text, divider, image, edge-path, group, component |
+| `document-model` | Layer/Page/Document CRUD. LayerKinds: border-box, text-block, figlet-text, divider, image, edge-path, group, component, canvas |
+| `color-utils` | Color conversion and manipulation helpers used across features |
 | `layout-engine` | **@experimental** Guides, auto-layout (direction/gap/padding/alignment), alignment computation — stubs, deferred to Tier 2 |
 | `figlet-engine` | **@experimental** FLF font parsing, ASCII art text rendering — stubs, deferred to Tier 2 |
 | `char-registry` | Searchable Unicode character catalog (39 chars currently, ~500 planned for Tier 2), categories, in-memory favorites/recents |
@@ -49,8 +50,9 @@ App (src/App.tsx)             — shell layout (CSS Grid: toolbar, layers, canva
 
 All exported as hooks: `useDocumentStore`, `useToolStore`, `useUiStore`, `useViewportStore`.
 
-- Document store has undo/redo (max 50 entries)
-- Tool store tracks active tool (select, border-box, text-block, figlet-text, divider, image, edge-path, hand)
+- Document store has undo/redo (max 50 entries) and per-tab auto-save to localStorage/IndexedDB
+- Tool store tracks active tool (select, border-box, text-block, figlet-text, divider, image, edge-path, hand, draw)
+- UI store tracks panel state, selection, `agentBriefingMode`, and draw-tool state (brush size, eraser)
 - Immutable state updates throughout (spread, slice, map, filter — never mutate)
 
 ## Commands
@@ -86,3 +88,11 @@ npm run typecheck     # tsc -b --noEmit
 ## StampBuffer — The Core Abstraction
 
 The stamp buffer (`chars[][]` + `styles[][]`) is the bridge between logic and display. Primitives write characters and style-keys into buffers. Buffers get merged (later layers on top). The renderer reads the final merged buffer and produces styled DOM spans with `data-col`/`data-row` attributes. This keeps rendering and logic cleanly separated.
+
+## Agent API (`src/features/agent-api/`)
+
+`window.FigMe` is the Chrome agent's write surface — document mutation mirrored from the human toolbar. Notable:
+
+- `FigMe.paint()` writes a `canvas` LayerKind with per-cell characters and colors — the freeform escape hatch from structured primitives (border-box, text-block, etc.).
+- `FigMe.batch(fn)` suppresses `FIGME_STATE` / `FIGME_PROPERTY_CHANGE` console events during multi-op sequences; use it for any change set that would otherwise emit many events.
+- Agent-facing capability docs live in `src/renderer/AgentBriefing.tsx`. Raw briefing mode shows unconstrained capabilities; keep it descriptive, never prescriptive.
