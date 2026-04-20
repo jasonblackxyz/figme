@@ -1,8 +1,15 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { StatusBar } from '@features/status-bar/StatusBar.tsx';
+import { createEmptyDocument } from '@primitives/document-model/operations.ts';
+import { useDocumentStore } from '@stores/documentStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
 
 beforeEach(() => {
+  useDocumentStore.setState({
+    document: createEmptyDocument('Status Test'),
+    undoStack: [],
+    redoStack: [],
+  });
   useViewportStore.setState({
     zoom: 1,
     panX: 0,
@@ -51,7 +58,9 @@ describe('StatusBar', () => {
     const { rerender } = render(<StatusBar />);
     expect(screen.getByText('100%')).toBeInTheDocument();
 
-    useViewportStore.setState({ zoom: 1.5 });
+    act(() => {
+      useViewportStore.setState({ zoom: 1.5 });
+    });
     rerender(<StatusBar />);
     expect(screen.getByText('150%')).toBeInTheDocument();
   });
@@ -60,5 +69,10 @@ describe('StatusBar', () => {
     useViewportStore.setState({ cursorGridPos: null });
     render(<StatusBar />);
     expect(screen.getByText('Col 0, Row 0')).toBeInTheDocument();
+  });
+
+  it('does not render the old agent mode toggle', () => {
+    render(<StatusBar />);
+    expect(screen.queryByRole('button', { name: /Agent:/i })).not.toBeInTheDocument();
   });
 });

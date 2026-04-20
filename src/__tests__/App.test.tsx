@@ -86,12 +86,14 @@ beforeEach(() => {
   });
 
   useUiStore.setState({
+    interfaceMode: 'ai',
     selectedLayerIds: [],
     hoveredLayerId: null,
     layersPanelOpen: true,
     propertiesPanelOpen: true,
     specViewOpen: false,
     exportDialogOpen: false,
+    clearCanvasDialogOpen: false,
     isDragging: false,
     dragStartPos: null,
     marqueeRect: null,
@@ -102,6 +104,17 @@ beforeEach(() => {
 });
 
 describe('App', () => {
+  it('starts in AI mode with the lean shell', () => {
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: 'Switch to Human Mode' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
+    expect(screen.getByText('Canvas')).toBeInTheDocument();
+    expect(screen.queryByText('Toolbar')).not.toBeInTheDocument();
+    expect(screen.queryByText('Status')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Collapse layers panel')).not.toBeInTheDocument();
+  });
+
   it('renders a visible export button and opens the dialog from it', () => {
     render(<App />);
 
@@ -112,7 +125,20 @@ describe('App', () => {
     expect(screen.getByText('Export Dialog')).toBeInTheDocument();
   });
 
+  it('switches to Human mode and restores the full shell', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Human Mode' }));
+
+    expect(screen.getByRole('button', { name: 'Switch to AI Mode' })).toBeInTheDocument();
+    expect(screen.getByText('Toolbar')).toBeInTheDocument();
+    expect(screen.getByText('Status')).toBeInTheDocument();
+    expect(screen.getByLabelText('Collapse layers panel')).toBeInTheDocument();
+    expect(screen.getByLabelText('Collapse properties panel')).toBeInTheDocument();
+  });
+
   it('does not toggle the properties panel via keyboard shortcut', () => {
+    useUiStore.setState({ interfaceMode: 'human' });
     render(<App />);
 
     // Ctrl+Shift+\ was removed to prevent accidental panel hiding
@@ -128,6 +154,7 @@ describe('App', () => {
   });
 
   it('moves focus to the layers expand button after collapsing the panel', async () => {
+    useUiStore.setState({ interfaceMode: 'human' });
     render(<App />);
 
     const collapseButton = screen.getByLabelText('Collapse layers panel');
