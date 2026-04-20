@@ -1,13 +1,66 @@
 .shell {
   display: grid;
+  height: 100%;
+  width: 100%;
+  transition:
+    grid-template-columns 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    grid-template-rows 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shellAi {
   grid-template-areas:
+    "topbar"
+    "canvas";
+  grid-template-columns: 1fr;
+  grid-template-rows: 42px 1fr;
+}
+
+.shellHuman {
+  grid-template-areas:
+    "topbar topbar topbar"
     "toolbar toolbar toolbar"
     "layers  canvas  properties"
     "status  status  status";
-  grid-template-rows: 40px 1fr 24px;
-  height: 100%;
-  width: 100%;
-  transition: grid-template-columns 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  grid-template-rows: 42px 40px 1fr 24px;
+}
+
+.topBar {
+  grid-area: topbar;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  min-width: 0;
+}
+
+.modeSwitch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.pageTabs {
+  flex: 1;
+  min-width: 0;
+}
+
+.topBarActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .toolbar {
@@ -19,14 +72,7 @@
   padding: 0 8px;
 }
 
-.toolbarActions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.exportButton {
+.actionButton {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -44,7 +90,8 @@
   transition: background 0.1s, color 0.1s;
 }
 
-.exportButton:hover {
+.actionButton:hover,
+.modeSwitch:hover {
   background: var(--color-surface-raised);
   color: var(--color-text);
 }

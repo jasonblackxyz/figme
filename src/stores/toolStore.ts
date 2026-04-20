@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+export type InterfaceMode = 'ai' | 'human';
+
 export type ToolType =
   | 'select'
   | 'border-box'
@@ -10,6 +12,18 @@ export type ToolType =
   | 'edge-path'
   | 'hand'
   | 'draw';
+
+const AI_HIDDEN_TOOLS: ReadonlySet<ToolType> = new Set([
+  'border-box',
+  'divider',
+  'text-block',
+  'figlet-text',
+  'draw',
+]);
+
+export function isToolAllowedInInterfaceMode(tool: ToolType, mode: InterfaceMode): boolean {
+  return mode === 'human' || !AI_HIDDEN_TOOLS.has(tool);
+}
 
 interface ToolState {
   activeTool: ToolType;

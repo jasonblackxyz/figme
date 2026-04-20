@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useDocumentStore } from '@stores/documentStore.ts';
+import { useUiStore } from '@stores/uiStore.ts';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
 import { buildApi } from '../agentApi.ts';
 
@@ -30,6 +31,7 @@ describe('batch()', () => {
       undoStack: [],
       redoStack: [],
     });
+    useUiStore.setState({ interfaceMode: 'human' });
     api = buildApi();
   });
 

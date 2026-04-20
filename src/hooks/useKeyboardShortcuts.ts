@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
-import { useToolStore } from '@stores/toolStore.ts';
+import { useToolStore, isToolAllowedInInterfaceMode, type ToolType } from '@stores/toolStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { removeLayer } from '@primitives/document-model/operations.ts';
@@ -61,10 +61,10 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
-      // Ctrl+Shift+M: toggle agent briefing mode (full/raw)
+      // Ctrl+Shift+M: toggle interface mode (AI/Human)
       if (ctrl && e.shiftKey && (e.key === 'M' || e.key === 'm')) {
         e.preventDefault();
-        useUiStore.getState().toggleAgentBriefingMode();
+        useUiStore.getState().toggleInterfaceMode();
         return;
       }
 
@@ -195,28 +195,23 @@ export function useKeyboardShortcuts(): void {
       if (ctrl) return;
 
       // Tool shortcuts
-      switch (e.key.toLowerCase()) {
-        case 'v':
-          useToolStore.getState().setActiveTool('select');
-          return;
-        case 'b':
-          useToolStore.getState().setActiveTool('border-box');
-          return;
-        case 'd':
-          useToolStore.getState().setActiveTool('divider');
-          return;
-        case 'h':
-          useToolStore.getState().setActiveTool('hand');
-          return;
-        case 't':
-          useToolStore.getState().setActiveTool('text-block');
-          return;
-        case 'f':
-          useToolStore.getState().setActiveTool('figlet-text');
-          return;
-        case 'p':
-          useToolStore.getState().setActiveTool('draw');
-          return;
+      const toolShortcuts: Partial<Record<string, ToolType>> = {
+        v: 'select',
+        b: 'border-box',
+        d: 'divider',
+        h: 'hand',
+        t: 'text-block',
+        f: 'figlet-text',
+        p: 'draw',
+      };
+      const shortcutTool = toolShortcuts[e.key.toLowerCase()];
+      if (shortcutTool) {
+        const mode = useUiStore.getState().interfaceMode;
+        e.preventDefault();
+        useToolStore.getState().setActiveTool(
+          isToolAllowedInInterfaceMode(shortcutTool, mode) ? shortcutTool : 'select',
+        );
+        return;
       }
 
       // Delete/Backspace: delete selected layers

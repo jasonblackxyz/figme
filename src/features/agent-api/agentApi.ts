@@ -1,5 +1,5 @@
 import { useDocumentStore } from '@stores/documentStore.ts';
-import { useToolStore } from '@stores/toolStore.ts';
+import { useToolStore, type InterfaceMode } from '@stores/toolStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
 import type { FigMeDocument, FigMePage, Layer, LayerKind, LayerProperties, CanvasProperties } from '@primitives/document-model/types.ts';
@@ -32,6 +32,11 @@ const LAYER_KINDS: LayerKind[] = [
   'border-box', 'text-block', 'figlet-text', 'divider',
   'image', 'edge-path', 'group', 'component', 'canvas',
 ];
+const AI_DISALLOWED_LAYER_KINDS: ReadonlySet<LayerKind> = new Set([
+  'border-box',
+  'divider',
+  'text-block',
+]);
 
 /** Internal default styleKey per layer kind — agents never see these. */
 const DEFAULT_STYLE_FOR_KIND: Record<LayerKind, StyleKey> = {
@@ -62,6 +67,22 @@ function getCurrentDocument(): FigMeDocument {
 function getActivePage(): FigMePage | undefined {
   const doc = getCurrentDocument();
   return doc.pages.find(p => p.id === doc.activePageId);
+}
+
+function readInterfaceMode(): InterfaceMode {
+  return useUiStore.getState().interfaceMode;
+}
+
+function readAgentMode(): 'full' | 'raw' {
+  return readInterfaceMode() === 'ai' ? 'raw' : 'full';
+}
+
+function applyInterfaceMode(mode: InterfaceMode): void {
+  useUiStore.getState().setInterfaceMode(mode);
+}
+
+function applyAgentMode(mode: 'full' | 'raw'): void {
+  applyInterfaceMode(mode === 'raw' ? 'ai' : 'human');
 }
 
 function getLayers(): Layer[] {
@@ -141,6 +162,19 @@ interface AddLayerSpec {
   [key: string]: unknown;
 }
 
+interface AddFigletSpec {
+  name?: string;
+  col: number;
+  row: number;
+  width?: number;
+  height?: number;
+  content: string;
+  fontName?: string;
+  alignment?: 'left' | 'center' | 'right';
+  color?: string;
+  bg?: string;
+}
+
 // ---------------------------------------------------------------------------
 // API builder
 // ---------------------------------------------------------------------------
@@ -216,6 +250,15 @@ export function buildApi() {
     getPage(id: string): FigMePage | undefined {
       return getCurrentDocument().pages.find(p => p.id === id);
     },
+    setInterfaceMode(mode: InterfaceMode): void {
+      if (mode !== 'ai' && mode !== 'human') {
+        throw new Error(`FigMe.setInterfaceMode: invalid mode "${String(mode)}". Valid values: ai, human`);
+      }
+      applyInterfaceMode(mode);
+    },
+    getInterfaceMode(): InterfaceMode {
+      return readInterfaceMode();
+    },
 
     // Layer mutations — supports object-spec (preferred) or positional call form:
     //   addLayer({kind:'border-box', col:2, row:2, width:20, height:5, color:'#fff', bg:'#000', ...props})
@@ -273,6 +316,12 @@ export function buildApi() {
           `FigMe.addLayer: invalid kind "${String(k)}". Valid values: ${LAYER_KINDS.join(', ')}`,
         );
       }
+      if (readInterfaceMode() === 'ai' && AI_DISALLOWED_LAYER_KINDS.has(k)) {
+        throw new Error(
+          `FigMe.addLayer: "${k}" is unavailable in AI mode. Use FigMe.paint() for freeform design, ` +
+          'FigMe.addFiglet() for ASCII display text, or switch to Human mode with FigMe.setInterfaceMode(\'human\').',
+        );
+      }
       if (k === 'edge-path') {
         console.warn(
           'FigMe.addLayer: edge-path is experimental and may cause rendering issues. Consider using text-block layers with box-drawing characters (\u2502\u2500\u250c\u2514\u251c\u2524) for connections.',
@@ -328,6 +377,21 @@ export function buildApi() {
         return;
       }
       applyPageMutation(p => moveLayerOp(p, id, col, row));
+    },
+    addFiglet(spec: AddFigletSpec): string | undefined {
+      return api.addLayer({
+        kind: 'figlet-text',
+        name: spec.name ?? 'FIGlet Text',
+        col: spec.col,
+        row: spec.row,
+        width: spec.width ?? 40,
+        height: spec.height ?? 8,
+        color: spec.color,
+        bg: spec.bg,
+        content: spec.content,
+        fontName: spec.fontName ?? 'koholint',
+        alignment: spec.alignment ?? 'left',
+      } as AddLayerSpec);
     },
 
     // Batch
@@ -460,15 +524,15 @@ export function buildApi() {
       setActivePage,
     },
 
-    // Agent briefing mode toggle
+    // Compatibility wrapper for the older raw/full agent mode API
     setAgentMode(mode: 'full' | 'raw'): void {
       if (mode !== 'full' && mode !== 'raw') {
         throw new Error(`FigMe.setAgentMode: invalid mode "${String(mode)}". Valid values: full, raw`);
       }
-      useUiStore.getState().setAgentBriefingMode(mode);
+      applyAgentMode(mode);
     },
     getAgentMode(): 'full' | 'raw' {
-      return useUiStore.getState().agentBriefingMode;
+      return readAgentMode();
     },
 
     // Export (returns data, no download dialog)

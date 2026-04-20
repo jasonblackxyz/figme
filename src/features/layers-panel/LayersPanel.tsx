@@ -1,6 +1,5 @@
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
-import { ArtboardTabs } from '@features/artboard-manager/ArtboardTabs.tsx';
 import { LayerRow } from './LayerRow.tsx';
 import type { FigMePage } from '@primitives/document-model/types.ts';
 import styles from './LayersPanel.module.css';
@@ -65,7 +64,6 @@ export function LayersPanel() {
 
   return (
     <div className={styles.panel} data-component="layers-panel">
-      <ArtboardTabs />
       <div className={styles.header}>
         <h2 className={styles.title}>Layers</h2>
         <button

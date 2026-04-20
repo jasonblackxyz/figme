@@ -15,6 +15,7 @@ function buildFullBriefing(document: FigMeDocument) {
     system: 'FigMe \u2014 ASCII Grid Design Tool',
     version: '2.0',
     mode: 'full' as const,
+    interfaceMode: 'human' as const,
     purpose:
       'Design tool for composing ASCII character grid interfaces. All colours are specified as hex values (e.g. \'#ffffff\'). You have full creative control over the colour palette.',
     gridSystem: {
@@ -53,15 +54,18 @@ function buildFullBriefing(document: FigMeDocument) {
         'addPage(name) => pageId',
         'setActivePage(id)',
         'getPage(id)',
+        "setInterfaceMode('ai' | 'human')",
+        "getInterfaceMode() \u2014 returns the visible shell mode ('ai' or 'human')",
         "paint({col, row, lines?, content?, color?, bg?, name?}) \u2014 freeform character painting with per-span colors. Returns layerId",
+        "addFiglet({content, col, row, fontName?, alignment?, color?, bg?, name?}) \u2014 convenience helper for FIGlet display text",
         'export.toJson()',
         'export.toMarkdown()',
         'export.toAscii(pageId?)',
         'viewport.setZoom(n)',
         'viewport.resetView()',
         'viewport.fitToPage()',
-        "setAgentMode('full' | 'raw') \u2014 switch agent briefing mode",
-        "getAgentMode() \u2014 returns current briefing mode ('full' or 'raw')",
+        "setAgentMode('full' | 'raw') \u2014 compatibility alias for setInterfaceMode()",
+        "getAgentMode() \u2014 compatibility alias returning 'full' in Human mode and 'raw' in AI mode",
       ],
       batch: 'FigMe.batch(() => { ...mutations... }) \u2014 single undo entry. ALWAYS use batch() when adding multiple layers.',
       subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub \u2014 WARNING: never call mutation methods (addLayer etc.) inside the 'document' callback; that creates an infinite loop and crashes the tab.",
@@ -215,6 +219,7 @@ function buildFullBriefing(document: FigMeDocument) {
       ],
     },
     warnings: [
+      'Structured layer creation (border-box, divider, text-block) is a Human-mode capability. AI mode rejects those kinds through addLayer().',
       'edge-path layers are experimental and frequently crash the renderer. Use text-block layers with box-drawing characters (\u2502\u2500\u250c\u2514\u251c\u2524\u25c6\u25cf) for connections instead.',
       "Never call mutation methods (addLayer, updateLayer, etc.) inside FigMe.subscribe('document') callbacks \u2014 this creates an infinite loop.",
       'Always wrap multiple mutations in FigMe.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
@@ -241,8 +246,9 @@ function buildRawBriefing(document: FigMeDocument) {
     system: 'FigMe \u2014 ASCII Grid Design Tool',
     version: '2.0',
     mode: 'raw' as const,
+    interfaceMode: 'ai' as const,
     purpose:
-      'Freeform ASCII art canvas. You have complete creative freedom \u2014 use FigMe.paint() to place any characters (box-drawing, block elements, Unicode symbols, custom shapes) with per-cell hex colours. There are no predefined templates or layer types. Design from scratch.',
+      'Freeform ASCII art canvas optimized for agents. Use FigMe.paint() as the primary creative primitive and FigMe.addFiglet() when preset FIGlet fonts are helpful. Structured layer creation is intentionally unavailable in AI mode.',
     gridSystem: {
       description:
         'The canvas is a 2D grid of monospace character cells. Every position is addressed by (col, row). There are no sub-cell positions. Spaces are transparent \u2014 lower layers show through.',
@@ -265,16 +271,22 @@ function buildRawBriefing(document: FigMeDocument) {
       convenience: [
         'getDocument()',
         'getActivePage()',
+        'addPage(name) => pageId',
+        'setActivePage(id)',
+        'getPage(id)',
         'getLayers()',
         'getLayer(id)',
         'removeLayer(id)',
         'moveLayer(id, col, row)',
         'findLayer(name)',
+        "addFiglet({content, col, row, fontName?, alignment?, color?, bg?, name?}) \u2014 FIGlet helper for ASCII display text",
         "paint({col, row, lines?, content?, color?, bg?, name?}) \u2014 freeform character painting with per-span colors. Returns layerId",
         'export.toAscii(pageId?) \u2014 rendered ASCII string for verification',
         'export.toJson()',
-        "setAgentMode('full' | 'raw') \u2014 switch agent briefing mode",
-        "getAgentMode() \u2014 returns current briefing mode ('full' or 'raw')",
+        "setInterfaceMode('ai' | 'human')",
+        "getInterfaceMode() \u2014 returns the visible shell mode ('ai' or 'human')",
+        "setAgentMode('full' | 'raw') \u2014 compatibility alias for setInterfaceMode()",
+        "getAgentMode() \u2014 compatibility alias returning 'raw' in AI mode and 'full' in Human mode",
       ],
       batch: 'FigMe.batch(() => { ...mutations... }) \u2014 single undo entry. ALWAYS use batch() when placing multiple paint layers.',
       subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub \u2014 WARNING: never call mutation methods inside the 'document' callback; that creates an infinite loop and crashes the tab.",
@@ -308,6 +320,11 @@ function buildRawBriefing(document: FigMeDocument) {
           notes: 'Each span in a line has its own color and bg. No coordinate math needed \u2014 colours are inline with the text.',
         },
         {
+          name: 'Add FIGlet text',
+          code: "FigMe.addFiglet({col:2, row:1, content:'Title', fontName:'koholint', color:'#2563eb'})",
+          notes: 'Use this when you want stylized ASCII display text without switching to Human mode.',
+        },
+        {
           name: 'Verify the design',
           code: 'FigMe.export.toAscii()',
           notes: 'Returns rendered ASCII string. Also: FigMe.getLayers() for layer list.',
@@ -325,6 +342,7 @@ function buildRawBriefing(document: FigMeDocument) {
       ],
     },
     warnings: [
+      'FigMe.addLayer() rejects border-box, divider, and text-block in AI mode. Use paint(), addFiglet(), or switch to Human mode.',
       "Never call mutation methods (paint, removeLayer, etc.) inside FigMe.subscribe('document') callbacks \u2014 this creates an infinite loop.",
       'Always wrap multiple mutations in FigMe.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
     ],
@@ -347,8 +365,9 @@ function buildRawBriefing(document: FigMeDocument) {
  * Both are referenced via aria-describedby on #app-root so the accessibility tree points to them.
  */
 export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
-  const mode = useUiStore((s) => s.agentBriefingMode);
+  const interfaceMode = useUiStore((s) => s.interfaceMode);
   const isFirstRender = useRef(true);
+  const mode = interfaceMode === 'ai' ? 'raw' : 'full';
 
   const briefing = useMemo(
     () => mode === 'raw' ? buildRawBriefing(document) : buildFullBriefing(document),
@@ -365,11 +384,12 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
       return;
     }
     console.log('FIGME_STATE', {
-      action: 'agent_mode_change',
+      action: 'interface_mode_change',
       timestamp: Date.now(),
+      interfaceMode,
       agentBriefingMode: mode,
     });
-  }, [mode]);
+  }, [interfaceMode, mode]);
 
   return (
     <>

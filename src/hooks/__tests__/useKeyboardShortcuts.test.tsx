@@ -44,18 +44,37 @@ describe('useKeyboardShortcuts', () => {
     });
     useToolStore.setState({ activeTool: 'select' });
     useUiStore.setState({
+      interfaceMode: 'ai',
       selectedLayerIds: ['layer1'],
       exportDialogOpen: false,
       specViewOpen: false,
+      editingLayerId: null,
     });
   });
 
-  it('switches to the draw tool on P', () => {
+  it('keeps AI-mode-only blocked shortcuts on select', () => {
+    render(<KeyboardShortcutsHarness />);
+
+    fireEvent.keyDown(window, { key: 'p' });
+
+    expect(useToolStore.getState().activeTool).toBe('select');
+  });
+
+  it('allows the draw shortcut after switching to Human mode', () => {
+    useUiStore.setState({ interfaceMode: 'human' });
     render(<KeyboardShortcutsHarness />);
 
     fireEvent.keyDown(window, { key: 'p' });
 
     expect(useToolStore.getState().activeTool).toBe('draw');
+  });
+
+  it('toggles interface mode with Ctrl+Shift+M', () => {
+    render(<KeyboardShortcutsHarness />);
+
+    fireEvent.keyDown(window, { key: 'M', ctrlKey: true, shiftKey: true });
+
+    expect(useUiStore.getState().interfaceMode).toBe('human');
   });
 
   it('suppresses editor shortcuts while the export dialog is open', () => {
