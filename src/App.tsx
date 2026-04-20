@@ -144,6 +144,14 @@ export function App() {
           >
             Reset View
           </button>
+          <button
+            className={styles.actionButton}
+            onClick={toggleClearCanvasDialog}
+            title="Clear all layers on the current page"
+            data-action="clear-canvas"
+          >
+            Clear
+          </button>
         </div>
       </header>
       {interfaceMode === 'human' ? (
