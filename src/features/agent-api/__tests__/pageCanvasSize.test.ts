@@ -87,4 +87,15 @@ describe('page canvas size API', () => {
       isOverridden: false,
     });
   });
+
+  it('ignores transparent canvas layers when enforcing clipping guards', () => {
+    api.paint({ col: 40, row: 10, content: '   \n   ' });
+
+    expect(() => api.setPageCanvasSize({ cols: 10, rows: 10 })).not.toThrow();
+    expect(api.getPageCanvasSize()).toMatchObject({
+      effectiveCols: 10,
+      effectiveRows: 10,
+      isOverridden: true,
+    });
+  });
 });

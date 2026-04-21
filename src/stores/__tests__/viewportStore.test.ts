@@ -123,6 +123,15 @@ describe('viewportStore', () => {
       expect(config.canvasCols).toBe(300);
       expect(config.canvasRows).toBe(80);
     });
+
+    it('returns a stable config object when unrelated viewport state changes', () => {
+      const config1 = useViewportStore.getState().getEffectiveGridConfig();
+
+      useViewportStore.getState().setCursorGridPos({ col: 10, row: 5 });
+
+      const config2 = useViewportStore.getState().getEffectiveGridConfig();
+      expect(config2).toBe(config1);
+    });
   });
 
 

@@ -10,6 +10,8 @@ function clamp(value: number, min: number, max: number): number {
 
 /** Cache measured cell dimensions by font family, size, and line height. */
 const measuredCellCache = new Map<string, { cellWidth: number; cellHeight: number }>();
+/** Cache effective grid configs so unrelated viewport updates keep selector identity stable. */
+const effectiveGridConfigCache = new Map<string, GridConfig>();
 
 /**
  * Pure function: compute zoom + centered pan so the artboard fits the viewport.
@@ -162,26 +164,41 @@ export const useViewportStore = create<ViewportState>((set, get) => ({
     const page = doc.pages.find(p => p.id === doc.activePageId);
     const base = doc.gridConfig;
     const effectiveFontSize = Math.round(base.fontSize * zoom * 100) / 100;
-    const cacheKey = `${base.fontFamily}::${base.lineHeight}::${effectiveFontSize}`;
+    const measurementCacheKey = `${base.fontFamily}::${base.lineHeight}::${effectiveFontSize}`;
 
-    let measured = measuredCellCache.get(cacheKey);
+    let measured = measuredCellCache.get(measurementCacheKey);
     if (!measured) {
       measured = measureCellDimensions(
         base.fontFamily,
         effectiveFontSize,
         base.lineHeight,
       );
-      measuredCellCache.set(cacheKey, measured);
+      measuredCellCache.set(measurementCacheKey, measured);
     }
 
     const pageCanvas = page ? getPageCanvasSizeInfo(page, base) : null;
-    return {
+    const effectiveCols = pageCanvas?.effectiveCols ?? base.canvasCols;
+    const effectiveRows = pageCanvas?.effectiveRows ?? base.canvasRows;
+    const effectiveConfigCacheKey = [
+      base.fontFamily,
+      effectiveFontSize,
+      base.lineHeight,
+      effectiveCols,
+      effectiveRows,
+    ].join('::');
+
+    const cached = effectiveGridConfigCache.get(effectiveConfigCacheKey);
+    if (cached) return cached;
+
+    const config = {
       ...base,
       fontSize: effectiveFontSize,
       cellWidth: measured.cellWidth,
       cellHeight: measured.cellHeight,
-      canvasCols: pageCanvas?.effectiveCols ?? base.canvasCols,
-      canvasRows: pageCanvas?.effectiveRows ?? base.canvasRows,
+      canvasCols: effectiveCols,
+      canvasRows: effectiveRows,
     };
+    effectiveGridConfigCache.set(effectiveConfigCacheKey, config);
+    return config;
   },
 }));

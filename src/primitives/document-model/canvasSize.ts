@@ -72,8 +72,22 @@ export function getVisiblePageContentBounds(page: FigMePage): PageContentBounds 
     if (!layer || layer.kind === 'group') continue;
     if (isEffectivelyHidden(page, layerId)) continue;
 
-    maxCol = Math.max(maxCol, layer.rect.col + layer.rect.width);
-    maxRow = Math.max(maxRow, layer.rect.row + layer.rect.height);
+    if (layer.kind === 'canvas') {
+      const canvasProps = layer.properties as CanvasProperties;
+      const contentLines = canvasProps.content.split('\n');
+
+      for (let relRow = 0; relRow < Math.min(contentLines.length, layer.rect.height); relRow++) {
+        const line = contentLines[relRow] ?? '';
+        for (let relCol = 0; relCol < Math.min(line.length, layer.rect.width); relCol++) {
+          if (line[relCol] !== ' ') {
+            updateBounds(layer.rect.col + relCol, layer.rect.row + relRow);
+          }
+        }
+      }
+    } else {
+      maxCol = Math.max(maxCol, layer.rect.col + layer.rect.width);
+      maxRow = Math.max(maxRow, layer.rect.row + layer.rect.height);
+    }
 
     if (layer.cellColorOverrides) {
       for (const key of Object.keys(layer.cellColorOverrides)) {

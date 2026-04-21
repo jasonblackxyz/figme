@@ -52,6 +52,9 @@ export function useAutoFit(canvasRef: React.RefObject<HTMLDivElement | null>): v
       canvas.effectiveRows,
       activePage.canvasX,
       activePage.canvasY,
+      s.document.gridConfig.fontFamily,
+      s.document.gridConfig.fontSize,
+      s.document.gridConfig.lineHeight,
     ].join(':');
   });
   useEffect(() => {
