@@ -1,14 +1,17 @@
 import { create } from 'zustand';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
-import { measureCellDimensions, createDefaultGridConfig } from '@primitives/grid-engine/measurement.ts';
+import { measureCellDimensions } from '@primitives/grid-engine/measurement.ts';
+import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/** Cache for effective grid configs keyed by effective font size */
-const gridConfigCache = new Map<number, GridConfig>();
+/** Cache measured cell dimensions by font family, size, and line height. */
+const measuredCellCache = new Map<string, { cellWidth: number; cellHeight: number }>();
+/** Cache effective grid configs so unrelated viewport updates keep selector identity stable. */
+const effectiveGridConfigCache = new Map<string, GridConfig>();
 
 /**
  * Pure function: compute zoom + centered pan so the artboard fits the viewport.
@@ -56,13 +59,17 @@ function currentAutoFit(viewportWidth: number, viewportHeight: number) {
   const doc = useDocumentStore.getState().document;
   const page = doc.pages.find(p => p.id === doc.activePageId);
   if (!page) return null;
-  const base = createDefaultGridConfig();
-  const cols = page.canvasColsOverride ?? base.canvasCols;
-  const rows = page.canvasRowsOverride ?? base.canvasRows;
+  const base = doc.gridConfig;
+  const { effectiveCols, effectiveRows } = getPageCanvasSizeInfo(page, base);
+  const { cellWidth, cellHeight } = measureCellDimensions(
+    base.fontFamily,
+    base.fontSize,
+    base.lineHeight,
+  );
   return computeAutoFitZoom(
     viewportWidth, viewportHeight,
-    cols, rows,
-    base.cellWidth, base.cellHeight,
+    effectiveCols, effectiveRows,
+    cellWidth, cellHeight,
     page.canvasX, page.canvasY,
   );
 }
@@ -153,26 +160,45 @@ export const useViewportStore = create<ViewportState>((set, get) => ({
 
   getEffectiveGridConfig: () => {
     const { zoom } = get();
-    const base = createDefaultGridConfig();
+    const doc = useDocumentStore.getState().document;
+    const page = doc.pages.find(p => p.id === doc.activePageId);
+    const base = doc.gridConfig;
     const effectiveFontSize = Math.round(base.fontSize * zoom * 100) / 100;
+    const measurementCacheKey = `${base.fontFamily}::${base.lineHeight}::${effectiveFontSize}`;
 
-    const cached = gridConfigCache.get(effectiveFontSize);
-    if (cached) return cached;
+    let measured = measuredCellCache.get(measurementCacheKey);
+    if (!measured) {
+      measured = measureCellDimensions(
+        base.fontFamily,
+        effectiveFontSize,
+        base.lineHeight,
+      );
+      measuredCellCache.set(measurementCacheKey, measured);
+    }
 
-    const { cellWidth, cellHeight } = measureCellDimensions(
+    const pageCanvas = page ? getPageCanvasSizeInfo(page, base) : null;
+    const effectiveCols = pageCanvas?.effectiveCols ?? base.canvasCols;
+    const effectiveRows = pageCanvas?.effectiveRows ?? base.canvasRows;
+    const effectiveConfigCacheKey = [
       base.fontFamily,
       effectiveFontSize,
       base.lineHeight,
-    );
+      effectiveCols,
+      effectiveRows,
+    ].join('::');
 
-    const config: GridConfig = {
+    const cached = effectiveGridConfigCache.get(effectiveConfigCacheKey);
+    if (cached) return cached;
+
+    const config = {
       ...base,
       fontSize: effectiveFontSize,
-      cellWidth,
-      cellHeight,
+      cellWidth: measured.cellWidth,
+      cellHeight: measured.cellHeight,
+      canvasCols: effectiveCols,
+      canvasRows: effectiveRows,
     };
-
-    gridConfigCache.set(effectiveFontSize, config);
+    effectiveGridConfigCache.set(effectiveConfigCacheKey, config);
     return config;
   },
 }));

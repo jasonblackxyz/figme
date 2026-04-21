@@ -8,12 +8,10 @@ interface ArtboardFrameProps {
 }
 
 export function ArtboardFrame({ page, gridConfig }: ArtboardFrameProps) {
-  const cols = page.canvasColsOverride ?? gridConfig.canvasCols;
-  const rows = page.canvasRowsOverride ?? gridConfig.canvasRows;
   const x = page.canvasX * gridConfig.cellWidth;
   const y = page.canvasY * gridConfig.cellHeight;
-  const width = cols * gridConfig.cellWidth;
-  const height = rows * gridConfig.cellHeight;
+  const width = gridConfig.canvasCols * gridConfig.cellWidth;
+  const height = gridConfig.canvasRows * gridConfig.cellHeight;
 
   return (
     <>

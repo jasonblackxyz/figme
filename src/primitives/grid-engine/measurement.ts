@@ -1,5 +1,8 @@
 import type { GridConfig } from './types.ts';
 
+export const DEFAULT_CANVAS_COLS = 228;
+export const DEFAULT_CANVAS_ROWS = 57;
+
 /**
  * Measure character cell dimensions for a given monospace font configuration.
  * Uses an OffscreenCanvas (or falls back to approximate values) to measure
@@ -70,7 +73,7 @@ export function createDefaultGridConfig(): GridConfig {
     lineHeight,
     cellWidth,
     cellHeight,
-    canvasCols: Math.floor(1920 / cellWidth),
-    canvasRows: Math.floor(1080 / cellHeight),
+    canvasCols: DEFAULT_CANVAS_COLS,
+    canvasRows: DEFAULT_CANVAS_ROWS,
   };
 }

@@ -3,6 +3,7 @@ import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
+import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 
 /**
  * Serialize the full document as formatted JSON.
@@ -89,10 +90,12 @@ ${bodyRows}</div>
 export function exportAsMarkdown(doc: FigMeDocument): string {
   let md = `# ${doc.name}\n\n`;
   md += `- **Pages:** ${doc.pages.length}\n`;
-  md += `- **Grid:** ${doc.gridConfig.canvasCols} x ${doc.gridConfig.canvasRows} cells\n\n`;
+  md += `- **Default Grid:** ${doc.gridConfig.canvasCols} x ${doc.gridConfig.canvasRows} cells\n\n`;
 
   for (const page of doc.pages) {
+    const canvasSize = getPageCanvasSizeInfo(page, doc.gridConfig);
     md += `## ${page.name}\n\n`;
+    md += `- **Canvas:** ${canvasSize.effectiveCols} x ${canvasSize.effectiveRows} cells (${canvasSize.isOverridden ? 'custom' : 'default'})\n\n`;
     md += `| Name | Kind | Position | Size | Style | Visible |\n`;
     md += `|------|------|----------|------|-------|---------|\n`;
 

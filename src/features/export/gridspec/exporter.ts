@@ -14,6 +14,7 @@ import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import { BORDER_CHARS } from '@primitives/stamp-system/stamps.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
 import { computeColorOverrides, type ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
+import { applyPageCanvasSizeToGridConfig, getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 import type { GridSpec, GridSpecPage, GridSpecLayer, GridSpecResolved, GridSpecComponent, GridSpecCompactBuffer } from './types.ts';
 
 export interface GridSpecExportOptions {
@@ -50,9 +51,7 @@ export function exportAsGridSpec(doc: FigMeDocument, options?: GridSpecExportOpt
   const includeBuffer = options?.includeBuffer ?? false;
 
   const pages: GridSpecPage[] = doc.pages.map((page) => {
-    const cols = page.canvasColsOverride ?? gridConfig.canvasCols;
-    const rows = page.canvasRowsOverride ?? gridConfig.canvasRows;
-    const hasOverride = page.canvasColsOverride != null || page.canvasRowsOverride != null;
+    const canvasSize = getPageCanvasSizeInfo(page, gridConfig);
 
     const layers: GridSpecLayer[] = flattenLayerOrder(page)
       .map((id) => page.layers[id])
@@ -62,16 +61,17 @@ export function exportAsGridSpec(doc: FigMeDocument, options?: GridSpecExportOpt
     const specPage: GridSpecPage = {
       id: page.id,
       name: page.name,
-      ...(hasOverride ? { gridOverride: { cols, rows } } : {}),
+      ...(canvasSize.isOverridden ? {
+        gridOverride: {
+          cols: canvasSize.effectiveCols,
+          rows: canvasSize.effectiveRows,
+        },
+      } : {}),
       layers,
     };
 
     if (includeBuffer) {
-      const pageGridConfig = {
-        ...gridConfig,
-        canvasCols: cols,
-        canvasRows: rows,
-      };
+      const pageGridConfig = applyPageCanvasSizeToGridConfig(page, gridConfig);
       const buffer = composePageBuffer(page, pageGridConfig);
       const overrides = computeColorOverrides(page);
       specPage.buffer = buildCompactBuffer(buffer, palette as Palette, overrides);

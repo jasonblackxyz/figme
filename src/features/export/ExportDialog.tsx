@@ -7,6 +7,7 @@ import { downloadBlob } from './downloadBlob.ts';
 import { renderBufferToCanvas } from './renderToCanvas.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
 import { computeColorOverrides } from '@primitives/document-model/colorOverrides.ts';
+import { applyPageCanvasSizeToGridConfig, getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
 import styles from './ExportDialog.module.css';
 
@@ -14,13 +15,12 @@ function getActivePageExportConfig(doc: FigMeDocument) {
   const activePage = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
   if (!activePage) return null;
 
-  const cols = activePage.canvasColsOverride ?? doc.gridConfig.canvasCols;
-  const rows = activePage.canvasRowsOverride ?? doc.gridConfig.canvasRows;
-  const pageGridConfig = { ...doc.gridConfig, canvasCols: cols, canvasRows: rows };
+  const canvasSize = getPageCanvasSizeInfo(activePage, doc.gridConfig);
+  const pageGridConfig = applyPageCanvasSizeToGridConfig(activePage, doc.gridConfig);
   const buffer = composePageBuffer(activePage, pageGridConfig);
   const colorOverrides = computeColorOverrides(activePage);
 
-  return { activePage, cols, rows, pageGridConfig, buffer, colorOverrides };
+  return { activePage, canvasSize, pageGridConfig, buffer, colorOverrides };
 }
 
 interface ExportDialogProps {
@@ -91,7 +91,10 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
     canvas.toBlob((blob) => {
       if (blob) {
         const name = doc.name || 'untitled';
-        downloadBlob(blob, `${name}_${config.cols}x${config.rows}.png`);
+        downloadBlob(
+          blob,
+          `${name}_${config.canvasSize.effectiveCols}x${config.canvasSize.effectiveRows}.png`,
+        );
       }
     }, 'image/png');
     onClose();

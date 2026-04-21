@@ -21,6 +21,11 @@ import { pixelToGrid, gridToPixel, snapToGrid } from '@primitives/grid-engine/co
 import { rectIntersects, rectContains, innerRect } from '@primitives/grid-engine/geometry.ts';
 import { computeTextFlow } from '@primitives/text-flow/compute.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
+import {
+  applyPageCanvasSizeToGridConfig,
+  getPageCanvasSizeInfo,
+  getVisiblePageContentBounds,
+} from '@primitives/document-model/canvasSize.ts';
 import { exportAsJson, exportAsMarkdown } from '@features/export/exporters.ts';
 import { batch, isBatching, getPendingDocument, setPendingDocument } from './batch.ts';
 
@@ -69,6 +74,13 @@ function getActivePage(): FigMePage | undefined {
   return doc.pages.find(p => p.id === doc.activePageId);
 }
 
+function getPageById(pageId?: string): FigMePage | undefined {
+  const doc = getCurrentDocument();
+  return pageId
+    ? doc.pages.find((p) => p.id === pageId)
+    : doc.pages.find((p) => p.id === doc.activePageId);
+}
+
 function readInterfaceMode(): InterfaceMode {
   return useUiStore.getState().interfaceMode;
 }
@@ -91,6 +103,16 @@ function getLayers(): Layer[] {
   return flattenLayerOrder(page).map(id => page.layers[id]).filter((l): l is Layer => l != null);
 }
 
+function commitDocument(nextDoc: FigMeDocument): void {
+  if (isBatching()) {
+    setPendingDocument(nextDoc);
+  } else {
+    const store = useDocumentStore.getState();
+    store.pushUndo();
+    store.setDocument(nextDoc);
+  }
+}
+
 function applyPageMutation(fn: (page: FigMePage) => FigMePage): void {
   const doc = getCurrentDocument();
   const page = doc.pages.find(p => p.id === doc.activePageId);
@@ -104,13 +126,31 @@ function applyPageMutation(fn: (page: FigMePage) => FigMePage): void {
     pages: doc.pages.map(p => (p.id === page.id ? fn(p) : p)),
   };
 
-  if (isBatching()) {
-    setPendingDocument(nextDoc);
-  } else {
-    const store = useDocumentStore.getState();
-    store.pushUndo();
-    store.setDocument(nextDoc);
+  commitDocument(nextDoc);
+}
+
+function applyTargetPageMutation(pageId: string | undefined, fn: (page: FigMePage) => FigMePage): void {
+  const doc = getCurrentDocument();
+  const page = getPageById(pageId);
+  if (!page) {
+    throw new Error(pageId
+      ? `FigMe: no page with id "${pageId}"`
+      : 'FigMe: no active page');
   }
+
+  const nextDoc = {
+    ...doc,
+    pages: doc.pages.map((p) => (p.id === page.id ? fn(p) : p)),
+  };
+
+  commitDocument(nextDoc);
+}
+
+function assertPositiveInteger(value: number, field: 'cols' | 'rows'): number {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`FigMe.setPageCanvasSize: "${field}" must be a positive integer.`);
+  }
+  return value;
 }
 
 function defaultPropsForKind(kind: LayerKind): LayerProperties {
@@ -222,14 +262,7 @@ export function buildApi() {
       const updated = addPage(doc, name);
       const newId = updated.pages[updated.pages.length - 1]!.id;
       const finalDoc = { ...updated, activePageId: newId };
-
-      if (isBatching()) {
-        setPendingDocument(finalDoc);
-      } else {
-        const store = useDocumentStore.getState();
-        store.pushUndo();
-        store.setDocument(finalDoc);
-      }
+      commitDocument(finalDoc);
       return newId;
     },
     setActivePage(id: string): void {
@@ -238,17 +271,64 @@ export function buildApi() {
         throw new Error(`FigMe.setActivePage: no page with id "${id}"`);
       }
       const finalDoc = { ...doc, activePageId: id };
-
-      if (isBatching()) {
-        setPendingDocument(finalDoc);
-      } else {
-        const store = useDocumentStore.getState();
-        store.pushUndo();
-        store.setDocument(finalDoc);
-      }
+      commitDocument(finalDoc);
     },
     getPage(id: string): FigMePage | undefined {
       return getCurrentDocument().pages.find(p => p.id === id);
+    },
+    getPageCanvasSize(pageId?: string) {
+      const doc = getCurrentDocument();
+      const page = getPageById(pageId);
+      if (!page) {
+        throw new Error(pageId
+          ? `FigMe.getPageCanvasSize: no page with id "${pageId}"`
+          : 'FigMe.getPageCanvasSize: no active page');
+      }
+      return getPageCanvasSizeInfo(page, doc.gridConfig);
+    },
+    setPageCanvasSize(spec: { cols: number; rows: number; pageId?: string; allowClip?: boolean }) {
+      const cols = assertPositiveInteger(spec.cols, 'cols');
+      const rows = assertPositiveInteger(spec.rows, 'rows');
+      const page = getPageById(spec.pageId);
+      const doc = getCurrentDocument();
+      if (!page) {
+        throw new Error(spec.pageId
+          ? `FigMe.setPageCanvasSize: no page with id "${spec.pageId}"`
+          : 'FigMe.setPageCanvasSize: no active page');
+      }
+
+      const bounds = getVisiblePageContentBounds(page);
+      if (spec.allowClip !== true && (cols < bounds.cols || rows < bounds.rows)) {
+        throw new Error(
+          `FigMe.setPageCanvasSize: ${cols}x${rows} would clip visible content (${bounds.cols}x${bounds.rows}). ` +
+          'Pass allowClip: true to permit clipping.',
+        );
+      }
+
+      const pageCanvas = getPageCanvasSizeInfo(page, doc.gridConfig);
+      applyTargetPageMutation(spec.pageId, (targetPage) => ({
+        ...targetPage,
+        canvasColsOverride: cols === pageCanvas.defaultCols ? undefined : cols,
+        canvasRowsOverride: rows === pageCanvas.defaultRows ? undefined : rows,
+      }));
+
+      return api.getPageCanvasSize(spec.pageId);
+    },
+    resetPageCanvasSize(pageId?: string) {
+      const page = getPageById(pageId);
+      if (!page) {
+        throw new Error(pageId
+          ? `FigMe.resetPageCanvasSize: no page with id "${pageId}"`
+          : 'FigMe.resetPageCanvasSize: no active page');
+      }
+
+      applyTargetPageMutation(pageId, (targetPage) => ({
+        ...targetPage,
+        canvasColsOverride: undefined,
+        canvasRowsOverride: undefined,
+      }));
+
+      return api.getPageCanvasSize(pageId);
     },
     setInterfaceMode(mode: InterfaceMode): void {
       if (mode !== 'ai' && mode !== 'human') {
@@ -365,6 +445,7 @@ export function buildApi() {
           `FigMe.updateLayer: unknown styleKey "${String(updates.styleKey)}" ignored. Use customColors: {color, bg} for direct hex colors.`,
         );
         const { styleKey: _ignored, ...safeUpdates } = updates;
+        void _ignored;
         applyPageMutation(p => updateLayerOp(p, id, safeUpdates));
         return;
       }
@@ -554,7 +635,7 @@ export function buildApi() {
           ? doc.pages.find(p => p.id === pageId)
           : doc.pages.find(p => p.id === doc.activePageId);
         if (!page) return '';
-        const buffer = composePageBuffer(page, doc.gridConfig);
+        const buffer = composePageBuffer(page, applyPageCanvasSizeToGridConfig(page, doc.gridConfig));
         return buffer.chars.map(row => row.join('')).join('\n');
       },
     },

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 
 interface AgentBriefingProps {
@@ -10,7 +11,14 @@ interface AgentBriefingProps {
 // Briefing builders
 // ---------------------------------------------------------------------------
 
+function getActivePageCanvasInfo(document: FigMeDocument) {
+  const activePage = document.pages.find((p) => p.id === document.activePageId);
+  return activePage ? getPageCanvasSizeInfo(activePage, document.gridConfig) : null;
+}
+
 function buildFullBriefing(document: FigMeDocument) {
+  const activePageCanvas = getActivePageCanvasInfo(document);
+
   return {
     system: 'FigMe \u2014 ASCII Grid Design Tool',
     version: '2.0',
@@ -20,13 +28,15 @@ function buildFullBriefing(document: FigMeDocument) {
       'Design tool for composing ASCII character grid interfaces. All colours are specified as hex values (e.g. \'#ffffff\'). You have full creative control over the colour palette.',
     gridSystem: {
       description:
-        'The canvas is a 2D grid of monospace character cells. Every position is addressed by (col, row). There are no sub-cell positions.',
+        'The canvas is a 2D grid of monospace character cells. Every position is addressed by (col, row). There are no sub-cell positions, and page size is an explicit row/column setting rather than something inferred from painted content.',
       defaults: {
         fontFamily: document.gridConfig.fontFamily,
         fontSize: document.gridConfig.fontSize,
         lineHeight: document.gridConfig.lineHeight,
         cellWidth: document.gridConfig.cellWidth,
         cellHeight: document.gridConfig.cellHeight,
+        canvasCols: document.gridConfig.canvasCols,
+        canvasRows: document.gridConfig.canvasRows,
       },
     },
     document: {
@@ -34,6 +44,17 @@ function buildFullBriefing(document: FigMeDocument) {
       pageCount: document.pages.length,
       activePageId: document.activePageId,
       componentCount: Object.keys(document.components).length,
+    },
+    canvasSize: {
+      description:
+        'The canvas is fundamentally a row/column ASCII surface. The default canvas size for this document is authoritative. paint() creates layers inside that surface and never resizes the page.',
+      default: {
+        cols: document.gridConfig.canvasCols,
+        rows: document.gridConfig.canvasRows,
+      },
+      activePage: activePageCanvas,
+      control:
+        "Use FigMe.getPageCanvasSize(pageId?), FigMe.setPageCanvasSize({cols, rows, pageId?, allowClip?}), or FigMe.resetPageCanvasSize(pageId?) to change the design surface intentionally.",
     },
     api: {
       global: 'window.FigMe',
@@ -54,6 +75,9 @@ function buildFullBriefing(document: FigMeDocument) {
         'addPage(name) => pageId',
         'setActivePage(id)',
         'getPage(id)',
+        'getPageCanvasSize(pageId?)',
+        "setPageCanvasSize({cols, rows, pageId?, allowClip?})",
+        'resetPageCanvasSize(pageId?)',
         "setInterfaceMode('ai' | 'human')",
         "getInterfaceMode() \u2014 returns the visible shell mode ('ai' or 'human')",
         "paint({col, row, lines?, content?, color?, bg?, name?}) \u2014 freeform character painting with per-span colors. Returns layerId",
@@ -77,6 +101,7 @@ function buildFullBriefing(document: FigMeDocument) {
         setSelection: 'FigMe.stores.ui.getState().setSelectedLayers([id])',
         zoom: 'FigMe.viewport.setZoom(1.5)',
         fitToPage: 'FigMe.viewport.fitToPage()',
+        canvasSize: 'FigMe.setPageCanvasSize({ cols: 300, rows: 80 })',
         setLayerColors: "FigMe.updateLayer(id, {customColors: {color: '#fff', bg: '#000'}})",
         paintCells:
           "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor')",
@@ -197,6 +222,11 @@ function buildFullBriefing(document: FigMeDocument) {
           notes: 'Each span has its own color. No coordinate math needed \u2014 colors are inline with the text.',
         },
         {
+          name: 'Resize the page canvas',
+          code: 'FigMe.setPageCanvasSize({cols:300, rows:80})',
+          notes: 'Use this to intentionally change the design surface. paint() and layer bounds never resize the page for you.',
+        },
+        {
           name: 'Verify the design',
           code: 'FigMe.export.toAscii()',
           notes: 'Returns rendered ASCII string. Also: FigMe.getLayers() for layer list, FigMe.getDocument() for full state.',
@@ -242,28 +272,43 @@ function buildFullBriefing(document: FigMeDocument) {
 }
 
 function buildRawBriefing(document: FigMeDocument) {
+  const activePageCanvas = getActivePageCanvasInfo(document);
+
   return {
     system: 'FigMe \u2014 ASCII Grid Design Tool',
     version: '2.0',
     mode: 'raw' as const,
     interfaceMode: 'ai' as const,
     purpose:
-      'Freeform ASCII art canvas optimized for agents. Use FigMe.paint() as the primary creative primitive and FigMe.addFiglet() when preset FIGlet fonts are helpful. Structured layer creation is intentionally unavailable in AI mode.',
+      'Freeform ASCII art canvas optimized for agents. Use FigMe.paint() as the primary creative primitive, FigMe.addFiglet() when preset FIGlet fonts are helpful, and setPageCanvasSize() when you intentionally need a different surface size. Structured layer creation is intentionally unavailable in AI mode.',
     gridSystem: {
       description:
-        'The canvas is a 2D grid of monospace character cells. Every position is addressed by (col, row). There are no sub-cell positions. Spaces are transparent \u2014 lower layers show through.',
+        'The canvas is a 2D grid of monospace character cells. Every position is addressed by (col, row). There are no sub-cell positions. Spaces are transparent \u2014 lower layers show through. paint() never changes the page dimensions.',
       defaults: {
         fontFamily: document.gridConfig.fontFamily,
         fontSize: document.gridConfig.fontSize,
         lineHeight: document.gridConfig.lineHeight,
         cellWidth: document.gridConfig.cellWidth,
         cellHeight: document.gridConfig.cellHeight,
+        canvasCols: document.gridConfig.canvasCols,
+        canvasRows: document.gridConfig.canvasRows,
       },
     },
     document: {
       name: document.name,
       pageCount: document.pages.length,
       activePageId: document.activePageId,
+    },
+    canvasSize: {
+      description:
+        'The canvas is fundamentally a row/column ASCII surface. The default size is the standard output surface unless you explicitly override it.',
+      default: {
+        cols: document.gridConfig.canvasCols,
+        rows: document.gridConfig.canvasRows,
+      },
+      activePage: activePageCanvas,
+      control:
+        "Use FigMe.setPageCanvasSize({cols, rows, pageId?, allowClip?}) to change the surface. Use FigMe.resetPageCanvasSize(pageId?) to return to the default size.",
     },
     api: {
       global: 'window.FigMe',
@@ -274,6 +319,9 @@ function buildRawBriefing(document: FigMeDocument) {
         'addPage(name) => pageId',
         'setActivePage(id)',
         'getPage(id)',
+        'getPageCanvasSize(pageId?)',
+        "setPageCanvasSize({cols, rows, pageId?, allowClip?})",
+        'resetPageCanvasSize(pageId?)',
         'getLayers()',
         'getLayer(id)',
         'removeLayer(id)',
@@ -295,6 +343,7 @@ function buildRawBriefing(document: FigMeDocument) {
         undo: 'FigMe.stores.document.getState().undo()',
         zoom: 'FigMe.viewport.setZoom(1.5)',
         fitToPage: 'FigMe.viewport.fitToPage()',
+        canvasSize: 'FigMe.setPageCanvasSize({ cols: 300, rows: 80 })',
         paintCells:
           "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor')",
         paintPage:
@@ -323,6 +372,11 @@ function buildRawBriefing(document: FigMeDocument) {
           name: 'Add FIGlet text',
           code: "FigMe.addFiglet({col:2, row:1, content:'Title', fontName:'koholint', color:'#2563eb'})",
           notes: 'Use this when you want stylized ASCII display text without switching to Human mode.',
+        },
+        {
+          name: 'Resize the page canvas',
+          code: 'FigMe.setPageCanvasSize({cols:300, rows:80})',
+          notes: 'Use this when you want a non-default ASCII surface. paint() layers stay inside the existing page size unless you change it explicitly.',
         },
         {
           name: 'Verify the design',

@@ -9,6 +9,7 @@ import type {
 import type { GridRect } from '@primitives/grid-engine/types.ts';
 import type { StyleKey, Palette } from '@primitives/style-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
+import { createDefaultGridConfig } from '@primitives/grid-engine/measurement.ts';
 
 let idCounter = 0;
 function generateId(): string {
@@ -86,7 +87,6 @@ export function removeLayer(page: FigMePage, layerId: string): FigMePage {
 
   // Remove all collected IDs from layers map
   for (const id of toRemove) {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete result.layers[id];
   }
 
@@ -239,15 +239,7 @@ export function createEmptyDocument(
   gridConfig?: GridConfig,
   palette?: Palette,
 ): FigMeDocument {
-  const defaultGridConfig: GridConfig = gridConfig ?? {
-    fontFamily: "'IBM Plex Mono', monospace",
-    fontSize: 14,
-    lineHeight: 1.35,
-    cellWidth: 8.4,
-    cellHeight: 18.9,
-    canvasCols: 228,
-    canvasRows: 57,
-  };
+  const defaultGridConfig: GridConfig = gridConfig ?? createDefaultGridConfig();
 
   const defaultPalette: Palette = palette ?? createMinimalPalette();
 
@@ -421,12 +413,10 @@ export function ungroupLayers(page: FigMePage, groupId: string): FigMePage {
     const newOrder = [...page.layerOrder];
     newOrder.splice(idx, 1, ...children);
     // Remove the group from layers, return with spliced order
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete layers[groupId];
     return { ...page, layers, layerOrder: newOrder };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
   delete layers[groupId];
   return { ...page, layers, layerOrder: page.layerOrder.filter((id) => id !== groupId) };
 }
@@ -532,7 +522,7 @@ export function moveLayerToGroup(
     }
   }
 
-  let layers = { ...page.layers };
+  const layers = { ...page.layers };
   let layerOrder = [...page.layerOrder];
 
   // Remove from current parent
