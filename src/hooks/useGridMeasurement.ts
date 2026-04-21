@@ -21,10 +21,10 @@ export function useGridMeasurement(): GridConfig {
       ...gridConfig,
       cellWidth,
       cellHeight,
-      canvasCols: Math.floor(1920 / cellWidth),
-      canvasRows: Math.floor(1080 / cellHeight),
+      canvasCols: gridConfig.canvasCols,
+      canvasRows: gridConfig.canvasRows,
     };
-  }, [gridConfig.fontFamily, gridConfig.fontSize, gridConfig.lineHeight]);
+  }, [gridConfig]);
 
   return measured;
 }

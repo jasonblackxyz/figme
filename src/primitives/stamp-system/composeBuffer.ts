@@ -10,6 +10,7 @@ import type {
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { StampBuffer } from './types.ts';
 import { createBuffer, mergeBuffers } from './buffer.ts';
+import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 import {
   stampNodeBox,
   stampModalBox,
@@ -28,7 +29,8 @@ import { getFigletFont } from '@primitives/figlet-engine/fonts/index.ts';
  * Pure function — no React, no store access.
  */
 export function composePageBuffer(page: FigMePage, gridConfig: GridConfig, skipLayerId?: string | null): StampBuffer {
-  let buffer = createBuffer(gridConfig.canvasCols, gridConfig.canvasRows);
+  const { effectiveCols, effectiveRows } = getPageCanvasSizeInfo(page, gridConfig);
+  let buffer = createBuffer(effectiveCols, effectiveRows);
 
   for (const layerId of flattenLayerOrder(page)) {
     const layer: Layer | undefined = page.layers[layerId];
@@ -87,8 +89,8 @@ export function composePageBuffer(page: FigMePage, gridConfig: GridConfig, skipL
             sourceLyr.rect,
             targetLyr.rect,
             props.styleKey,
-            gridConfig.canvasCols,
-            gridConfig.canvasRows,
+            effectiveCols,
+            effectiveRows,
           );
         }
         break;

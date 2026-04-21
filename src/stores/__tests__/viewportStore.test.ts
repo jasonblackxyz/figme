@@ -1,6 +1,13 @@
 import { useViewportStore, computeAutoFitZoom } from '@stores/viewportStore.ts';
+import { useDocumentStore } from '@stores/documentStore.ts';
+import { createEmptyDocument } from '@primitives/document-model/operations.ts';
 
 beforeEach(() => {
+  useDocumentStore.setState({
+    document: createEmptyDocument(),
+    undoStack: [],
+    redoStack: [],
+  });
   useViewportStore.setState({
     zoom: 1,
     panX: 0,
@@ -88,17 +95,33 @@ describe('viewportStore', () => {
       expect(config.fontSize).toBe(28);
     });
 
-    it('caches config for same effective font size', () => {
-      useViewportStore.getState().setZoom(1.5);
-      const config1 = useViewportStore.getState().getEffectiveGridConfig();
-      const config2 = useViewportStore.getState().getEffectiveGridConfig();
-      expect(config1).toBe(config2); // Same reference = cached
-    });
-
     it('preserves canvasCols and canvasRows from default', () => {
       const config = useViewportStore.getState().getEffectiveGridConfig();
-      expect(config.canvasCols).toBeGreaterThan(0);
-      expect(config.canvasRows).toBeGreaterThan(0);
+      expect(config.canvasCols).toBe(228);
+      expect(config.canvasRows).toBe(57);
+    });
+
+    it('reflects active page canvas overrides', () => {
+      const doc = createEmptyDocument();
+      const page = doc.pages[0]!;
+      useDocumentStore.setState({
+        document: {
+          ...doc,
+          pages: [
+            {
+              ...page,
+              canvasColsOverride: 300,
+              canvasRowsOverride: 80,
+            },
+          ],
+        },
+        undoStack: [],
+        redoStack: [],
+      });
+
+      const config = useViewportStore.getState().getEffectiveGridConfig();
+      expect(config.canvasCols).toBe(300);
+      expect(config.canvasRows).toBe(80);
     });
   });
 

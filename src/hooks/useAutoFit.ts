@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useViewportStore } from '@stores/viewportStore.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
+import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 
 /**
  * Observes the canvas viewport element's size and the active page,
@@ -40,12 +41,23 @@ export function useAutoFit(canvasRef: React.RefObject<HTMLDivElement | null>): v
     };
   }, [canvasRef]);
 
-  // Re-trigger auto-fit when the active page changes
-  const activePageId = useDocumentStore((s) => s.document.activePageId);
+  // Re-trigger auto-fit when the active page or its effective size changes.
+  const activePageCanvasKey = useDocumentStore((s) => {
+    const activePage = s.document.pages.find((p) => p.id === s.document.activePageId);
+    if (!activePage) return 'none';
+    const canvas = getPageCanvasSizeInfo(activePage, s.document.gridConfig);
+    return [
+      activePage.id,
+      canvas.effectiveCols,
+      canvas.effectiveRows,
+      activePage.canvasX,
+      activePage.canvasY,
+    ].join(':');
+  });
   useEffect(() => {
     const vs = useViewportStore.getState();
     if (vs.autoFitEnabled && vs.viewportWidth > 0) {
       vs.applyAutoFit();
     }
-  }, [activePageId]);
+  }, [activePageCanvasKey]);
 }

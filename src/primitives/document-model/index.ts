@@ -42,6 +42,11 @@ export {
   isEffectivelyHidden,
   getDepth,
 } from './hierarchy.ts'
+export {
+  getPageCanvasSizeInfo,
+  applyPageCanvasSizeToGridConfig,
+  getVisiblePageContentBounds,
+} from './canvasSize.ts'
 export { serializeDocument, deserializeDocument } from './serialization.ts'
 export type { ColorOverrideMap } from './colorOverrides.ts'
 export { computeColorOverrides } from './colorOverrides.ts'

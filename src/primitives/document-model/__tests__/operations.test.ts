@@ -20,6 +20,8 @@ describe('createEmptyDocument', () => {
     expect(doc.name).toBe('Untitled')
     expect(doc.gridConfig.fontFamily).toContain('IBM Plex Mono')
     expect(doc.gridConfig.fontSize).toBe(14)
+    expect(doc.gridConfig.canvasCols).toBe(228)
+    expect(doc.gridConfig.canvasRows).toBe(57)
     expect(doc.pages).toHaveLength(1)
     expect(doc.activePageId).toBe(doc.pages[0]!.id)
     expect(doc.metadata.version).toBe(1)

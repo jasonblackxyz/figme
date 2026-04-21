@@ -35,8 +35,11 @@ describe('StatusBar', () => {
 
   it('renders grid size', () => {
     render(<StatusBar />);
-    const gridEl = screen.getByText(/\d+x\d+/);
+    const gridEl = screen.getByText('228x57 default');
     expect(gridEl).toBeInTheDocument();
+    expect(gridEl).toHaveAttribute('data-grid-cols', '228');
+    expect(gridEl).toHaveAttribute('data-grid-rows', '57');
+    expect(gridEl).toHaveAttribute('data-grid-mode', 'default');
   });
 
   it('renders layer count', () => {
@@ -74,5 +77,30 @@ describe('StatusBar', () => {
   it('does not render the old agent mode toggle', () => {
     render(<StatusBar />);
     expect(screen.queryByRole('button', { name: /Agent:/i })).not.toBeInTheDocument();
+  });
+
+  it('renders custom grid size when the active page overrides the default canvas', () => {
+    const doc = createEmptyDocument('Status Test');
+    const page = doc.pages[0]!;
+    useDocumentStore.setState({
+      document: {
+        ...doc,
+        pages: [
+          {
+            ...page,
+            canvasColsOverride: 300,
+            canvasRowsOverride: 80,
+          },
+        ],
+      },
+      undoStack: [],
+      redoStack: [],
+    });
+
+    render(<StatusBar />);
+    const gridEl = screen.getByText('300x80 custom');
+    expect(gridEl).toHaveAttribute('data-grid-mode', 'custom');
+    expect(gridEl).toHaveAttribute('data-grid-cols', '300');
+    expect(gridEl).toHaveAttribute('data-grid-rows', '80');
   });
 });

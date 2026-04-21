@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
 import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
+import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 
 interface SpecViewProps {
   document: FigMeDocument;
@@ -14,6 +15,9 @@ interface SpecViewProps {
  */
 export function SpecView({ document, selectedLayerIds }: SpecViewProps): ReactNode {
   const activePage = document.pages.find((p) => p.id === document.activePageId);
+  const activePageCanvas = activePage
+    ? getPageCanvasSizeInfo(activePage, document.gridConfig)
+    : null;
 
   const spec = {
     document: {
@@ -33,6 +37,7 @@ export function SpecView({ document, selectedLayerIds }: SpecViewProps): ReactNo
       ? {
           id: activePage.id,
           name: activePage.name,
+          canvasSize: activePageCanvas,
           layerCount: Object.keys(activePage.layers).length,
           layers: flattenLayerOrder(activePage).map((id) => {
             const layer = activePage.layers[id];
