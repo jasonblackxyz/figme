@@ -1,5 +1,6 @@
 import type { FigMePage } from '@primitives/document-model/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
+import { getResolvedPageBackgroundColor } from '@primitives/document-model/pageBackground.ts';
 import styles from './ArtboardFrame.module.css';
 
 interface ArtboardFrameProps {
@@ -12,6 +13,7 @@ export function ArtboardFrame({ page, gridConfig }: ArtboardFrameProps) {
   const y = page.canvasY * gridConfig.cellHeight;
   const width = gridConfig.canvasCols * gridConfig.cellWidth;
   const height = gridConfig.canvasRows * gridConfig.cellHeight;
+  const backgroundColor = getResolvedPageBackgroundColor(page);
 
   return (
     <>
@@ -31,7 +33,7 @@ export function ArtboardFrame({ page, gridConfig }: ArtboardFrameProps) {
           top: y,
           width,
           height,
-          backgroundColor: page.backgroundColor ?? '#ffffff',
+          backgroundColor,
         }}
       />
       <div

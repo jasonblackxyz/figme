@@ -47,6 +47,10 @@ export {
   applyPageCanvasSizeToGridConfig,
   getVisiblePageContentBounds,
 } from './canvasSize.ts'
+export {
+  DEFAULT_PAGE_BACKGROUND_COLOR,
+  getResolvedPageBackgroundColor,
+} from './pageBackground.ts'
 export { serializeDocument, deserializeDocument } from './serialization.ts'
 export type { ColorOverrideMap } from './colorOverrides.ts'
 export { computeColorOverrides } from './colorOverrides.ts'

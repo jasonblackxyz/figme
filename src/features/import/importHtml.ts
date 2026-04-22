@@ -1,6 +1,7 @@
 import type { FigMeDocument, Layer } from '@primitives/document-model/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
+import { getResolvedPageBackgroundColor } from '@primitives/document-model/pageBackground.ts';
 
 /**
  * Import a FigMe-exported HTML file back into a FigMeDocument.
@@ -29,7 +30,8 @@ export function importHtml(html: string): FigMeDocument {
   const layerOrder: string[] = [];
   let hasVisibleContent = false;
   let nextLayerId = 1;
-  const defaultBg = normalizeStyleValue(doc.palette.bg.bg);
+  const pageBackgroundColor = extractPageBackgroundColor(htmlDoc) ?? getResolvedPageBackgroundColor(page);
+  const defaultBg = normalizeStyleValue(pageBackgroundColor);
 
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
     const row = rows[rowIndex]!;
@@ -44,7 +46,7 @@ export function importHtml(html: string): FigMeDocument {
       }
 
       const { styleKey, customColors, bg } = resolveSpanStyle(span, reversePalette, doc.palette);
-      if (text.trim().length === 0 && normalizeStyleValue(bg) === defaultBg) {
+      if (text.trim().length === 0 && (bg === '' || bg === 'transparent' || bg === defaultBg)) {
         col += text.length;
         continue;
       }
@@ -85,12 +87,22 @@ export function importHtml(html: string): FigMeDocument {
     ...page,
     layers,
     layerOrder,
+    backgroundColor: pageBackgroundColor,
   };
 
   return {
     ...doc,
     pages: [updatedPage],
   };
+}
+
+function extractPageBackgroundColor(htmlDoc: Document): string | undefined {
+  const pageBackground = extractInlineBackgroundColor(htmlDoc.querySelector('.page'));
+  if (pageBackground) return pageBackground;
+
+  // Legacy HTML exports used the body background as the page color before the
+  // dedicated `.page` wrapper was introduced.
+  return extractStyleBlockBackgroundColor(htmlDoc, 'body');
 }
 
 function extractGridConfig(htmlDoc: Document) {
@@ -187,4 +199,19 @@ function pickFallbackStyleKey(fontWeight: string): StyleKey {
 
 function normalizeStyleValue(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function extractInlineBackgroundColor(element: Element | null): string | undefined {
+  const style = element?.getAttribute('style') ?? '';
+  const bgMatch = style.match(/(?:^|;)\s*background(?:-color)?:\s*([^;]+)/);
+  const background = bgMatch?.[1]?.trim();
+  return background ? normalizeStyleValue(background) : undefined;
+}
+
+function extractStyleBlockBackgroundColor(htmlDoc: Document, selector: string): string | undefined {
+  const style = htmlDoc.querySelector('style')?.textContent ?? '';
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const blockRegex = new RegExp(`${escapedSelector}\\s*\\{[^}]*background(?:-color)?:\\s*([^;]+)`, 'i');
+  const background = style.match(blockRegex)?.[1]?.trim();
+  return background ? normalizeStyleValue(background) : undefined;
 }

@@ -4,7 +4,7 @@ import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
 import { renderGridToElements } from '@renderer/renderGrid.ts';
 import { importHtml } from './importHtml.ts';
 
-function makeHtml(rows: string[]): string {
+function makeHtml(rows: string[], pageBackground = '#ffffff'): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,6 +15,35 @@ body {
   margin: 0;
   padding: 16px;
   background: #1a1a2e;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.grid { white-space: pre; }
+.row { height: 18.9px; }
+</style>
+</head>
+<body>
+<div class="page" style="background:${pageBackground}">
+<div class="grid">
+${rows.join('\n')}
+</div>
+</div>
+</body>
+</html>`;
+}
+
+function makeLegacyHtml(rows: string[]): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Imported</title>
+<style>
+body {
+  margin: 0;
+  padding: 16px;
+  background: #faf6ef;
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
   font-size: 14px;
   line-height: 1.35;
@@ -94,5 +123,30 @@ describe('importHtml', () => {
       bg: bold.bg,
       fontWeight: bold.fontWeight,
     });
+  });
+
+  it('preserves explicit page background color and skips transparent whitespace spans', () => {
+    const html = makeHtml([
+      `<div class="row"><span style="color:#1a1a1a;background:transparent">   </span><span style="color:#e0e0e0;background:#1a1a2e">X</span></div>`,
+    ], '#0d1117');
+
+    const doc = importHtml(html);
+    const page = doc.pages[0]!;
+
+    expect(page.backgroundColor).toBe('#0d1117');
+    expect(page.layerOrder).toHaveLength(1);
+    expect(page.layers[page.layerOrder[0]!]!.properties).toMatchObject({
+      content: 'X',
+    });
+  });
+
+  it('preserves legacy body background color for pre-wrapper HTML exports', () => {
+    const html = makeLegacyHtml([
+      `<div class="row"><span style="color:#e0e0e0;background:#faf6ef">X</span></div>`,
+    ]);
+
+    const doc = importHtml(html);
+
+    expect(doc.pages[0]!.backgroundColor).toBe('#faf6ef');
   });
 });

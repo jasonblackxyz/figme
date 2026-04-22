@@ -129,6 +129,7 @@ export interface FigMePage {
   canvasX: number;
   canvasY: number;
   cellColorOverrides?: Record<string, string>;
+  /** Base page fill rendered underneath transparent cells and layers. */
   backgroundColor?: string;
 }
 

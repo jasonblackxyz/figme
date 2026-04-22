@@ -8,6 +8,7 @@ import { renderBufferToCanvas } from './renderToCanvas.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
 import { computeColorOverrides } from '@primitives/document-model/colorOverrides.ts';
 import { applyPageCanvasSizeToGridConfig, getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
+import { getResolvedPageBackgroundColor } from '@primitives/document-model/pageBackground.ts';
 import type { FigMeDocument } from '@primitives/document-model/types.ts';
 import styles from './ExportDialog.module.css';
 
@@ -19,8 +20,9 @@ function getActivePageExportConfig(doc: FigMeDocument) {
   const pageGridConfig = applyPageCanvasSizeToGridConfig(activePage, doc.gridConfig);
   const buffer = composePageBuffer(activePage, pageGridConfig);
   const colorOverrides = computeColorOverrides(activePage);
+  const pageBackgroundColor = getResolvedPageBackgroundColor(activePage);
 
-  return { activePage, canvasSize, pageGridConfig, buffer, colorOverrides };
+  return { activePage, canvasSize, pageGridConfig, buffer, colorOverrides, pageBackgroundColor };
 }
 
 interface ExportDialogProps {
@@ -86,7 +88,13 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
     const config = getActivePageExportConfig(doc);
     if (!config) return;
 
-    const canvas = await renderBufferToCanvas(config.buffer, doc.palette, config.pageGridConfig, config.colorOverrides);
+    const canvas = await renderBufferToCanvas(
+      config.buffer,
+      doc.palette,
+      config.pageGridConfig,
+      config.colorOverrides,
+      config.pageBackgroundColor,
+    );
 
     canvas.toBlob((blob) => {
       if (blob) {
@@ -104,7 +112,13 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
     const config = getActivePageExportConfig(doc);
     if (!config) return;
 
-    const html = exportAsHtml(doc, config.buffer, config.pageGridConfig, config.colorOverrides);
+    const html = exportAsHtml(
+      doc,
+      config.activePage,
+      config.buffer,
+      config.pageGridConfig,
+      config.colorOverrides,
+    );
     downloadFile(html, `${doc.name || 'untitled'}.html`, 'text/html');
     onClose();
   }, [doc, onClose]);
