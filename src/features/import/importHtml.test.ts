@@ -33,6 +33,33 @@ ${rows.join('\n')}
 </html>`;
 }
 
+function makeLegacyHtml(rows: string[]): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Imported</title>
+<style>
+body {
+  margin: 0;
+  padding: 16px;
+  background: #faf6ef;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.grid { white-space: pre; }
+.row { height: 18.9px; }
+</style>
+</head>
+<body>
+<div class="grid">
+${rows.join('\n')}
+</div>
+</body>
+</html>`;
+}
+
 function buildColorOverrides(page: ReturnType<typeof importHtml>['pages'][number]) {
   const overrides: Record<string, { color?: string; bg?: string }> = {};
 
@@ -111,5 +138,15 @@ describe('importHtml', () => {
     expect(page.layers[page.layerOrder[0]!]!.properties).toMatchObject({
       content: 'X',
     });
+  });
+
+  it('preserves legacy body background color for pre-wrapper HTML exports', () => {
+    const html = makeLegacyHtml([
+      `<div class="row"><span style="color:#e0e0e0;background:#faf6ef">X</span></div>`,
+    ]);
+
+    const doc = importHtml(html);
+
+    expect(doc.pages[0]!.backgroundColor).toBe('#faf6ef');
   });
 });

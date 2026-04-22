@@ -97,10 +97,12 @@ export function importHtml(html: string): FigMeDocument {
 }
 
 function extractPageBackgroundColor(htmlDoc: Document): string | undefined {
-  const pageStyle = htmlDoc.querySelector('.page')?.getAttribute('style') ?? '';
-  const bgMatch = pageStyle.match(/(?:^|;)\s*background(?:-color)?:\s*([^;]+)/);
-  const background = bgMatch?.[1]?.trim();
-  return background ? normalizeStyleValue(background) : undefined;
+  const pageBackground = extractInlineBackgroundColor(htmlDoc.querySelector('.page'));
+  if (pageBackground) return pageBackground;
+
+  // Legacy HTML exports used the body background as the page color before the
+  // dedicated `.page` wrapper was introduced.
+  return extractStyleBlockBackgroundColor(htmlDoc, 'body');
 }
 
 function extractGridConfig(htmlDoc: Document) {
@@ -197,4 +199,19 @@ function pickFallbackStyleKey(fontWeight: string): StyleKey {
 
 function normalizeStyleValue(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function extractInlineBackgroundColor(element: Element | null): string | undefined {
+  const style = element?.getAttribute('style') ?? '';
+  const bgMatch = style.match(/(?:^|;)\s*background(?:-color)?:\s*([^;]+)/);
+  const background = bgMatch?.[1]?.trim();
+  return background ? normalizeStyleValue(background) : undefined;
+}
+
+function extractStyleBlockBackgroundColor(htmlDoc: Document, selector: string): string | undefined {
+  const style = htmlDoc.querySelector('style')?.textContent ?? '';
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const blockRegex = new RegExp(`${escapedSelector}\\s*\\{[^}]*background(?:-color)?:\\s*([^;]+)`, 'i');
+  const background = style.match(blockRegex)?.[1]?.trim();
+  return background ? normalizeStyleValue(background) : undefined;
 }
