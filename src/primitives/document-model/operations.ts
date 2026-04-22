@@ -10,6 +10,7 @@ import type { GridRect } from '@primitives/grid-engine/types.ts';
 import type { StyleKey, Palette } from '@primitives/style-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import { createDefaultGridConfig } from '@primitives/grid-engine/measurement.ts';
+import { DEFAULT_PAGE_BACKGROUND_COLOR } from './pageBackground.ts';
 
 let idCounter = 0;
 function generateId(): string {
@@ -289,6 +290,7 @@ export function createEmptyPage(name?: string): FigMePage {
     layerOrder: [bgId],
     canvasX: 0,
     canvasY: 0,
+    backgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
   };
 }
 

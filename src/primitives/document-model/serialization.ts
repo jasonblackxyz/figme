@@ -1,4 +1,5 @@
 import type { FigMeDocument, FigMePage, Layer } from './types.ts';
+import { DEFAULT_PAGE_BACKGROUND_COLOR } from './pageBackground.ts';
 
 let migrationIdCounter = 0;
 
@@ -28,10 +29,20 @@ export function deserializeDocument(json: string): FigMeDocument {
 function migrateDocument(doc: FigMeDocument): FigMeDocument {
   let changed = false;
   const pages = doc.pages.map((page): FigMePage => {
-    const hasBackground = Object.values(page.layers).some(
+    let nextPage = page;
+
+    if (page.backgroundColor == null) {
+      changed = true;
+      nextPage = {
+        ...nextPage,
+        backgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
+      };
+    }
+
+    const hasBackground = Object.values(nextPage.layers).some(
       (l: Layer | undefined) => l?.isBackground,
     );
-    if (hasBackground) return page;
+    if (hasBackground) return nextPage;
 
     changed = true;
     const bgId = `layer_migrate_${Date.now()}_${++migrationIdCounter}`;
@@ -49,9 +60,9 @@ function migrateDocument(doc: FigMeDocument): FigMeDocument {
       properties: {},
     };
     return {
-      ...page,
-      layers: { ...page.layers, [bgId]: bgLayer },
-      layerOrder: [bgId, ...page.layerOrder],
+      ...nextPage,
+      layers: { ...nextPage.layers, [bgId]: bgLayer },
+      layerOrder: [bgId, ...nextPage.layerOrder],
     };
   });
 

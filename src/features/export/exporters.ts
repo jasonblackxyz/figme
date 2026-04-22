@@ -1,9 +1,12 @@
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigMeDocument, FigMePage } from '@primitives/document-model/types.ts';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
+import { getResolvedPageBackgroundColor } from '@primitives/document-model/pageBackground.ts';
+
+const BG_STYLE = 'bg';
 
 /**
  * Serialize the full document as formatted JSON.
@@ -18,11 +21,13 @@ export function exportAsJson(doc: FigMeDocument): string {
  */
 export function exportAsHtml(
   doc: FigMeDocument,
+  page: Pick<FigMePage, 'backgroundColor'>,
   buffer: StampBuffer,
   gridConfig: GridConfig,
   colorOverrides?: ColorOverrideMap,
 ): string {
   const palette = doc.palette;
+  const pageBackgroundColor = getResolvedPageBackgroundColor(page);
 
   let bodyRows = '';
   for (let r = 0; r < buffer.height; r++) {
@@ -40,7 +45,7 @@ export function exportAsHtml(
       const styleDef = palette[styleKey];
       const override = colorOverrides?.[`${r},${c}`];
       const resolvedColor = override?.color ?? styleDef?.color ?? '#ffffff';
-      const resolvedBg = override?.bg ?? styleDef?.bg ?? '#000000';
+      const resolvedBg = override?.bg ?? (styleKey === BG_STYLE ? 'transparent' : (styleDef?.bg ?? '#000000'));
       const style = `color:${resolvedColor};background:${resolvedBg}${styleDef?.fontWeight ? `;font-weight:${styleDef.fontWeight}` : ''}`;
 
       if (style !== currentStyle) {
@@ -73,13 +78,16 @@ body {
   font-size: ${gridConfig.fontSize}px;
   line-height: ${gridConfig.lineHeight};
 }
-.grid { white-space: pre; }
+.page { display: inline-block; }
+.grid { white-space: pre; display: inline-block; }
 .row { height: ${gridConfig.cellHeight}px; }
 </style>
 </head>
 <body>
+<div class="page" style="background:${escapeAttr(pageBackgroundColor)}">
 <div class="grid">
 ${bodyRows}</div>
+</div>
 </body>
 </html>`;
 }

@@ -4,7 +4,7 @@ import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
 import { renderGridToElements } from '@renderer/renderGrid.ts';
 import { importHtml } from './importHtml.ts';
 
-function makeHtml(rows: string[]): string {
+function makeHtml(rows: string[], pageBackground = '#ffffff'): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,8 +24,10 @@ body {
 </style>
 </head>
 <body>
+<div class="page" style="background:${pageBackground}">
 <div class="grid">
 ${rows.join('\n')}
+</div>
 </div>
 </body>
 </html>`;
@@ -93,6 +95,21 @@ describe('importHtml', () => {
       color: bold.color,
       bg: bold.bg,
       fontWeight: bold.fontWeight,
+    });
+  });
+
+  it('preserves explicit page background color and skips transparent whitespace spans', () => {
+    const html = makeHtml([
+      `<div class="row"><span style="color:#1a1a1a;background:transparent">   </span><span style="color:#e0e0e0;background:#1a1a2e">X</span></div>`,
+    ], '#0d1117');
+
+    const doc = importHtml(html);
+    const page = doc.pages[0]!;
+
+    expect(page.backgroundColor).toBe('#0d1117');
+    expect(page.layerOrder).toHaveLength(1);
+    expect(page.layers[page.layerOrder[0]!]!.properties).toMatchObject({
+      content: 'X',
     });
   });
 });

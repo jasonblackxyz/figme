@@ -36,11 +36,14 @@ describe('renderBufferToCanvas', () => {
 
   it('sizes the canvas to the rendered grid without any ruler gutter', async () => {
     const buffer = createBuffer(3, 2);
+    const fillRectStyles: string[] = [];
 
     const ctx = {
       fillStyle: '',
       font: '',
-      fillRect: vi.fn(),
+      fillRect: vi.fn(() => {
+        fillRectStyles.push(ctx.fillStyle);
+      }),
       fillText: vi.fn(),
     };
 
@@ -52,6 +55,8 @@ describe('renderBufferToCanvas', () => {
 
     expect(canvas.width).toBe(24);
     expect(canvas.height).toBe(32);
+    expect(fillRectStyles[0]).toBe('#ffffff');
+    expect(ctx.fillRect).toHaveBeenCalledTimes(1);
     expect(ctx.fillRect).toHaveBeenNthCalledWith(1, 0, 0, 24, 32);
   });
 
@@ -73,6 +78,9 @@ describe('renderBufferToCanvas', () => {
     buffer.chars[0]![0] = 'A';
     buffer.chars[0]![1] = 'B';
     buffer.chars[1]![0] = 'C';
+    buffer.styles[0]![0] = 'nodeBg';
+    buffer.styles[0]![1] = 'nodeBg';
+    buffer.styles[1]![0] = 'nodeBg';
 
     const ctx = {
       fillStyle: '',
@@ -94,18 +102,14 @@ describe('renderBufferToCanvas', () => {
       }
     }
 
-    const cellCalls = ctx.fillRect.mock.calls.slice(1);
-    const maxRight = Math.max(...cellCalls.map(([x, , w]) => x + w));
-    const maxBottom = Math.max(...cellCalls.map(([, y, , h]) => y + h));
-
-    expect(maxRight).toBe(canvas.width);
-    expect(maxBottom).toBe(canvas.height);
+    expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, canvas.width, canvas.height);
+    expect(ctx.fillRect.mock.calls).toHaveLength(4);
   });
 
   it('renders cell backgrounds and text at raw grid coordinates', async () => {
     const buffer = createBuffer(2, 2);
     buffer.chars[1]![1] = 'X';
-    buffer.styles[1]![1] = 'text';
+    buffer.styles[1]![1] = 'nodeBg';
 
     const ctx = {
       fillStyle: '',
@@ -123,5 +127,47 @@ describe('renderBufferToCanvas', () => {
     expect(ctx.fillRect).toHaveBeenCalledWith(8, 16, 8, 16);
     expect(ctx.fillText).toHaveBeenCalledTimes(1);
     expect(ctx.fillText).toHaveBeenCalledWith('X', 8, 24);
+  });
+
+  it('fills explicit empty-cell background overrides on top of the white page', async () => {
+    const buffer = createBuffer(2, 1);
+    const ctx = {
+      fillStyle: '',
+      font: '',
+      fillRect: vi.fn(),
+      fillText: vi.fn(),
+    };
+
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      ctx as unknown as CanvasRenderingContext2D,
+    );
+
+    await renderBufferToCanvas(buffer, palette, gridConfig, {
+      '0,1': { bg: '#ff00ff' },
+    });
+
+    expect(ctx.fillRect).toHaveBeenNthCalledWith(1, 0, 0, 16, 16);
+    expect(ctx.fillRect).toHaveBeenNthCalledWith(2, 8, 0, 8, 16);
+  });
+
+  it('uses an explicit page background color when provided', async () => {
+    const buffer = createBuffer(1, 1);
+    const fillRectStyles: string[] = [];
+    const ctx = {
+      fillStyle: '',
+      font: '',
+      fillRect: vi.fn(() => {
+        fillRectStyles.push(ctx.fillStyle);
+      }),
+      fillText: vi.fn(),
+    };
+
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      ctx as unknown as CanvasRenderingContext2D,
+    );
+
+    await renderBufferToCanvas(buffer, palette, gridConfig, undefined, '#0d1117');
+
+    expect(fillRectStyles[0]).toBe('#0d1117');
   });
 });

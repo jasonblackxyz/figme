@@ -1,6 +1,7 @@
 import type { FigMeDocument, Layer } from '@primitives/document-model/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
+import { getResolvedPageBackgroundColor } from '@primitives/document-model/pageBackground.ts';
 
 /**
  * Import a FigMe-exported HTML file back into a FigMeDocument.
@@ -29,7 +30,8 @@ export function importHtml(html: string): FigMeDocument {
   const layerOrder: string[] = [];
   let hasVisibleContent = false;
   let nextLayerId = 1;
-  const defaultBg = normalizeStyleValue(doc.palette.bg.bg);
+  const pageBackgroundColor = extractPageBackgroundColor(htmlDoc) ?? getResolvedPageBackgroundColor(page);
+  const defaultBg = normalizeStyleValue(pageBackgroundColor);
 
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
     const row = rows[rowIndex]!;
@@ -44,7 +46,7 @@ export function importHtml(html: string): FigMeDocument {
       }
 
       const { styleKey, customColors, bg } = resolveSpanStyle(span, reversePalette, doc.palette);
-      if (text.trim().length === 0 && normalizeStyleValue(bg) === defaultBg) {
+      if (text.trim().length === 0 && (bg === '' || bg === 'transparent' || bg === defaultBg)) {
         col += text.length;
         continue;
       }
@@ -85,12 +87,20 @@ export function importHtml(html: string): FigMeDocument {
     ...page,
     layers,
     layerOrder,
+    backgroundColor: pageBackgroundColor,
   };
 
   return {
     ...doc,
     pages: [updatedPage],
   };
+}
+
+function extractPageBackgroundColor(htmlDoc: Document): string | undefined {
+  const pageStyle = htmlDoc.querySelector('.page')?.getAttribute('style') ?? '';
+  const bgMatch = pageStyle.match(/(?:^|;)\s*background(?:-color)?:\s*([^;]+)/);
+  const background = bgMatch?.[1]?.trim();
+  return background ? normalizeStyleValue(background) : undefined;
 }
 
 function extractGridConfig(htmlDoc: Document) {

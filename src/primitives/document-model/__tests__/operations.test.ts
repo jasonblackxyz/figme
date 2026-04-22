@@ -24,6 +24,7 @@ describe('createEmptyDocument', () => {
     expect(doc.gridConfig.canvasRows).toBe(57)
     expect(doc.pages).toHaveLength(1)
     expect(doc.activePageId).toBe(doc.pages[0]!.id)
+    expect(doc.pages[0]!.backgroundColor).toBe('#ffffff')
     expect(doc.metadata.version).toBe(1)
   })
 
@@ -45,6 +46,7 @@ describe('createEmptyPage', () => {
   it('creates a page with a Background layer', () => {
     const page = createEmptyPage('Test Page')
     expect(page.name).toBe('Test Page')
+    expect(page.backgroundColor).toBe('#ffffff')
     expect(Object.keys(page.layers)).toHaveLength(1)
     expect(page.layerOrder).toHaveLength(1)
     const bgLayer = page.layers[page.layerOrder[0]!]!
@@ -148,6 +150,7 @@ describe('page operations', () => {
     const updated = addPage(doc, 'Page 2')
     expect(updated.pages).toHaveLength(2)
     expect(updated.pages[1]!.name).toBe('Page 2')
+    expect(updated.pages[1]!.backgroundColor).toBe('#ffffff')
   })
 
   it('removePage removes a page', () => {

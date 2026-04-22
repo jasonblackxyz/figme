@@ -2,6 +2,9 @@ import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { Palette } from '@primitives/style-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
+import { DEFAULT_PAGE_BACKGROUND_COLOR } from '@primitives/document-model/pageBackground.ts';
+
+const BG_STYLE = 'bg';
 
 /**
  * Render a StampBuffer to an HTMLCanvasElement as a PNG-ready image.
@@ -12,6 +15,7 @@ export async function renderBufferToCanvas(
   palette: Palette,
   gridConfig: GridConfig,
   colorOverrides?: ColorOverrideMap,
+  pageBackgroundColor: string = DEFAULT_PAGE_BACKGROUND_COLOR,
 ): Promise<HTMLCanvasElement> {
   await document.fonts.ready;
 
@@ -27,7 +31,7 @@ export async function renderBufferToCanvas(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to get 2D canvas context');
 
-  ctx.fillStyle = palette.bg.bg;
+  ctx.fillStyle = pageBackgroundColor;
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   // Render each cell
@@ -64,8 +68,11 @@ export async function renderBufferToCanvas(
       const override = colorOverrides?.[`${r},${c}`];
 
       // Background
-      ctx.fillStyle = override?.bg ?? styleDef.bg;
-      ctx.fillRect(x, y, w, h);
+      const resolvedBg = override?.bg ?? (styleKey === BG_STYLE ? 'transparent' : (styleDef.bg ?? '#000000'));
+      if (resolvedBg !== 'transparent') {
+        ctx.fillStyle = resolvedBg;
+        ctx.fillRect(x, y, w, h);
+      }
 
       // Character (skip spaces for performance)
       if (ch !== ' ') {
