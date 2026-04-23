@@ -10,11 +10,14 @@ import type { GridSpec, GridSpecPage, GridSpecLayer } from '@features/export/gri
  * Only `customColors`, `cellColorOverrides`, and viewport scroll are lost.
  */
 export function importGridSpec(json: string): FigmiiDocument {
-  const spec: GridSpec = JSON.parse(json);
+  const parsed: unknown = JSON.parse(json);
+  const schema = (parsed as { $schema?: unknown }).$schema;
 
-  if (spec.$schema !== 'figmii-gridspec-v1' && (spec.$schema as string) !== 'figme-gridspec-v1') {
+  if (schema !== 'figmii-gridspec-v1' && schema !== 'figme-gridspec-v1') {
     throw new Error('Invalid GridSpec: missing or wrong $schema');
   }
+
+  const spec = parsed as GridSpec;
 
   const gridConfig: GridConfig = {
     fontFamily: spec.grid.fontFamily,
