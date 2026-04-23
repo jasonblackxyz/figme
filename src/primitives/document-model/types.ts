@@ -118,7 +118,7 @@ export interface Layer {
   cellColorOverrides?: Record<string, string>;
 }
 
-export interface FigMePage {
+export interface FigmiiPage {
   id: string;
   name: string;
   layers: Record<string, Layer>;
@@ -138,12 +138,12 @@ export interface SwatchCollection {
   colors: string[];
 }
 
-export interface FigMeDocument {
+export interface FigmiiDocument {
   id: string;
   name: string;
   gridConfig: GridConfig;
   palette: Palette;
-  pages: FigMePage[];
+  pages: FigmiiPage[];
   activePageId: string;
   components: Record<string, ComponentDef>;
   swatchCollections?: SwatchCollection[];

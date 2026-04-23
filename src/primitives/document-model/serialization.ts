@@ -1,23 +1,23 @@
-import type { FigMeDocument, FigMePage, Layer } from './types.ts';
+import type { FigmiiDocument, FigmiiPage, Layer } from './types.ts';
 
 let migrationIdCounter = 0;
 
 /**
- * Serialize a FigMeDocument to a JSON string.
+ * Serialize a FigmiiDocument to a JSON string.
  *
  * Stub: uses JSON.stringify. Real implementation may add
  * versioning, compression, or custom serialization logic.
  */
-export function serializeDocument(doc: FigMeDocument): string {
+export function serializeDocument(doc: FigmiiDocument): string {
   return JSON.stringify(doc, null, 2);
 }
 
 /**
- * Deserialize a JSON string into a FigMeDocument.
+ * Deserialize a JSON string into a FigmiiDocument.
  * Applies migrations for older document versions.
  */
-export function deserializeDocument(json: string): FigMeDocument {
-  const doc = JSON.parse(json) as FigMeDocument;
+export function deserializeDocument(json: string): FigmiiDocument {
+  const doc = JSON.parse(json) as FigmiiDocument;
   return migrateDocument(doc);
 }
 
@@ -25,9 +25,9 @@ export function deserializeDocument(json: string): FigMeDocument {
  * Ensure every page has a Background layer.
  * Handles documents saved before the layer hierarchy was introduced.
  */
-function migrateDocument(doc: FigMeDocument): FigMeDocument {
+function migrateDocument(doc: FigmiiDocument): FigmiiDocument {
   let changed = false;
-  const pages = doc.pages.map((page): FigMePage => {
+  const pages = doc.pages.map((page): FigmiiPage => {
     const hasBackground = Object.values(page.layers).some(
       (l: Layer | undefined) => l?.isBackground,
     );

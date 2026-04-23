@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeColorOverrides } from '../colorOverrides.ts';
 import { createEmptyPage } from '../operations.ts';
-import type { FigMePage, Layer } from '../types.ts';
+import type { FigmiiPage, Layer } from '../types.ts';
 
 function makeLayer(overrides: Partial<Layer>): Layer {
   return {
@@ -18,7 +18,7 @@ function makeLayer(overrides: Partial<Layer>): Layer {
   };
 }
 
-function pageWithLayers(layers: Layer[], pageOverrides?: Partial<FigMePage>): FigMePage {
+function pageWithLayers(layers: Layer[], pageOverrides?: Partial<FigmiiPage>): FigmiiPage {
   const page = createEmptyPage('Test');
   for (const layer of layers) {
     page.layers[layer.id] = layer;

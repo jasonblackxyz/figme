@@ -2,7 +2,7 @@ import { useDocumentStore } from '@stores/documentStore.ts';
 import { useToolStore, type InterfaceMode } from '@stores/toolStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
-import type { FigMeDocument, FigMePage, Layer, LayerKind, LayerProperties, CanvasProperties } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument, FigmiiPage, Layer, LayerKind, LayerProperties, CanvasProperties } from '@primitives/document-model/types.ts';
 import type { GridRect } from '@primitives/grid-engine/types.ts';
 import type { StyleKey } from '@primitives/style-system/types.ts';
 import {
@@ -65,16 +65,16 @@ const DEFAULT_STYLE_FOR_KIND: Record<LayerKind, StyleKey> = {
  * All read helpers and mutation paths should use this instead of store.getState().document
  * so that mutations within a batch are visible to subsequent reads.
  */
-function getCurrentDocument(): FigMeDocument {
+function getCurrentDocument(): FigmiiDocument {
   return getPendingDocument() ?? useDocumentStore.getState().document;
 }
 
-function getActivePage(): FigMePage | undefined {
+function getActivePage(): FigmiiPage | undefined {
   const doc = getCurrentDocument();
   return doc.pages.find(p => p.id === doc.activePageId);
 }
 
-function getPageById(pageId?: string): FigMePage | undefined {
+function getPageById(pageId?: string): FigmiiPage | undefined {
   const doc = getCurrentDocument();
   return pageId
     ? doc.pages.find((p) => p.id === pageId)
@@ -103,7 +103,7 @@ function getLayers(): Layer[] {
   return flattenLayerOrder(page).map(id => page.layers[id]).filter((l): l is Layer => l != null);
 }
 
-function commitDocument(nextDoc: FigMeDocument): void {
+function commitDocument(nextDoc: FigmiiDocument): void {
   if (isBatching()) {
     setPendingDocument(nextDoc);
   } else {
@@ -113,11 +113,11 @@ function commitDocument(nextDoc: FigMeDocument): void {
   }
 }
 
-function applyPageMutation(fn: (page: FigMePage) => FigMePage): void {
+function applyPageMutation(fn: (page: FigmiiPage) => FigmiiPage): void {
   const doc = getCurrentDocument();
   const page = doc.pages.find(p => p.id === doc.activePageId);
   if (!page) {
-    console.warn('FigMe: no active page \u2014 mutation skipped.');
+    console.warn('Figmii: no active page \u2014 mutation skipped.');
     return;
   }
 
@@ -129,13 +129,13 @@ function applyPageMutation(fn: (page: FigMePage) => FigMePage): void {
   commitDocument(nextDoc);
 }
 
-function applyTargetPageMutation(pageId: string | undefined, fn: (page: FigMePage) => FigMePage): void {
+function applyTargetPageMutation(pageId: string | undefined, fn: (page: FigmiiPage) => FigmiiPage): void {
   const doc = getCurrentDocument();
   const page = getPageById(pageId);
   if (!page) {
     throw new Error(pageId
-      ? `FigMe: no page with id "${pageId}"`
-      : 'FigMe: no active page');
+      ? `Figmii: no page with id "${pageId}"`
+      : 'Figmii: no active page');
   }
 
   const nextDoc = {
@@ -148,7 +148,7 @@ function applyTargetPageMutation(pageId: string | undefined, fn: (page: FigMePag
 
 function assertPositiveInteger(value: number, field: 'cols' | 'rows'): number {
   if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(`FigMe.setPageCanvasSize: "${field}" must be a positive integer.`);
+    throw new Error(`Figmii.setPageCanvasSize: "${field}" must be a positive integer.`);
   }
   return value;
 }
@@ -221,7 +221,7 @@ interface AddFigletSpec {
 
 export function buildApi() {
   const api = {
-    version: { api: '1.0', app: 'FigMe 2.0' },
+    version: { api: '1.0', app: 'Figmii 2.0' },
 
     // Raw store access for operations the convenience layer doesn't cover
     stores: {
@@ -233,7 +233,7 @@ export function buildApi() {
 
     // Parsed agent briefing — convenience accessor for the hidden DOM element
     get briefing(): unknown {
-      const el = document.getElementById('figme-agent-briefing');
+      const el = document.getElementById('figmii-agent-briefing');
       return el ? JSON.parse(el.textContent ?? '{}') : null;
     },
 
@@ -268,12 +268,12 @@ export function buildApi() {
     setActivePage(id: string): void {
       const doc = getCurrentDocument();
       if (!doc.pages.find(p => p.id === id)) {
-        throw new Error(`FigMe.setActivePage: no page with id "${id}"`);
+        throw new Error(`Figmii.setActivePage: no page with id "${id}"`);
       }
       const finalDoc = { ...doc, activePageId: id };
       commitDocument(finalDoc);
     },
-    getPage(id: string): FigMePage | undefined {
+    getPage(id: string): FigmiiPage | undefined {
       return getCurrentDocument().pages.find(p => p.id === id);
     },
     getPageCanvasSize(pageId?: string) {
@@ -281,8 +281,8 @@ export function buildApi() {
       const page = getPageById(pageId);
       if (!page) {
         throw new Error(pageId
-          ? `FigMe.getPageCanvasSize: no page with id "${pageId}"`
-          : 'FigMe.getPageCanvasSize: no active page');
+          ? `Figmii.getPageCanvasSize: no page with id "${pageId}"`
+          : 'Figmii.getPageCanvasSize: no active page');
       }
       return getPageCanvasSizeInfo(page, doc.gridConfig);
     },
@@ -293,14 +293,14 @@ export function buildApi() {
       const doc = getCurrentDocument();
       if (!page) {
         throw new Error(spec.pageId
-          ? `FigMe.setPageCanvasSize: no page with id "${spec.pageId}"`
-          : 'FigMe.setPageCanvasSize: no active page');
+          ? `Figmii.setPageCanvasSize: no page with id "${spec.pageId}"`
+          : 'Figmii.setPageCanvasSize: no active page');
       }
 
       const bounds = getVisiblePageContentBounds(page);
       if (spec.allowClip !== true && (cols < bounds.cols || rows < bounds.rows)) {
         throw new Error(
-          `FigMe.setPageCanvasSize: ${cols}x${rows} would clip visible content (${bounds.cols}x${bounds.rows}). ` +
+          `Figmii.setPageCanvasSize: ${cols}x${rows} would clip visible content (${bounds.cols}x${bounds.rows}). ` +
           'Pass allowClip: true to permit clipping.',
         );
       }
@@ -318,8 +318,8 @@ export function buildApi() {
       const page = getPageById(pageId);
       if (!page) {
         throw new Error(pageId
-          ? `FigMe.resetPageCanvasSize: no page with id "${pageId}"`
-          : 'FigMe.resetPageCanvasSize: no active page');
+          ? `Figmii.resetPageCanvasSize: no page with id "${pageId}"`
+          : 'Figmii.resetPageCanvasSize: no active page');
       }
 
       applyTargetPageMutation(pageId, (targetPage) => ({
@@ -332,7 +332,7 @@ export function buildApi() {
     },
     setInterfaceMode(mode: InterfaceMode): void {
       if (mode !== 'ai' && mode !== 'human') {
-        throw new Error(`FigMe.setInterfaceMode: invalid mode "${String(mode)}". Valid values: ai, human`);
+        throw new Error(`Figmii.setInterfaceMode: invalid mode "${String(mode)}". Valid values: ai, human`);
       }
       applyInterfaceMode(mode);
     },
@@ -381,7 +381,7 @@ export function buildApi() {
       } else {
         k = kindOrSpec;
         n = name ?? kindOrSpec;
-        if (!rect) throw new Error('FigMe.addLayer: rect is required for positional form \u2014 pass {col, row, width, height}');
+        if (!rect) throw new Error('Figmii.addLayer: rect is required for positional form \u2014 pass {col, row, width, height}');
         r = rect;
         // styleKey is optional in positional form; derive from kind if not provided
         sk = styleKey && STYLE_KEYS.includes(styleKey as StyleKey)
@@ -393,18 +393,18 @@ export function buildApi() {
       // Validate
       if (!LAYER_KINDS.includes(k)) {
         throw new Error(
-          `FigMe.addLayer: invalid kind "${String(k)}". Valid values: ${LAYER_KINDS.join(', ')}`,
+          `Figmii.addLayer: invalid kind "${String(k)}". Valid values: ${LAYER_KINDS.join(', ')}`,
         );
       }
       if (readInterfaceMode() === 'ai' && AI_DISALLOWED_LAYER_KINDS.has(k)) {
         throw new Error(
-          `FigMe.addLayer: "${k}" is unavailable in AI mode. Use FigMe.paint() for freeform design, ` +
-          'FigMe.addFiglet() for ASCII display text, or switch to Human mode with FigMe.setInterfaceMode(\'human\').',
+          `Figmii.addLayer: "${k}" is unavailable in AI mode. Use Figmii.paint() for freeform design, ` +
+          'Figmii.addFiglet() for ASCII display text, or switch to Human mode with Figmii.setInterfaceMode(\'human\').',
         );
       }
       if (k === 'edge-path') {
         console.warn(
-          'FigMe.addLayer: edge-path is experimental and may cause rendering issues. Consider using text-block layers with box-drawing characters (\u2502\u2500\u250c\u2514\u251c\u2524) for connections.',
+          'Figmii.addLayer: edge-path is experimental and may cause rendering issues. Consider using text-block layers with box-drawing characters (\u2502\u2500\u250c\u2514\u251c\u2524) for connections.',
         );
       }
 
@@ -422,7 +422,7 @@ export function buildApi() {
     removeLayer(id: string): void {
       const page = getActivePage();
       if (page && !page.layers[id]) {
-        console.warn(`FigMe.removeLayer: layer "${id}" not found on active page.`);
+        console.warn(`Figmii.removeLayer: layer "${id}" not found on active page.`);
         return;
       }
       applyPageMutation(p => removeLayerOp(p, id));
@@ -430,19 +430,19 @@ export function buildApi() {
     updateLayer(id: string, updates: Partial<Layer>): void {
       const page = getActivePage();
       if (page && !page.layers[id]) {
-        console.warn(`FigMe.updateLayer: layer "${id}" not found on active page.`);
+        console.warn(`Figmii.updateLayer: layer "${id}" not found on active page.`);
         return;
       }
       // Guard: 'kind' must remain a valid LayerKind string if supplied
       if ('kind' in updates && !LAYER_KINDS.includes(updates.kind as LayerKind)) {
         throw new Error(
-          `FigMe.updateLayer: invalid kind "${String(updates.kind)}". Valid values: ${LAYER_KINDS.join(', ')}`,
+          `Figmii.updateLayer: invalid kind "${String(updates.kind)}". Valid values: ${LAYER_KINDS.join(', ')}`,
         );
       }
       // Warn on invalid styleKey but don't throw — agents primarily use customColors now
       if ('styleKey' in updates && !STYLE_KEYS.includes(updates.styleKey as StyleKey)) {
         console.warn(
-          `FigMe.updateLayer: unknown styleKey "${String(updates.styleKey)}" ignored. Use customColors: {color, bg} for direct hex colors.`,
+          `Figmii.updateLayer: unknown styleKey "${String(updates.styleKey)}" ignored. Use customColors: {color, bg} for direct hex colors.`,
         );
         const { styleKey: _ignored, ...safeUpdates } = updates;
         void _ignored;
@@ -454,7 +454,7 @@ export function buildApi() {
     moveLayer(id: string, col: number, row: number): void {
       const page = getActivePage();
       if (page && !page.layers[id]) {
-        console.warn(`FigMe.moveLayer: layer "${id}" not found on active page.`);
+        console.warn(`Figmii.moveLayer: layer "${id}" not found on active page.`);
         return;
       }
       applyPageMutation(p => moveLayerOp(p, id, col, row));
@@ -536,7 +536,7 @@ export function buildApi() {
           }
         }
       } else {
-        throw new Error('FigMe.paint: provide either "lines" (per-span colors) or "content" (plain string).');
+        throw new Error('Figmii.paint: provide either "lines" (per-span colors) or "content" (plain string).');
       }
 
       // Auto-compute dimensions from content
@@ -608,7 +608,7 @@ export function buildApi() {
     // Compatibility wrapper for the older raw/full agent mode API
     setAgentMode(mode: 'full' | 'raw'): void {
       if (mode !== 'full' && mode !== 'raw') {
-        throw new Error(`FigMe.setAgentMode: invalid mode "${String(mode)}". Valid values: full, raw`);
+        throw new Error(`Figmii.setAgentMode: invalid mode "${String(mode)}". Valid values: full, raw`);
       }
       applyAgentMode(mode);
     },
@@ -620,12 +620,12 @@ export function buildApi() {
     export: {
       toJson(): string {
         const doc = getCurrentDocument();
-        console.log('FIGME_EXPORT', { format: 'json', timestamp: Date.now() });
+        console.log('FIGMII_EXPORT', { format: 'json', timestamp: Date.now() });
         return exportAsJson(doc);
       },
       toMarkdown(): string {
         const doc = getCurrentDocument();
-        console.log('FIGME_EXPORT', { format: 'markdown', timestamp: Date.now() });
+        console.log('FIGMII_EXPORT', { format: 'markdown', timestamp: Date.now() });
         return exportAsMarkdown(doc);
       },
       /** Returns the rendered ASCII characters for the active (or specified) page as a plain string. */

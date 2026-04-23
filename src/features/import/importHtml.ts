@@ -1,14 +1,14 @@
-import type { FigMeDocument, Layer } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument, Layer } from '@primitives/document-model/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
 
 /**
- * Import a FigMe-exported HTML file back into a FigMeDocument.
+ * Import a Figmii-exported HTML file back into a FigmiiDocument.
  *
  * Parses the character grid and inline styles from <span> elements
  * and rebuilds one literal text-block layer per styled HTML span.
  */
-export function importHtml(html: string): FigMeDocument {
+export function importHtml(html: string): FigmiiDocument {
   const parser = new DOMParser();
   const htmlDoc = parser.parseFromString(html, 'text/html');
 

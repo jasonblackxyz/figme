@@ -96,7 +96,7 @@ export function App() {
       id="app-root"
       className={shellClassName}
       style={{ gridTemplateColumns: gridColumns }}
-      aria-describedby="figme-agent-briefing"
+      aria-describedby="figmii-agent-briefing"
     >
       <AgentBriefing document={document} />
       <header className={styles.topBar} data-component="shell-topbar">

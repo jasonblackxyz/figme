@@ -1,22 +1,22 @@
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument } from '@primitives/document-model/types.ts';
 import { deserializeDocument } from '@primitives/document-model/serialization.ts';
 import { downloadFile } from '@features/export/downloadFile.ts';
 
 /**
- * Save a FigMe document to disk.
+ * Save a Figmii document to disk.
  * Uses File System Access API when available, falls back to download.
  */
-export async function saveDocument(doc: FigMeDocument): Promise<void> {
+export async function saveDocument(doc: FigmiiDocument): Promise<void> {
   const json = JSON.stringify(doc, null, 2);
 
   // Try File System Access API first
   if ('showSaveFilePicker' in window) {
     try {
       const handle = await (window as unknown as FileSystemAccessWindow).showSaveFilePicker({
-        suggestedName: `${doc.name || 'untitled'}.figme`,
+        suggestedName: `${doc.name || 'untitled'}.figmii`,
         types: [{
-          description: 'FigMe Document',
-          accept: { 'application/json': ['.figme'] },
+          description: 'Figmii Document',
+          accept: { 'application/json': ['.figmii', '.figme'] },
         }],
       });
       const writable = await handle.createWritable();
@@ -29,22 +29,22 @@ export async function saveDocument(doc: FigMeDocument): Promise<void> {
   }
 
   // Fallback: download
-  downloadFile(json, `${doc.name || 'untitled'}.figme`, 'application/json');
+  downloadFile(json, `${doc.name || 'untitled'}.figmii`, 'application/json');
 }
 
 /**
- * Load a FigMe document from disk.
+ * Load a Figmii document from disk.
  * Uses File System Access API when available, falls back to file input.
  * Returns null if the user cancels or the file is invalid.
  */
-export async function loadDocument(): Promise<FigMeDocument | null> {
+export async function loadDocument(): Promise<FigmiiDocument | null> {
   // Try File System Access API first
   if ('showOpenFilePicker' in window) {
     try {
       const [handle] = await (window as unknown as FileSystemAccessWindow).showOpenFilePicker({
         types: [{
-          description: 'FigMe Document',
-          accept: { 'application/json': ['.figme'] },
+          description: 'Figmii Document',
+          accept: { 'application/json': ['.figmii', '.figme'] },
         }],
       });
       if (!handle) return null;
@@ -60,7 +60,7 @@ export async function loadDocument(): Promise<FigMeDocument | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.figme,.json';
+    input.accept = '.figmii,.figme,.json';
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) { resolve(null); return; }

@@ -4,8 +4,8 @@
  * Covers ASCII 32-126
  */
 export const BANNER_FLF = `flf2a$ 7 6 20 15 3
-Banner (FigMe)
-Block letter banner font for FigMe
+Banner (Figmii)
+Block letter banner font for Figmii
 Wide bold ASCII art font
  $@
  $@
