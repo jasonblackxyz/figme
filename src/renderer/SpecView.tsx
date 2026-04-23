@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument } from '@primitives/document-model/types.ts';
 import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 
 interface SpecViewProps {
-  document: FigMeDocument;
+  document: FigmiiDocument;
   selectedLayerIds: string[];
 }
 
@@ -64,7 +64,7 @@ export function SpecView({ document, selectedLayerIds }: SpecViewProps): ReactNo
 
   return (
     <div
-      id="figme-spec-view"
+      id="figmii-spec-view"
       role="region"
       aria-label="Specification View"
       style={{

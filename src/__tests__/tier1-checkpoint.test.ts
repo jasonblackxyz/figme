@@ -2,7 +2,7 @@
  * Tier 1 Checkpoint Test
  *
  * Validates the full primitive pipeline WITHOUT any UI:
- * 1. Create a FigMeDocument with layers on two pages
+ * 1. Create a FigmiiDocument with layers on two pages
  * 2. Stamp border boxes and fills into buffers
  * 3. Merge buffers in z-order
  * 4. Render to grid elements via the DOM Grid Renderer

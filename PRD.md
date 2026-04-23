@@ -1,4 +1,4 @@
-# FigMe — Product Requirements Document
+# FIGMII — Product Requirements Document
 
 **An ASCII-Grid Design Tool for the readme-app Ecosystem**
 
@@ -10,7 +10,7 @@ Version 2.0 · April 4, 2026
 
 The readme-app uses a unique ASCII character grid rendering system where every pixel of the interface is a monospace character cell. Designing new features for this system is currently done entirely through written descriptions—there is no visual tool that understands the grid's constraints (fixed cell sizes, discrete spacing, box-drawing character borders, style-key-driven theming). This makes it hard for the PM to communicate layout intent and hard for the developer to interpret it accurately.
 
-FigMe solves this by providing a Figma-inspired design tool purpose-built for ASCII grid interfaces. It lets the PM visually compose layouts using the exact same grid primitives the readme-app uses, then export those designs as both visual screenshots and structured data the developer (an AI agent using Claude in Chrome) can consume programmatically.
+Figmii solves this by providing a Figma-inspired design tool purpose-built for ASCII grid interfaces. It lets the PM visually compose layouts using the exact same grid primitives the readme-app uses, then export those designs as both visual screenshots and structured data the developer (an AI agent using Claude in Chrome) can consume programmatically.
 
 ---
 
@@ -22,7 +22,7 @@ The person who decides what features look like. They need to drag-and-drop ASCII
 
 ### Secondary: Agent Developer (Claude in Chrome)
 
-An AI coding agent that reads design specs from the FigMe interface and implements them in the readme-app codebase. Claude in Chrome reads web pages through the accessibility tree and DOM structure—it cannot see canvas-rendered content. This means FigMe must expose every design decision as structured, semantic HTML alongside the visual preview. The agent dev needs to extract grid coordinates, component types, style keys, text content, padding values, and font choices without relying on screenshots.
+An AI coding agent that reads design specs from the Figmii interface and implements them in the readme-app codebase. Claude in Chrome reads web pages through the accessibility tree and DOM structure—it cannot see canvas-rendered content. This means Figmii must expose every design decision as structured, semantic HTML alongside the visual preview. The agent dev needs to extract grid coordinates, component types, style keys, text content, padding values, and font choices without relying on screenshots.
 
 **Implications for the agent dev persona:**
 
@@ -101,7 +101,7 @@ interface ViewportPreset {
 }
 ```
 
-**Note:** readme-app calls this `CharGrid` (with fields `charWidth`, `charHeight`, `cols`, `rows`). FigMe extends it with additional config fields like `fontFamily` and `fontSize` to make the grid fully configurable. The measurement logic is ported from `useCharGrid.ts` but extracted as a pure function independent of React hooks.
+**Note:** readme-app calls this `CharGrid` (with fields `charWidth`, `charHeight`, `cols`, `rows`). Figmii extends it with additional config fields like `fontFamily` and `fontSize` to make the grid fully configurable. The measurement logic is ported from `useCharGrid.ts` but extracted as a pure function independent of React hooks.
 
 **Responsibilities:**
 - Measure character cell dimensions from a given font configuration (port `useCharGrid` logic to a pure function)
@@ -198,7 +198,7 @@ type Palette = Record<StyleKey, StyleDef>;
 
 **Responsibilities:**
 - Import and use readme-app's theme definitions directly (56 style keys as of April 2026)
-- Allow custom theme creation within FigMe
+- Allow custom theme creation within Figmii
 - Map style keys to CSS variables for live preview
 - Support theme switching (preview design under different themes)
 - Export theme as JSON for handoff
@@ -235,7 +235,7 @@ interface StampBuffer {
 | `stampDivider` | `charUtils.ts` | `─` (horizontal line) |
 | `stampHorizontalDivider` | `queryStamp.ts` (internal helper, not exported) | `╟ ─ ╢` (divider with tee connectors) |
 
-**New stamp functions for FigMe:**
+**New stamp functions for Figmii:**
 
 | Function | Purpose |
 |----------|---------|
@@ -371,7 +371,7 @@ Ported from readme-app's image rendering system. Converts raster images to ASCII
 - `charBrightness.ts` — character brightness measurement
 - `galleryImageProcessor.ts` — image-to-cell-data conversion with cover-crop
 
-**Enhancements for FigMe:**
+**Enhancements for Figmii:**
 - Adjustable output dimensions (user sets target cols × rows)
 - Live preview as parameters change
 - Brightness/contrast sliders
@@ -449,7 +449,7 @@ interface PatternFillConfig {
 
 **Depends on:** F1 (Grid Engine), F3 (Style System).
 
-The document model that represents a FigMe design. Every element on the canvas is a layer. The document model supports multiple pages (artboards) for designing multi-screen flows.
+The document model that represents a Figmii design. Every element on the canvas is a layer. The document model supports multiple pages (artboards) for designing multi-screen flows.
 
 ```typescript
 type LayerKind =
@@ -554,12 +554,12 @@ interface AutoLayoutConfig {
 **Document model with multi-page support:**
 
 ```typescript
-interface FigMeDocument {
+interface FigmiiDocument {
   id: string;
   name: string;
   gridConfig: GridConfig;
   palette: Palette;
-  pages: FigMePage[];              // multiple pages / artboards
+  pages: FigmiiPage[];              // multiple pages / artboards
   activePageId: string;            // which page is currently shown
   components: Record<string, ComponentDef>; // reusable component library (shared across pages)
   metadata: {
@@ -569,7 +569,7 @@ interface FigMeDocument {
   };
 }
 
-interface FigMePage {
+interface FigmiiPage {
   id: string;
   name: string;                    // e.g. "Modal - Open State", "Dashboard", "Settings"
   layers: Record<string, Layer>;   // flat map, tree structure via parentId
@@ -591,7 +591,7 @@ interface ComponentDef {
 }
 ```
 
-**Multi-page rationale:** Design workflows almost always involve multiple screens or states. FigMe pages are analogous to Figma pages—each is its own canvas with its own layer tree. This lets you mock up "modal open" vs "modal closed" states, or design several views of a flow side by side. Components are shared across all pages in a document.
+**Multi-page rationale:** Design workflows almost always involve multiple screens or states. Figmii pages are analogous to Figma pages—each is its own canvas with its own layer tree. This lets you mock up "modal open" vs "modal closed" states, or design several views of a flow side by side. Components are shared across all pages in a document.
 
 **Acceptance criteria:**
 - Layer CRUD operations work
@@ -611,7 +611,7 @@ Immutable state snapshots with command pattern.
 interface HistoryEntry {
   timestamp: number;
   description: string;             // human-readable ("Move text-block to (4, 12)")
-  snapshot: FigMeDocument;         // full document state
+  snapshot: FigmiiDocument;         // full document state
 }
 ```
 
@@ -717,11 +717,11 @@ The rendering pipeline that converts stamp buffers into React elements for the d
 
 **Depends on:** F9 (Layer Model types), F3 (Style System types)—needs to reference these in the briefing JSON.
 
-FigMe embeds a hidden instruction system directly in the DOM so that a Claude in Chrome agent gets an immediate, comprehensive briefing every time it opens the app—without any of that content being visible to human users.
+Figmii embeds a hidden instruction system directly in the DOM so that a Claude in Chrome agent gets an immediate, comprehensive briefing every time it opens the app—without any of that content being visible to human users.
 
 ### Why This Matters
 
-Claude in Chrome reads web pages primarily through the **accessibility tree**—a structured, semantic representation of the DOM. By embedding rich instructions in the accessibility tree, we ensure the agent dev understands FigMe's unique domain (ASCII grids, cell-based spacing, style keys, stamp functions) the moment it opens the page, without needing a separate briefing document.
+Claude in Chrome reads web pages primarily through the **accessibility tree**—a structured, semantic representation of the DOM. By embedding rich instructions in the accessibility tree, we ensure the agent dev understands Figmii's unique domain (ASCII grids, cell-based spacing, style keys, stamp functions) the moment it opens the page, without needing a separate briefing document.
 
 ### Implementation Architecture
 
@@ -734,9 +734,9 @@ The accessibility tree includes content referenced by `aria-describedby` even wh
 ```html
 <html>
 <head>
-  <script type="application/json" id="figme-agent-briefing">
+  <script type="application/json" id="figmii-agent-briefing">
   {
-    "system": "FigMe — ASCII Grid Design Tool",
+    "system": "Figmii — ASCII Grid Design Tool",
     "version": "2.0",
     "purpose": "Design tool for composing ASCII character grid interfaces. Designs target the readme-app rendering engine.",
 
@@ -781,7 +781,7 @@ The accessibility tree includes content referenced by `aria-describedby` even wh
       "layerInspection": "Each layer in the Layers Panel is a <li> with role='treeitem', aria-label set to the layer name, data-layer-id, and data-layer-kind attributes.",
       "propertyInspection": "Select a layer, then read the Properties Panel. Every property input has a <label>, name attribute, and data-property attribute with the current value.",
       "canvasReading": "The ASCII preview canvas is DOM-based (<div> rows containing <span> segments). Each cell has data-col and data-row attributes. Style information is in inline CSS on each <span>.",
-      "stateViaConsole": "On every design change, the app logs: console.log('FIGME_STATE', { action, layerId, timestamp, document }). Read via Chrome DevTools console.",
+      "stateViaConsole": "On every design change, the app logs: console.log('FIGMII_STATE', { action, layerId, timestamp, document }). Read via Chrome DevTools console.",
       "exportFormats": "Use File → Export to get: JSON (full document), HTML/CSS fragment (the rendered grid markup), PNG screenshot, or spec markdown.",
       "multiPage": "Documents can have multiple pages (artboards). Switch pages via the page tabs at the top of the canvas. Each page has its own layer tree but shares the component library."
     },
@@ -794,7 +794,7 @@ The accessibility tree includes content referenced by `aria-describedby` even wh
     },
 
     "readmeAppContext": {
-      "description": "FigMe designs target the readme-app, which renders its entire UI as a monospace character grid. The app has 5 views: ASCII (tree explorer), Notion (article table), Etch-A-Sketch (drawing canvas), Gallery (image-to-ASCII), and a Cell simulation (excluded from FigMe—unrelated to ASCII grid).",
+      "description": "Figmii designs target the readme-app, which renders its entire UI as a monospace character grid. The app has 5 views: ASCII (tree explorer), Notion (article table), Etch-A-Sketch (drawing canvas), Gallery (image-to-ASCII), and a Cell simulation (excluded from Figmii—unrelated to ASCII grid).",
       "renderingPipeline": "readme-app uses a stamp → buffer → React elements pipeline: pure stamp functions write characters and style keys into 2D arrays, then renderGridToElements() converts those arrays into <div> rows of <span> segments with inline CSS colors from the active palette.",
       "boxDrawingCharacters": {
         "rounded": "╭ ╮ ╰ ╯ │ ─ (node boxes)",
@@ -808,17 +808,17 @@ The accessibility tree includes content referenced by `aria-describedby` even wh
   </script>
 </head>
 <body>
-  <div id="app-root" aria-describedby="figme-agent-briefing figme-context-help">
-    <!-- FigMe application renders here -->
+  <div id="app-root" aria-describedby="figmii-agent-briefing figmii-context-help">
+    <!-- Figmii application renders here -->
   </div>
 
-  <div id="figme-context-help" style="display:none;">
-    You are viewing FigMe, an ASCII grid design tool. To read the current design
+  <div id="figmii-context-help" style="display:none;">
+    You are viewing Figmii, an ASCII grid design tool. To read the current design
     specification, toggle the Spec View panel (Ctrl+Shift+S) or read the JSON in
     the element with data-spec="full-document". All layer properties are exposed
     as labeled form inputs in the Properties Panel. The canvas preview is DOM-based
     and each cell has data-col and data-row attributes. State changes are logged
-    to the console as FIGME_STATE events.
+    to the console as FIGMII_STATE events.
   </div>
 </body>
 </html>
@@ -842,23 +842,23 @@ Each major panel includes a hidden `aria-description` that explains what that sp
 </main>
 
 <section role="document" aria-label="Spec View"
-  aria-description="Machine-readable design specification. Contains the full FigMeDocument as JSON in a code element with data-spec=full-document.">
+  aria-description="Machine-readable design specification. Contains the full FigmiiDocument as JSON in a code element with data-spec=full-document.">
 </section>
 ```
 
 **Layer 3: `/llms.txt` (Site-Level)**
 
-If FigMe is deployed to its own domain, serve a `/llms.txt` file at the site root—the emerging standard (endorsed by Anthropic) for AI agent discovery.
+If Figmii is deployed to its own domain, serve a `/llms.txt` file at the site root—the emerging standard (endorsed by Anthropic) for AI agent discovery.
 
 ```markdown
-# FigMe
+# Figmii
 
 > ASCII grid design tool for the readme-app ecosystem. Compose layouts using
 > monospace character cells, box-drawing borders, and style-key-driven theming.
 
 ## Quick Reference
 
-- [App Briefing (JSON)](#figme-agent-briefing): Embedded in every page as a
+- [App Briefing (JSON)](#figmii-agent-briefing): Embedded in every page as a
   script[type=application/json] block referenced by aria-describedby on the app root.
 - [Spec View](/?panel=spec): Toggle with Ctrl+Shift+S. Contains the full design document as JSON.
 - [Component Library](/?panel=components): All reusable ASCII components with stamp parameters.
@@ -901,7 +901,7 @@ Part of the Playwright E2E suite: read the accessibility tree via `page.accessib
 Before building any Tier 2 features, validate the foundation:
 
 The developer should be able to write a simple script that:
-1. Creates a `FigMeDocument` with a few layers on two pages
+1. Creates a `FigmiiDocument` with a few layers on two pages
 2. Flows text through a border-box using the Text Flow Engine
 3. Applies a pattern fill to a region
 4. Renders the result to a grid buffer using the Stamp System
@@ -921,7 +921,7 @@ These are the user-facing tools built on top of Tier 1 primitives. Each feature 
 
 **Depends on:** F1 (Grid Engine), F12 (DOM Grid Renderer).
 
-The main design surface. FigMe uses a **Figma-style infinite canvas** where all artboards (pages) live on the same 2D spatial plane. The user zooms in/out and pans freely across the entire workspace—artboards are simply bounded frames positioned at different locations on this infinite plane.
+The main design surface. Figmii uses a **Figma-style infinite canvas** where all artboards (pages) live on the same 2D spatial plane. The user zooms in/out and pans freely across the entire workspace—artboards are simply bounded frames positioned at different locations on this infinite plane.
 
 **Zoom model:**
 
@@ -1034,7 +1034,7 @@ Right sidebar showing properties of the selected layer(s). Content changes dynam
 **Agent-friendliness:**
 - Every property input has a `<label>`, `name` attribute, and `data-property` attribute
 - Property values are in the DOM as `value` attributes, not just visually rendered
-- Changes emit console logs: `console.log('FIGME_PROPERTY_CHANGE', { layerId, property, oldValue, newValue })`
+- Changes emit console logs: `console.log('FIGMII_PROPERTY_CHANGE', { layerId, property, oldValue, newValue })`
 
 ---
 
@@ -1113,7 +1113,7 @@ When multiple layers are selected, alignment and distribution buttons appear in 
 
 **Depends on:** T1 (Canvas), F5 (Text Flow Engine).
 
-When editing a text-block layer, the user types directly into the ASCII grid canvas—not into a sidebar textarea. This is the most important UX differentiator for FigMe: you see exactly how your copy fits (or doesn't) within the grid constraints as you type.
+When editing a text-block layer, the user types directly into the ASCII grid canvas—not into a sidebar textarea. This is the most important UX differentiator for Figmii: you see exactly how your copy fits (or doesn't) within the grid constraints as you type.
 
 **Behavior:**
 1. Double-click a text-block layer (or click with the Text tool)
@@ -1320,7 +1320,7 @@ A dedicated panel—toggled via a tab or Ctrl+Shift+S—that renders the current
 
 1. **Document summary** — grid config, theme, page count, layer count
 2. **Layer table** — each layer as a row with: id, kind, page, position (col,row), size (w×h), style key, key properties
-3. **Full JSON export** — the complete `FigMeDocument` serialized as JSON, displayed in a `<pre>` block with copy button
+3. **Full JSON export** — the complete `FigmiiDocument` serialized as JSON, displayed in a `<pre>` block with copy button
 4. **Component specs** — for each component, a rendered ASCII preview alongside its stamp parameters
 5. **Diff view** — when a design is modified, show what changed since last export
 
@@ -1328,7 +1328,7 @@ A dedicated panel—toggled via a tab or Ctrl+Shift+S—that renders the current
 - The JSON is in a `<code>` element with `data-spec="full-document"`
 - Each layer row is a `<tr>` with `data-layer-id` and individual `<td>` cells for each property
 - A "Copy Spec" button writes the JSON to clipboard
-- Console log on every design change: `console.log('FIGME_DOCUMENT', JSON.stringify(document))`
+- Console log on every design change: `console.log('FIGMII_DOCUMENT', JSON.stringify(document))`
 
 ---
 
@@ -1336,7 +1336,7 @@ A dedicated panel—toggled via a tab or Ctrl+Shift+S—that renders the current
 
 **Depends on:** All above.
 
-FigMe produces two categories of output: visual exports for human review and data exports for developer consumption.
+Figmii produces two categories of output: visual exports for human review and data exports for developer consumption.
 
 **Visual exports:**
 
@@ -1350,7 +1350,7 @@ FigMe produces two categories of output: visual exports for human review and dat
 
 | Format | Contents | Use Case |
 |--------|----------|----------|
-| JSON (FigMeDocument) | Full document model (all pages) | Re-open in FigMe, programmatic consumption |
+| JSON (FigmiiDocument) | Full document model (all pages) | Re-open in Figmii, programmatic consumption |
 | Component JSON | Individual component definitions with stamp parameters | Developer imports into readme-app |
 | HTML/CSS fragment | The rendered grid as HTML `<div>`/`<span>` structure with inline styles | Developer can see exact markup structure |
 | Spec markdown | Human-readable specification document listing all layers, positions, styles | PRD-style handoff document |
@@ -1364,7 +1364,7 @@ File → Export menu with checkboxes for which formats to include. "Export All" 
 
 **Depends on:** F9 (Document Model).
 
-FigMe documents are saved as `.figme` files, which are JSON with the `FigMeDocument` schema. Files are saved to and loaded from the user's local filesystem via the File System Access API (with fallback to download/upload for unsupported browsers).
+Figmii documents are saved as `.figmii` files, which are JSON with the `FigmiiDocument` schema. Files are saved to and loaded from the user's local filesystem via the File System Access API (with fallback to download/upload for unsupported browsers).
 
 Auto-save to localStorage every 30 seconds. Manual save via Ctrl+S.
 
@@ -1383,7 +1383,7 @@ User Input (mouse/keyboard)
          │ dispatches mutations
          ▼
 ┌─────────────────────┐
-│   Document Store     │  (FigMeDocument, undo/redo history)
+│   Document Store     │  (FigmiiDocument, undo/redo history)
 │   (Zustand store)    │
 └────────┬────────────┘
          │ triggers re-render
@@ -1408,7 +1408,7 @@ User Input (mouse/keyboard)
 
 **Console logging contract:** On every document mutation, emit:
 ```javascript
-console.log('FIGME_STATE', {
+console.log('FIGMII_STATE', {
   action: 'layer:move',
   layerId: 'abc123',
   timestamp: Date.now(),
@@ -1420,7 +1420,7 @@ console.log('FIGME_STATE', {
 
 ## 6. File Format
 
-FigMe documents are saved as `.figme` files, which are JSON with the `FigMeDocument` schema. Files are saved to and loaded from the user's local filesystem via the File System Access API (with fallback to download/upload for unsupported browsers).
+Figmii documents are saved as `.figmii` files, which are JSON with the `FigmiiDocument` schema. Files are saved to and loaded from the user's local filesystem via the File System Access API (with fallback to download/upload for unsupported browsers).
 
 Auto-save to localStorage every 30 seconds. Manual save via Ctrl+S.
 
@@ -1466,7 +1466,7 @@ Auto-save to localStorage every 30 seconds. Manual save via Ctrl+S.
 | T14 | Multi-Page / Artboard Support | F9, T1, T2 | Page tabs, per-page viewport presets |
 | T15 | Spec View | F9, T1 | JSON export, layer table, diff view |
 | T16 | Export System | All above | PNG, SVG, HTML, JSON, component JSON, spec markdown |
-| T17 | File Save/Load | F9 | .figme files, auto-save, File System Access API |
+| T17 | File Save/Load | F9 | .figmii files, auto-save, File System Access API |
 
 ---
 
@@ -1478,7 +1478,7 @@ Every feature should be validated against this checklist before shipping:
 - [ ] All elements have meaningful `aria-label` attributes
 - [ ] All data-bearing elements have `data-*` attributes exposing their values
 - [ ] Layer selections are reflected in `aria-selected` attributes
-- [ ] Property changes emit `console.log('FIGME_STATE', ...)` events
+- [ ] Property changes emit `console.log('FIGMII_STATE', ...)` events
 - [ ] The Spec View panel accurately reflects the current document state
 - [ ] No critical information is only visible in `<canvas>` elements
 - [ ] Forms have associated labels and meaningful `name` attributes
@@ -1548,13 +1548,13 @@ Every feature should be validated against this checklist before shipping:
 
 ## 11. Open Questions & Future Considerations
 
-1. **Collaboration:** Should FigMe support real-time collaboration (like Figma)? Deferred for v1—single-user, local files only.
+1. **Collaboration:** Should Figmii support real-time collaboration (like Figma)? Deferred for v1—single-user, local files only.
 
-2. **Animation preview:** The readme-app has animations (ghost blob, spinner, scramble). Should FigMe support animation timelines? Deferred—v1 is static designs only.
+2. **Animation preview:** The readme-app has animations (ghost blob, spinner, scramble). Should Figmii support animation timelines? Deferred—v1 is static designs only.
 
-3. **Plugin system:** Should FigMe support user-written plugins for custom stamp functions? Architecturally, the stamp system is designed to support this (pure functions with a standard signature), but the plugin infrastructure is deferred.
+3. **Plugin system:** Should Figmii support user-written plugins for custom stamp functions? Architecturally, the stamp system is designed to support this (pure functions with a standard signature), but the plugin infrastructure is deferred.
 
-4. **Version control:** Should `.figme` files integrate with git? The JSON format is diffable, which is a good start. A visual diff tool could be a future feature.
+4. **Version control:** Should `.figmii` files integrate with git? The JSON format is diffable, which is a good start. A visual diff tool could be a future feature.
 
 5. **Non-rectangular borders:** The border drawing tool starts as a rectangle. Supporting draggable corner/edge control points for non-rectangular shapes is a stretch goal.
 
@@ -1562,7 +1562,7 @@ Every feature should be validated against this checklist before shipping:
 
 ## Appendix A: readme-app Component Catalog
 
-See the companion document `COMPONENT_CATALOG.md` for a comprehensive inventory of every ASCII grid component, border character set, style key, stamp function, modal layout, and interactive element in the readme-app codebase. This catalog drives the pre-populated component library in FigMe.
+See the companion document `COMPONENT_CATALOG.md` for a comprehensive inventory of every ASCII grid component, border character set, style key, stamp function, modal layout, and interactive element in the readme-app codebase. This catalog drives the pre-populated component library in Figmii.
 
 ---
 

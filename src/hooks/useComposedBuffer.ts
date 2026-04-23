@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { FigMePage } from '@primitives/document-model/types.ts';
+import type { FigmiiPage } from '@primitives/document-model/types.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
@@ -14,7 +14,7 @@ export interface ComposedBufferResult {
   colorOverrides: ColorOverrideMap;
 }
 
-export function useComposedBuffer(page: FigMePage, gridConfig: GridConfig): ComposedBufferResult {
+export function useComposedBuffer(page: FigmiiPage, gridConfig: GridConfig): ComposedBufferResult {
   const editingLayerId = useUiStore((s) => s.editingLayerId);
 
   return useMemo(() => {

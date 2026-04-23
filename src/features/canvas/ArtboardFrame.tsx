@@ -1,9 +1,9 @@
-import type { FigMePage } from '@primitives/document-model/types.ts';
+import type { FigmiiPage } from '@primitives/document-model/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import styles from './ArtboardFrame.module.css';
 
 interface ArtboardFrameProps {
-  page: FigMePage;
+  page: FigmiiPage;
   gridConfig: GridConfig;
 }
 

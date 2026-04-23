@@ -10,8 +10,8 @@ export type {
   CustomBorderChars,
   AutoLayoutConfig,
   LayerProperties,
-  FigMePage,
-  FigMeDocument,
+  FigmiiPage,
+  FigmiiDocument,
   ComponentDef,
 } from './types.ts'
 export {

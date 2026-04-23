@@ -1,13 +1,13 @@
-# FigMe
+# FIGMII
 
-ASCII-grid design tool for the readme-app ecosystem. The readme-app renders its entire UI as a monospace character grid — every pixel is a cell, every border is a box-drawing character, every color is a style-key. FigMe provides a Figma-like design surface that understands these constraints natively so the PM can visually compose layouts and export structured specs.
+ASCII-grid design tool for the readme-app ecosystem. The readme-app renders its entire UI as a monospace character grid — every pixel is a cell, every border is a box-drawing character, every color is a style-key. Figmii provides a Figma-like design surface that understands these constraints natively so the PM can visually compose layouts and export structured specs.
 
 ## Dual-Audience Architecture
 
-FigMe serves two consumers simultaneously:
+Figmii serves two consumers simultaneously:
 
 - **Human PM** — visual drag-and-drop canvas, layers panel, property inspector, zoom/pan
-- **AI coding agent (Claude in Chrome)** — reads designs via DOM structure, per-cell `data-col` / `data-row` attributes, a live `[data-spec="full-document"]` JSON panel, and `FIGME_STATE` / `FIGME_PROPERTY_CHANGE` console events. Mutates designs via `window.FigMe.*` (see `src/features/agent-api/`). A **raw briefing mode** (UI store `agentBriefingMode: 'full' | 'raw'`) swaps the default constrained briefing for unconstrained capability docs — per user preference, raw mode must remain purely descriptive, never prescriptive. No canvas rendering — everything is semantic HTML so the agent never needs screenshots.
+- **AI coding agent (Claude in Chrome)** — reads designs via DOM structure, per-cell `data-col` / `data-row` attributes, a live `[data-spec="full-document"]` JSON panel, and `FIGMII_STATE` / `FIGMII_PROPERTY_CHANGE` console events. Mutates designs via `window.Figmii.*` (see `src/features/agent-api/`). A **raw briefing mode** (UI store `agentBriefingMode: 'full' | 'raw'`) swaps the default constrained briefing for unconstrained capability docs — per user preference, raw mode must remain purely descriptive, never prescriptive. No canvas rendering — everything is semantic HTML so the agent never needs screenshots.
 
 ## Core Domain Constraint
 
@@ -91,8 +91,8 @@ The stamp buffer (`chars[][]` + `styles[][]`) is the bridge between logic and di
 
 ## Agent API (`src/features/agent-api/`)
 
-`window.FigMe` is the Chrome agent's write surface — document mutation mirrored from the human toolbar. Notable:
+`window.Figmii` is the Chrome agent's write surface — document mutation mirrored from the human toolbar. Notable:
 
-- `FigMe.paint()` writes a `canvas` LayerKind with per-cell characters and colors — the freeform escape hatch from structured primitives (border-box, text-block, etc.).
-- `FigMe.batch(fn)` suppresses `FIGME_STATE` / `FIGME_PROPERTY_CHANGE` console events during multi-op sequences; use it for any change set that would otherwise emit many events.
+- `Figmii.paint()` writes a `canvas` LayerKind with per-cell characters and colors — the freeform escape hatch from structured primitives (border-box, text-block, etc.).
+- `Figmii.batch(fn)` suppresses `FIGMII_STATE` / `FIGMII_PROPERTY_CHANGE` console events during multi-op sequences; use it for any change set that would otherwise emit many events.
 - Agent-facing capability docs live in `src/renderer/AgentBriefing.tsx`. Raw briefing mode shows unconstrained capabilities; keep it descriptive, never prescriptive.

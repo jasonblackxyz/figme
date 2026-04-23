@@ -4,8 +4,8 @@
  * Covers ASCII 32-126
  */
 export const SLANT_FLF = `flf2a$ 5 4 20 15 3
-Slant (FigMe)
-Simplified Slant font for FigMe
+Slant (Figmii)
+Simplified Slant font for Figmii
 Italic style ASCII art font
     $@
     $@

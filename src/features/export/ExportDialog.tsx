@@ -8,10 +8,10 @@ import { renderBufferToCanvas } from './renderToCanvas.ts';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
 import { computeColorOverrides } from '@primitives/document-model/colorOverrides.ts';
 import { applyPageCanvasSizeToGridConfig, getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument } from '@primitives/document-model/types.ts';
 import styles from './ExportDialog.module.css';
 
-function getActivePageExportConfig(doc: FigMeDocument) {
+function getActivePageExportConfig(doc: FigmiiDocument) {
   const activePage = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
   if (!activePage) return null;
 
@@ -111,7 +111,7 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
 
   const handleJsonExport = useCallback(() => {
     const json = exportAsJson(doc);
-    downloadFile(json, `${doc.name || 'untitled'}.figme`, 'application/json');
+    downloadFile(json, `${doc.name || 'untitled'}.figmii`, 'application/json');
     onClose();
   }, [doc, onClose]);
 
@@ -176,7 +176,7 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
           <button className={styles.formatButton} onClick={handleJsonExport}>
             <span className={styles.formatIcon}>{'{}'}</span>
             <div>
-              <div className={styles.formatLabel}>JSON (.figme)</div>
+              <div className={styles.formatLabel}>JSON (.figmii)</div>
               <div className={styles.formatDesc}>Full document data, re-importable</div>
             </div>
           </button>

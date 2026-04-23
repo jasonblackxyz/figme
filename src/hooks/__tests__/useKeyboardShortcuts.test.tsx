@@ -4,7 +4,7 @@ import { useDocumentStore } from '@stores/documentStore.ts';
 import { useToolStore } from '@stores/toolStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument } from '@primitives/document-model/types.ts';
 
 function KeyboardShortcutsHarness() {
   useKeyboardShortcuts();
@@ -15,7 +15,7 @@ describe('useKeyboardShortcuts', () => {
   beforeEach(() => {
     const base = createEmptyDocument('Shortcut Test');
     const page = base.pages[0]!;
-    const doc: FigMeDocument = {
+    const doc: FigmiiDocument = {
       ...base,
       pages: [{
         ...page,

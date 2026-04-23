@@ -1,16 +1,16 @@
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument } from '@primitives/document-model/types.ts';
 import { deserializeDocument } from '@primitives/document-model/serialization.ts';
 import { importGridSpec } from './importGridSpec.ts';
 import { importHtml } from './importHtml.ts';
 import { importMarkdown } from './importMarkdown.ts';
 
 /**
- * Open a file picker and import the selected file into a FigMeDocument.
+ * Open a file picker and import the selected file into a FigmiiDocument.
  *
- * Supports: .figme, .json, .gridspec.json, .html, .md
+ * Supports: .figmii, .figme (legacy), .json, .gridspec.json, .html, .md
  * Detects format by file extension and routes to the appropriate parser.
  */
-export async function importFile(): Promise<FigMeDocument | null> {
+export async function importFile(): Promise<FigmiiDocument | null> {
   const file = await pickFile();
   if (!file) return null;
 
@@ -27,7 +27,7 @@ export async function importFile(): Promise<FigMeDocument | null> {
     if (name.endsWith('.md')) {
       return importMarkdown(text);
     }
-    // .figme or .json — raw FigMeDocument JSON (with migration)
+    // .figmii/.figme or .json — raw FigmiiDocument JSON (with migration)
     return deserializeDocument(text);
   } catch {
     return null;
@@ -40,9 +40,9 @@ async function pickFile(): Promise<File | null> {
       const [handle] = await (window as unknown as FileSystemAccessWindow).showOpenFilePicker({
         types: [
           {
-            description: 'FigMe Files',
+            description: 'Figmii Files',
             accept: {
-              'application/json': ['.figme', '.json', '.gridspec.json'],
+              'application/json': ['.figmii', '.figme', '.json', '.gridspec.json'],
               'text/html': ['.html', '.htm'],
               'text/markdown': ['.md'],
             },
@@ -60,7 +60,7 @@ async function pickFile(): Promise<File | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.figme,.json,.gridspec.json,.html,.htm,.md';
+    input.accept = '.figmii,.figme,.json,.gridspec.json,.html,.htm,.md';
     input.onchange = () => {
       resolve(input.files?.[0] ?? null);
     };

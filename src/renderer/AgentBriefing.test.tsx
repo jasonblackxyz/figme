@@ -5,7 +5,7 @@ import { useUiStore } from '@stores/uiStore.ts';
 import { AgentBriefing } from './AgentBriefing.tsx';
 
 function readBriefing() {
-  const el = document.getElementById('figme-agent-briefing');
+  const el = document.getElementById('figmii-agent-briefing');
   expect(el).toBeTruthy();
   return JSON.parse(el!.textContent ?? '{}') as {
     mode: 'full' | 'raw';

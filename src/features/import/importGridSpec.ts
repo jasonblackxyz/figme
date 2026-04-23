@@ -1,20 +1,23 @@
-import type { FigMeDocument, FigMePage, Layer, LayerKind, LayerProperties, ComponentDef } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument, FigmiiPage, Layer, LayerKind, LayerProperties, ComponentDef } from '@primitives/document-model/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
 import type { GridSpec, GridSpecPage, GridSpecLayer } from '@features/export/gridspec/types.ts';
 
 /**
- * Import a GridSpec JSON string back into a FigMeDocument.
+ * Import a GridSpec JSON string back into a FigmiiDocument.
  *
  * GridSpec preserves raw layer `properties`, so this is near-lossless.
  * Only `customColors`, `cellColorOverrides`, and viewport scroll are lost.
  */
-export function importGridSpec(json: string): FigMeDocument {
-  const spec: GridSpec = JSON.parse(json);
+export function importGridSpec(json: string): FigmiiDocument {
+  const parsed: unknown = JSON.parse(json);
+  const schema = (parsed as { $schema?: unknown }).$schema;
 
-  if (spec.$schema !== 'figme-gridspec-v1') {
+  if (schema !== 'figmii-gridspec-v1' && schema !== 'figme-gridspec-v1') {
     throw new Error('Invalid GridSpec: missing or wrong $schema');
   }
+
+  const spec = parsed as GridSpec;
 
   const gridConfig: GridConfig = {
     fontFamily: spec.grid.fontFamily,
@@ -28,7 +31,7 @@ export function importGridSpec(json: string): FigMeDocument {
 
   const palette = spec.palette as Palette;
 
-  const pages: FigMePage[] = spec.pages.map((specPage) =>
+  const pages: FigmiiPage[] = spec.pages.map((specPage) =>
     rebuildPage(specPage),
   );
 
@@ -58,7 +61,7 @@ export function importGridSpec(json: string): FigMeDocument {
   };
 }
 
-function rebuildPage(specPage: GridSpecPage): FigMePage {
+function rebuildPage(specPage: GridSpecPage): FigmiiPage {
   const layers: Record<string, Layer> = {};
   const layerOrder: string[] = [];
 

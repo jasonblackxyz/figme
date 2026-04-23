@@ -1,26 +1,26 @@
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument } from '@primitives/document-model/types.ts';
 import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 
 interface AgentBriefingProps {
-  document: FigMeDocument;
+  document: FigmiiDocument;
 }
 
 // ---------------------------------------------------------------------------
 // Briefing builders
 // ---------------------------------------------------------------------------
 
-function getActivePageCanvasInfo(document: FigMeDocument) {
+function getActivePageCanvasInfo(document: FigmiiDocument) {
   const activePage = document.pages.find((p) => p.id === document.activePageId);
   return activePage ? getPageCanvasSizeInfo(activePage, document.gridConfig) : null;
 }
 
-function buildFullBriefing(document: FigMeDocument) {
+function buildFullBriefing(document: FigmiiDocument) {
   const activePageCanvas = getActivePageCanvasInfo(document);
 
   return {
-    system: 'FigMe \u2014 ASCII Grid Design Tool',
+    system: 'FIGMII \u2014 ASCII Grid Design Tool',
     version: '2.0',
     mode: 'full' as const,
     interfaceMode: 'human' as const,
@@ -54,13 +54,13 @@ function buildFullBriefing(document: FigMeDocument) {
       },
       activePage: activePageCanvas,
       control:
-        "Use FigMe.getPageCanvasSize(pageId?), FigMe.setPageCanvasSize({cols, rows, pageId?, allowClip?}), or FigMe.resetPageCanvasSize(pageId?) to change the design surface intentionally.",
+        "Use Figmii.getPageCanvasSize(pageId?), Figmii.setPageCanvasSize({cols, rows, pageId?, allowClip?}), or Figmii.resetPageCanvasSize(pageId?) to change the design surface intentionally.",
     },
     api: {
-      global: 'window.FigMe',
-      briefing: 'window.FigMe.briefing \u2014 returns this parsed briefing object',
+      global: 'window.Figmii',
+      briefing: 'window.Figmii.briefing \u2014 returns this parsed briefing object',
       stores:
-        'FigMe.stores.{document,tool,ui,viewport} \u2014 raw Zustand stores, call .getState() for sync access',
+        'Figmii.stores.{document,tool,ui,viewport} \u2014 raw Zustand stores, call .getState() for sync access',
       convenience: [
         'getDocument()',
         'getActivePage()',
@@ -91,22 +91,22 @@ function buildFullBriefing(document: FigMeDocument) {
         "setAgentMode('full' | 'raw') \u2014 compatibility alias for setInterfaceMode()",
         "getAgentMode() \u2014 compatibility alias returning 'full' in Human mode and 'raw' in AI mode",
       ],
-      batch: 'FigMe.batch(() => { ...mutations... }) \u2014 single undo entry. ALWAYS use batch() when adding multiple layers.',
-      subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub \u2014 WARNING: never call mutation methods (addLayer etc.) inside the 'document' callback; that creates an infinite loop and crashes the tab.",
-      subscribeRecovery: 'If a render error occurs, a FIGME_RECOVERY console entry appears with exact recovery commands. Short version: FigMe.stores.document.getState().undo() then click Dismiss.',
+      batch: 'Figmii.batch(() => { ...mutations... }) \u2014 single undo entry. ALWAYS use batch() when adding multiple layers.',
+      subscribe: "Figmii.subscribe('document'|'selection'|'tool', cb) => unsub \u2014 WARNING: never call mutation methods (addLayer etc.) inside the 'document' callback; that creates an infinite loop and crashes the tab.",
+      subscribeRecovery: 'If a render error occurs, a FIGMII_RECOVERY console entry appears with exact recovery commands. Short version: Figmii.stores.document.getState().undo() then click Dismiss.',
       storeExamples: {
-        rename: 'FigMe.stores.document.getState().renameLayer(id, name)',
-        undo: 'FigMe.stores.document.getState().undo()',
-        selectTool: "FigMe.stores.tool.getState().setActiveTool('border-box')",
-        setSelection: 'FigMe.stores.ui.getState().setSelectedLayers([id])',
-        zoom: 'FigMe.viewport.setZoom(1.5)',
-        fitToPage: 'FigMe.viewport.fitToPage()',
-        canvasSize: 'FigMe.setPageCanvasSize({ cols: 300, rows: 80 })',
-        setLayerColors: "FigMe.updateLayer(id, {customColors: {color: '#fff', bg: '#000'}})",
+        rename: 'Figmii.stores.document.getState().renameLayer(id, name)',
+        undo: 'Figmii.stores.document.getState().undo()',
+        selectTool: "Figmii.stores.tool.getState().setActiveTool('border-box')",
+        setSelection: 'Figmii.stores.ui.getState().setSelectedLayers([id])',
+        zoom: 'Figmii.viewport.setZoom(1.5)',
+        fitToPage: 'Figmii.viewport.fitToPage()',
+        canvasSize: 'Figmii.setPageCanvasSize({ cols: 300, rows: 80 })',
+        setLayerColors: "Figmii.updateLayer(id, {customColors: {color: '#fff', bg: '#000'}})",
         paintCells:
-          "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor')",
+          "Figmii.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor')",
         paintPage:
-          "FigMe.stores.document.getState().setPageCellOverridesBulk([{row,col}], '#hexColor')",
+          "Figmii.stores.document.getState().setPageCellOverridesBulk([{row,col}], '#hexColor')",
       },
     },
     layerKinds: {
@@ -174,7 +174,7 @@ function buildFullBriefing(document: FigMeDocument) {
         },
       },
       'canvas': {
-        desc: 'Freeform character painting \u2014 place any characters with per-cell colors. Spaces are transparent. Use FigMe.paint() to create.',
+        desc: 'Freeform character painting \u2014 place any characters with per-cell colors. Spaces are transparent. Use Figmii.paint() to create.',
         props: {
           content: "string \u2014 multiline ASCII art ('\\n'-separated). Spaces are transparent (lower layers show through).",
           cellColors: "Record<'row,col', {color?, bg?}> \u2014 per-cell hex colors for fg and bg. Auto-generated by paint().",
@@ -183,67 +183,67 @@ function buildFullBriefing(document: FigMeDocument) {
     },
     colorSystem: {
       description: 'All colours are specified as hex strings. Pass color and bg in addLayer() or use updateLayer() with customColors.',
-      addLayer: "FigMe.addLayer({kind:'border-box', col:2, row:2, width:20, height:8, color:'#ffffff', bg:'#1a1a2e'})",
-      updateLayer: "FigMe.updateLayer(id, {customColors: {color:'#e0e0e0', bg:'#0d1117'}})",
-      perCell: "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row:0,col:0},{row:0,col:1}], '#ff6600')",
-      pageBackground: "FigMe.stores.document.getState().setPageCellOverridesBulk([{row:0,col:0}], '#0d1117')",
+      addLayer: "Figmii.addLayer({kind:'border-box', col:2, row:2, width:20, height:8, color:'#ffffff', bg:'#1a1a2e'})",
+      updateLayer: "Figmii.updateLayer(id, {customColors: {color:'#e0e0e0', bg:'#0d1117'}})",
+      perCell: "Figmii.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row:0,col:0},{row:0,col:1}], '#ff6600')",
+      pageBackground: "Figmii.stores.document.getState().setPageCellOverridesBulk([{row:0,col:0}], '#0d1117')",
     },
     recipes: {
       note: 'These are core tool operations. You are encouraged to use these as building blocks and explore the full API for your unique design needs.',
       operations: [
         {
           name: 'Place a bordered region',
-          code: "FigMe.addLayer({kind:'border-box', col:2, row:2, width:40, height:10, color:'#6b6b80', bg:'#1a1a2e'})",
+          code: "Figmii.addLayer({kind:'border-box', col:2, row:2, width:40, height:10, color:'#6b6b80', bg:'#1a1a2e'})",
           notes: 'borderStyle options: rounded, double, section, custom. Use title prop for inline header text.',
         },
         {
           name: 'Place text',
-          code: "FigMe.addLayer({kind:'text-block', col:4, row:4, width:36, height:3, color:'#e0e0e0', content:'Your text here'})",
+          code: "Figmii.addLayer({kind:'text-block', col:4, row:4, width:36, height:3, color:'#e0e0e0', content:'Your text here'})",
           notes: 'kerning: 0 (compact, default), 1 (spaced), 2 (wide). alignment: left/center/right.',
         },
         {
           name: 'Place decorative text',
-          code: "FigMe.addLayer({kind:'figlet-text', col:2, row:1, width:60, height:8, color:'#2563eb', content:'Title', fontName:'koholint'})",
+          code: "Figmii.addLayer({kind:'figlet-text', col:2, row:1, width:60, height:8, color:'#2563eb', content:'Title', fontName:'koholint'})",
           notes: "Fonts: 'koholint' (default), 'standard', 'small', 'banner', 'slant', 'big', 'kompaktblk', 'six-fo', 'ublk'.",
         },
         {
           name: 'Set colors on layers and cells',
-          code: "FigMe.updateLayer(id, {customColors: {color:'#fff', bg:'#000'}})",
-          notes: "Per-cell: FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor'). Page-level: setPageCellOverridesBulk([{row,col}], '#hexColor').",
+          code: "Figmii.updateLayer(id, {customColors: {color:'#fff', bg:'#000'}})",
+          notes: "Per-cell: Figmii.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor'). Page-level: setPageCellOverridesBulk([{row,col}], '#hexColor').",
         },
         {
           name: 'Freeform painting (monochrome)',
-          code: "FigMe.paint({col:2, row:2, content:'\\u256d\\u2500\\u2500\\u2500\\u2500\\u2500\\u256e\\n\\u2502 Hi  \\u2502\\n\\u2570\\u2500\\u2500\\u2500\\u2500\\u2500\\u256f', color:'#ffffff'})",
+          code: "Figmii.paint({col:2, row:2, content:'\\u256d\\u2500\\u2500\\u2500\\u2500\\u2500\\u256e\\n\\u2502 Hi  \\u2502\\n\\u2570\\u2500\\u2500\\u2500\\u2500\\u2500\\u256f', color:'#ffffff'})",
           notes: 'Spaces are transparent \u2014 lower layers show through. ASCII export works natively.',
         },
         {
           name: 'Freeform painting (per-span colors)',
-          code: "FigMe.paint({col:2, row:2, lines:[[{text:'\\u2591\\u2591\\u2591', color:'#3d3a34'}, {text:'\\u2588\\u2588\\u2588', color:'#8b3a2a'}]]})",
+          code: "Figmii.paint({col:2, row:2, lines:[[{text:'\\u2591\\u2591\\u2591', color:'#3d3a34'}, {text:'\\u2588\\u2588\\u2588', color:'#8b3a2a'}]]})",
           notes: 'Each span has its own color. No coordinate math needed \u2014 colors are inline with the text.',
         },
         {
           name: 'Resize the page canvas',
-          code: 'FigMe.setPageCanvasSize({cols:300, rows:80})',
+          code: 'Figmii.setPageCanvasSize({cols:300, rows:80})',
           notes: 'Use this to intentionally change the design surface. paint() and layer bounds never resize the page for you.',
         },
         {
           name: 'Verify the design',
-          code: 'FigMe.export.toAscii()',
-          notes: 'Returns rendered ASCII string. Also: FigMe.getLayers() for layer list, FigMe.getDocument() for full state.',
+          code: 'Figmii.export.toAscii()',
+          notes: 'Returns rendered ASCII string. Also: Figmii.getLayers() for layer list, Figmii.getDocument() for full state.',
         },
         {
           name: 'Batch operations',
-          code: 'FigMe.batch(() => { FigMe.addLayer(...); FigMe.addLayer(...); })',
+          code: 'Figmii.batch(() => { Figmii.addLayer(...); Figmii.addLayer(...); })',
           notes: 'ALWAYS wrap multiple mutations in batch(). Single undo entry, single render, prevents layer loss.',
         },
         {
           name: 'Organize layers',
-          code: 'FigMe.stores.ui.getState().setSelectedLayers([id1, id2]); FigMe.stores.document.getState().groupSelectedLayers();',
+          code: 'Figmii.stores.ui.getState().setSelectedLayers([id1, id2]); Figmii.stores.document.getState().groupSelectedLayers();',
           notes: 'Z-order: bringToFront(), sendToBack(), bringForward(), sendBackward() on document store.',
         },
         {
           name: 'Read state and undo',
-          code: 'FigMe.getDocument(); FigMe.stores.document.getState().undo();',
+          code: 'Figmii.getDocument(); Figmii.stores.document.getState().undo();',
           notes: 'getLayers() returns all layers. findLayer(name) finds by name. findLayers({kind}) filters by type.',
         },
       ],
@@ -251,8 +251,8 @@ function buildFullBriefing(document: FigMeDocument) {
     warnings: [
       'Structured layer creation (border-box, divider, text-block) is a Human-mode capability. AI mode rejects those kinds through addLayer().',
       'edge-path layers are experimental and frequently crash the renderer. Use text-block layers with box-drawing characters (\u2502\u2500\u250c\u2514\u251c\u2524\u25c6\u25cf) for connections instead.',
-      "Never call mutation methods (addLayer, updateLayer, etc.) inside FigMe.subscribe('document') callbacks \u2014 this creates an infinite loop.",
-      'Always wrap multiple mutations in FigMe.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
+      "Never call mutation methods (addLayer, updateLayer, etc.) inside Figmii.subscribe('document') callbacks \u2014 this creates an infinite loop.",
+      'Always wrap multiple mutations in Figmii.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
     ],
     domSelectors: {
       toolbar: "[data-component='toolbar']",
@@ -271,16 +271,16 @@ function buildFullBriefing(document: FigMeDocument) {
   };
 }
 
-function buildRawBriefing(document: FigMeDocument) {
+function buildRawBriefing(document: FigmiiDocument) {
   const activePageCanvas = getActivePageCanvasInfo(document);
 
   return {
-    system: 'FigMe \u2014 ASCII Grid Design Tool',
+    system: 'FIGMII \u2014 ASCII Grid Design Tool',
     version: '2.0',
     mode: 'raw' as const,
     interfaceMode: 'ai' as const,
     purpose:
-      'Freeform ASCII art canvas optimized for agents. Use FigMe.paint() as the primary creative primitive, FigMe.addFiglet() when preset FIGlet fonts are helpful, and setPageCanvasSize() when you intentionally need a different surface size. Structured layer creation is intentionally unavailable in AI mode.',
+      'Freeform ASCII art canvas optimized for agents. Use Figmii.paint() as the primary creative primitive, Figmii.addFiglet() when preset FIGlet fonts are helpful, and setPageCanvasSize() when you intentionally need a different surface size. Structured layer creation is intentionally unavailable in AI mode.',
     gridSystem: {
       description:
         'The canvas is a 2D grid of monospace character cells. Every position is addressed by (col, row). There are no sub-cell positions. Spaces are transparent \u2014 lower layers show through. paint() never changes the page dimensions.',
@@ -308,11 +308,11 @@ function buildRawBriefing(document: FigMeDocument) {
       },
       activePage: activePageCanvas,
       control:
-        "Use FigMe.setPageCanvasSize({cols, rows, pageId?, allowClip?}) to change the surface. Use FigMe.resetPageCanvasSize(pageId?) to return to the default size.",
+        "Use Figmii.setPageCanvasSize({cols, rows, pageId?, allowClip?}) to change the surface. Use Figmii.resetPageCanvasSize(pageId?) to return to the default size.",
     },
     api: {
-      global: 'window.FigMe',
-      briefing: 'window.FigMe.briefing \u2014 returns this parsed briefing object',
+      global: 'window.Figmii',
+      briefing: 'window.Figmii.briefing \u2014 returns this parsed briefing object',
       convenience: [
         'getDocument()',
         'getActivePage()',
@@ -336,69 +336,69 @@ function buildRawBriefing(document: FigMeDocument) {
         "setAgentMode('full' | 'raw') \u2014 compatibility alias for setInterfaceMode()",
         "getAgentMode() \u2014 compatibility alias returning 'raw' in AI mode and 'full' in Human mode",
       ],
-      batch: 'FigMe.batch(() => { ...mutations... }) \u2014 single undo entry. ALWAYS use batch() when placing multiple paint layers.',
-      subscribe: "FigMe.subscribe('document'|'selection'|'tool', cb) => unsub \u2014 WARNING: never call mutation methods inside the 'document' callback; that creates an infinite loop and crashes the tab.",
-      subscribeRecovery: 'If a render error occurs, a FIGME_RECOVERY console entry appears with exact recovery commands. Short version: FigMe.stores.document.getState().undo() then click Dismiss.',
+      batch: 'Figmii.batch(() => { ...mutations... }) \u2014 single undo entry. ALWAYS use batch() when placing multiple paint layers.',
+      subscribe: "Figmii.subscribe('document'|'selection'|'tool', cb) => unsub \u2014 WARNING: never call mutation methods inside the 'document' callback; that creates an infinite loop and crashes the tab.",
+      subscribeRecovery: 'If a render error occurs, a FIGMII_RECOVERY console entry appears with exact recovery commands. Short version: Figmii.stores.document.getState().undo() then click Dismiss.',
       storeExamples: {
-        undo: 'FigMe.stores.document.getState().undo()',
-        zoom: 'FigMe.viewport.setZoom(1.5)',
-        fitToPage: 'FigMe.viewport.fitToPage()',
-        canvasSize: 'FigMe.setPageCanvasSize({ cols: 300, rows: 80 })',
+        undo: 'Figmii.stores.document.getState().undo()',
+        zoom: 'Figmii.viewport.setZoom(1.5)',
+        fitToPage: 'Figmii.viewport.fitToPage()',
+        canvasSize: 'Figmii.setPageCanvasSize({ cols: 300, rows: 80 })',
         paintCells:
-          "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor')",
+          "Figmii.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row,col}], '#hexColor')",
         paintPage:
-          "FigMe.stores.document.getState().setPageCellOverridesBulk([{row,col}], '#hexColor')",
+          "Figmii.stores.document.getState().setPageCellOverridesBulk([{row,col}], '#hexColor')",
       },
     },
     colorSystem: {
       description: 'All colours are hex strings (e.g. \'#ffffff\', \'#1a1a2e\'). Pass color (foreground) and bg (background) to paint().',
-      perCell: "FigMe.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row:0,col:0},{row:0,col:1}], '#ff6600')",
-      pageBackground: "FigMe.stores.document.getState().setPageCellOverridesBulk([{row:0,col:0}], '#0d1117')",
+      perCell: "Figmii.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row:0,col:0},{row:0,col:1}], '#ff6600')",
+      pageBackground: "Figmii.stores.document.getState().setPageCellOverridesBulk([{row:0,col:0}], '#0d1117')",
     },
     recipes: {
       note: 'Use paint() for all design work. You have complete creative freedom over characters, layout, and colours.',
       operations: [
         {
           name: 'Freeform painting (monochrome)',
-          code: "FigMe.paint({col:2, row:2, content:'\u256d\u2500\u2500\u2500\u2500\u2500\u256e\\n\u2502 Hi  \u2502\\n\u2570\u2500\u2500\u2500\u2500\u2500\u256f', color:'#ffffff'})",
+          code: "Figmii.paint({col:2, row:2, content:'\u256d\u2500\u2500\u2500\u2500\u2500\u256e\\n\u2502 Hi  \u2502\\n\u2570\u2500\u2500\u2500\u2500\u2500\u256f', color:'#ffffff'})",
           notes: 'Spaces are transparent. Use any Unicode characters \u2014 box-drawing (\u2500\u2502\u256d\u256e\u256f\u2570), blocks (\u2588\u2591\u2592\u2593), symbols, etc.',
         },
         {
           name: 'Freeform painting (per-span colors)',
-          code: "FigMe.paint({col:2, row:2, lines:[[{text:'\u2591\u2591\u2591', color:'#3d3a34'}, {text:'\u2588\u2588\u2588', color:'#8b3a2a'}]]})",
+          code: "Figmii.paint({col:2, row:2, lines:[[{text:'\u2591\u2591\u2591', color:'#3d3a34'}, {text:'\u2588\u2588\u2588', color:'#8b3a2a'}]]})",
           notes: 'Each span in a line has its own color and bg. No coordinate math needed \u2014 colours are inline with the text.',
         },
         {
           name: 'Add FIGlet text',
-          code: "FigMe.addFiglet({col:2, row:1, content:'Title', fontName:'koholint', color:'#2563eb'})",
+          code: "Figmii.addFiglet({col:2, row:1, content:'Title', fontName:'koholint', color:'#2563eb'})",
           notes: 'Use this when you want stylized ASCII display text without switching to Human mode.',
         },
         {
           name: 'Resize the page canvas',
-          code: 'FigMe.setPageCanvasSize({cols:300, rows:80})',
+          code: 'Figmii.setPageCanvasSize({cols:300, rows:80})',
           notes: 'Use this when you want a non-default ASCII surface. paint() layers stay inside the existing page size unless you change it explicitly.',
         },
         {
           name: 'Verify the design',
-          code: 'FigMe.export.toAscii()',
-          notes: 'Returns rendered ASCII string. Also: FigMe.getLayers() for layer list.',
+          code: 'Figmii.export.toAscii()',
+          notes: 'Returns rendered ASCII string. Also: Figmii.getLayers() for layer list.',
         },
         {
           name: 'Batch operations',
-          code: 'FigMe.batch(() => { FigMe.paint(...); FigMe.paint(...); })',
+          code: 'Figmii.batch(() => { Figmii.paint(...); Figmii.paint(...); })',
           notes: 'ALWAYS wrap multiple paint() calls in batch(). Single undo entry, single render.',
         },
         {
           name: 'Read state and undo',
-          code: 'FigMe.getDocument(); FigMe.stores.document.getState().undo();',
+          code: 'Figmii.getDocument(); Figmii.stores.document.getState().undo();',
           notes: 'getLayers() returns all layers. findLayer(name) finds by name.',
         },
       ],
     },
     warnings: [
-      'FigMe.addLayer() rejects border-box, divider, and text-block in AI mode. Use paint(), addFiglet(), or switch to Human mode.',
-      "Never call mutation methods (paint, removeLayer, etc.) inside FigMe.subscribe('document') callbacks \u2014 this creates an infinite loop.",
-      'Always wrap multiple mutations in FigMe.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
+      'Figmii.addLayer() rejects border-box, divider, and text-block in AI mode. Use paint(), addFiglet(), or switch to Human mode.',
+      "Never call mutation methods (paint, removeLayer, etc.) inside Figmii.subscribe('document') callbacks \u2014 this creates an infinite loop.",
+      'Always wrap multiple mutations in Figmii.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
     ],
   };
 }
@@ -410,7 +410,7 @@ function buildRawBriefing(document: FigMeDocument) {
 /**
  * Hidden component that embeds two structured JSON elements for AI agents:
  *
- * 1. #figme-agent-briefing  — API reference. In 'full' mode: layer kinds, recipes,
+ * 1. #figmii-agent-briefing  — API reference. In 'full' mode: layer kinds, recipes,
  *    DOM selectors. In 'raw' mode: stripped to paint() + grid info only.
  *
  * 2. [data-spec="full-document"] — live document snapshot that re-renders whenever the Zustand
@@ -437,7 +437,7 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
       isFirstRender.current = false;
       return;
     }
-    console.log('FIGME_STATE', {
+    console.log('FIGMII_STATE', {
       action: 'interface_mode_change',
       timestamp: Date.now(),
       interfaceMode,
@@ -449,7 +449,7 @@ export function AgentBriefing({ document }: AgentBriefingProps): ReactNode {
     <>
       <script
         type="application/json"
-        id="figme-agent-briefing"
+        id="figmii-agent-briefing"
         dangerouslySetInnerHTML={{ __html: briefingJson }}
       />
       {/* Live document snapshot — always present, updates on every document change */}

@@ -1,5 +1,5 @@
 import type { HSV, RGB } from './types.ts';
-import type { FigMePage } from '@primitives/document-model/types.ts';
+import type { FigmiiPage } from '@primitives/document-model/types.ts';
 import type { Palette } from '@primitives/style-system/types.ts';
 import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 
@@ -76,7 +76,7 @@ export function isValidHex(value: string): boolean {
  * Extract all unique colors currently in use on a page.
  * Scans layer styleKey palette lookups, customColors, and cellColorOverrides.
  */
-export function extractDocumentColors(page: FigMePage, palette: Palette): string[] {
+export function extractDocumentColors(page: FigmiiPage, palette: Palette): string[] {
   const colors = new Set<string>();
 
   // Page-level cell overrides

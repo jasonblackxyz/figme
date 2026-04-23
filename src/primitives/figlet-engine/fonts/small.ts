@@ -4,8 +4,8 @@
  * Compact version suitable for smaller displays
  */
 export const SMALL_FLF = `flf2a$ 4 3 16 15 3
-Small (FigMe)
-Simplified Small font for FigMe
+Small (Figmii)
+Simplified Small font for Figmii
 Compact ASCII art font
  $@
  $@

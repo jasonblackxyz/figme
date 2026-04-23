@@ -1,4 +1,4 @@
-# FigMe — Agent Usability Findings
+# FIGMII — Agent Usability Findings
 
 *Authored by Claude (claude-sonnet-4-6) after building 5 designs via Claude in Chrome*
 *Branch: worktree-agent-usability-features — 2026-04-09*
@@ -7,7 +7,7 @@
 
 ## Summary
 
-I built five full-canvas designs (API Explorer Dashboard, System Monitor, Chat Interface, File Browser, Component Spec Card) using `window.FigMe` exclusively. Each design was composed programmatically — no mouse interaction — using `addLayer`, `batch`, and `stores.document.setDocument`. The designs render correctly and the core API is sound. But the path to get there exposed a clear set of friction points that, if addressed, would make the agent experience significantly smoother.
+I built five full-canvas designs (API Explorer Dashboard, System Monitor, Chat Interface, File Browser, Component Spec Card) using `window.Figmii` exclusively. Each design was composed programmatically — no mouse interaction — using `addLayer`, `batch`, and `stores.document.setDocument`. The designs render correctly and the core API is sound. But the path to get there exposed a clear set of friction points that, if addressed, would make the agent experience significantly smoother.
 
 ---
 
@@ -27,14 +27,14 @@ I built five full-canvas designs (API Explorer Dashboard, System Monitor, Chat I
 
 ### 1. AgentBriefing was invisible until manually discovered
 
-**What happened:** I spent the first ~10 interactions reading source files and making trial/error API calls because I didn't know the briefing existed. The `#figme-agent-briefing` `<script type="application/json">` tag was present in the DOM the whole time with the correct API signature, valid style keys, layer kinds, and DOM selectors.
+**What happened:** I spent the first ~10 interactions reading source files and making trial/error API calls because I didn't know the briefing existed. The `#figmii-agent-briefing` `<script type="application/json">` tag was present in the DOM the whole time with the correct API signature, valid style keys, layer kinds, and DOM selectors.
 
 **Impact:** High. I crashed React twice and wasted many round-trips that the briefing would have prevented entirely.
 
 **Fix proposals:**
-- Log a one-time startup message: `console.log('[FigMe] Agent briefing available at: document.getElementById("figme-agent-briefing")')` or `window.FigMe.brief()`.
-- Expose `window.FigMe.briefing` as a direct property pointing to the parsed JSON object.
-- Add to the accessibility tree: `aria-describedby="figme-agent-briefing"` on `#root` (the briefing mentions this but it wasn't present on the running app).
+- Log a one-time startup message: `console.log('[Figmii] Agent briefing available at: document.getElementById("figmii-agent-briefing")')` or `window.Figmii.brief()`.
+- Expose `window.Figmii.briefing` as a direct property pointing to the parsed JSON object.
+- Add to the accessibility tree: `aria-describedby="figmii-agent-briefing"` on `#root` (the briefing mentions this but it wasn't present on the running app).
 
 ---
 
@@ -48,7 +48,7 @@ I built five full-canvas designs (API Explorer Dashboard, System Monitor, Chat I
 - Add a runtime guard at the top of `addLayer`:
   ```ts
   if (typeof kind !== 'string') throw new Error(
-    `FigMe.addLayer: first argument must be a LayerKind string (e.g. "border-box"), got ${typeof kind}. ` +
+    `Figmii.addLayer: first argument must be a LayerKind string (e.g. "border-box"), got ${typeof kind}. ` +
     `Did you mean to pass an object? Use: addLayer('border-box', name, {col,row,width,height}, styleKey, props)`
   );
   ```
@@ -66,21 +66,21 @@ I built five full-canvas designs (API Explorer Dashboard, System Monitor, Chat I
 **Fix proposals:**
 - Validate style keys in `addLayer` against `STYLE_KEYS` and throw/warn immediately, before the layer reaches the store.
 - In the renderer, add a fallback: if a style key is not found in the palette, use `'text'` and log a warning rather than propagating a render error.
-- Expose `FigMe.styles.keys` clearly as an array (it exists as `FigMe.styles.keys` but the shape is `readonly string[]` not a callable — consistent with the rest of the API but worth calling out in the briefing).
+- Expose `Figmii.styles.keys` clearly as an array (it exists as `Figmii.styles.keys` but the shape is `readonly string[]` not a callable — consistent with the rest of the API but worth calling out in the briefing).
 
 ---
 
-### 4. No `FigMe.addPage(name)` convenience method — workaround required
+### 4. No `Figmii.addPage(name)` convenience method — workaround required
 
-**What happened:** `FigMe.primitives.addPage(doc, name)` is a pure function requiring the full doc object. Calling it via `applyPageMutation` pattern isn't exposed. The only reliable way to add pages was to manually reconstruct `doc.pages` with `setDocument`.
+**What happened:** `Figmii.primitives.addPage(doc, name)` is a pure function requiring the full doc object. Calling it via `applyPageMutation` pattern isn't exposed. The only reliable way to add pages was to manually reconstruct `doc.pages` with `setDocument`.
 
 **Impact:** Medium. Clunky and easy to get wrong (I initially hit a `doc.pages is not iterable` error from calling the primitive directly).
 
 **Fix proposal:**
 ```ts
-FigMe.addPage(name: string): string  // returns new page id, sets it as active
-FigMe.setActivePage(id: string): void  // convenience over the setDocument dance
-FigMe.getPage(id: string): FigMePage | undefined
+Figmii.addPage(name: string): string  // returns new page id, sets it as active
+Figmii.setActivePage(id: string): void  // convenience over the setDocument dance
+Figmii.getPage(id: string): FigmiiPage | undefined
 ```
 
 ---
@@ -92,9 +92,9 @@ FigMe.getPage(id: string): FigMePage | undefined
 **Impact:** Medium. I couldn't programmatically verify that text content fits within its bounding box, or that borders are rendering the expected box-drawing characters.
 
 **Fix proposals:**
-- Expose `FigMe.export.toAscii(pageId?)` returning a `string[][]` or plain multiline string of the rendered characters.
-- Expose `FigMe.export.toJson()` (already exists) and document it clearly in the briefing — this returns the full spec but not the rendered buffer.
-- Expose a `FigMe.renderLayer(id)` that returns the StampBuffer for a single layer.
+- Expose `Figmii.export.toAscii(pageId?)` returning a `string[][]` or plain multiline string of the rendered characters.
+- Expose `Figmii.export.toJson()` (already exists) and document it clearly in the briefing — this returns the full spec but not the rendered buffer.
+- Expose a `Figmii.renderLayer(id)` that returns the StampBuffer for a single layer.
 
 ---
 
@@ -132,14 +132,14 @@ FigMe.getPage(id: string): FigMePage | undefined
 
 ### 8. No layer lookup by name
 
-**What happened:** After building a design, I wanted to find a specific layer to update it. `FigMe.getLayers()` returns all layers; there's no `findLayer(name)` or query capability.
+**What happened:** After building a design, I wanted to find a specific layer to update it. `Figmii.getLayers()` returns all layers; there's no `findLayer(name)` or query capability.
 
 **Impact:** Low-medium. Requires manual iteration.
 
 **Fix proposals:**
 ```ts
-FigMe.findLayer(name: string): Layer | undefined
-FigMe.findLayers({ kind?, name?, styleKey? }): Layer[]
+Figmii.findLayer(name: string): Layer | undefined
+Figmii.findLayers({ kind?, name?, styleKey? }): Layer[]
 ```
 
 ---
@@ -162,8 +162,8 @@ FigMe.findLayers({ kind?, name?, styleKey? }): Layer[]
 
 **Fix proposals:**
 ```ts
-FigMe.stores.viewport.getState().fitToPage()   // zoom + pan to show all layers
-FigMe.stores.viewport.getState().setZoom(0.5)  // already works, just undocumented
+Figmii.stores.viewport.getState().fitToPage()   // zoom + pan to show all layers
+Figmii.stores.viewport.getState().setZoom(0.5)  // already works, just undocumented
 ```
 Document `setZoom` in the briefing since it exists and works.
 
@@ -171,12 +171,12 @@ Document `setZoom` in the briefing since it exists and works.
 
 ## What Worked Well
 
-- **`window.FigMe` global is clean and readable** — once I had the correct API signature, composition was fast and expressive.
+- **`window.Figmii` global is clean and readable** — once I had the correct API signature, composition was fast and expressive.
 - **`batch()` for bulk inserts** — a single undo entry for a whole design is exactly right. Works reliably.
 - **Style key palette is rich** — 55 named keys covering the full readme-app theme spectrum. Using thematic keys like `queryText`, `etchScreen`, `ghostBubbleBg` made the designs semantically expressive.
 - **`section` borderStyle** — the only box style with an inline title (`{title: 'TEXT'}` in properties). Made headers clean and self-labelling.
 - **`data-layer-id`, `data-status`, `data-tool` attributes** — the accessibility tree and DOM selectors are well-placed for programmatic inspection.
-- **`FigMe.subscribe('document', cb)`** — reactive design state is a great pattern; agents could watch for changes made by the human PM and respond.
+- **`Figmii.subscribe('document', cb)`** — reactive design state is a great pattern; agents could watch for changes made by the human PM and respond.
 - **Text wrapping in `text-block`** — multiline `\n`-separated content renders correctly with proper line breaks, which is essential for content-heavy layouts.
 
 ---
@@ -186,11 +186,11 @@ Document `setZoom` in the briefing since it exists and works.
 | Priority | Issue | Effort |
 |----------|-------|--------|
 | P0 | React crash + full unmount on bad layer data (issues #2, #3) | Small — error boundary + input validation |
-| P0 | AgentBriefing discoverability (issue #1) | Tiny — console.log + `FigMe.briefing` property |
-| P1 | `FigMe.addPage(name)` + `FigMe.setActivePage(id)` (issue #4) | Small |
+| P0 | AgentBriefing discoverability (issue #1) | Tiny — console.log + `Figmii.briefing` property |
+| P1 | `Figmii.addPage(name)` + `Figmii.setActivePage(id)` (issue #4) | Small |
 | P1 | Layer props schema in briefing (issue #7) | Small — editorial |
 | P1 | `data-spec='full-document'` element (issue #6) | Medium — hidden live JSON element |
-| P2 | `FigMe.export.toAscii()` (issue #5) | Medium — expose StampBuffer output |
-| P2 | `FigMe.findLayer(name)` (issue #8) | Tiny |
+| P2 | `Figmii.export.toAscii()` (issue #5) | Medium — expose StampBuffer output |
+| P2 | `Figmii.findLayer(name)` (issue #8) | Tiny |
 | P3 | `fitToPage()` viewport helper (issue #10) | Small |
 | P3 | `batch(pageId, fn)` overload (issue #9) | Medium |

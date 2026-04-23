@@ -4,8 +4,8 @@
  * Based on the classic Standard FIGlet font style
  */
 export const STANDARD_FLF = `flf2a$ 6 5 20 15 3
-Standard (FigMe)
-Simplified Standard font for FigMe
+Standard (Figmii)
+Simplified Standard font for Figmii
 ASCII design tool font
  $@
  $@

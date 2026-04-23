@@ -1,4 +1,4 @@
-import type { FigMePage, Layer } from '@primitives/document-model/types.ts';
+import type { FigmiiPage, Layer } from '@primitives/document-model/types.ts';
 import { flattenLayerOrder, isEffectivelyHidden } from '@primitives/document-model/hierarchy.ts';
 import type {
   BorderBoxProperties,
@@ -28,7 +28,7 @@ import { getFigletFont } from '@primitives/figlet-engine/fonts/index.ts';
  * Compose all visible layers on a page into a single StampBuffer.
  * Pure function — no React, no store access.
  */
-export function composePageBuffer(page: FigMePage, gridConfig: GridConfig, skipLayerId?: string | null): StampBuffer {
+export function composePageBuffer(page: FigmiiPage, gridConfig: GridConfig, skipLayerId?: string | null): StampBuffer {
   const { effectiveCols, effectiveRows } = getPageCanvasSizeInfo(page, gridConfig);
   let buffer = createBuffer(effectiveCols, effectiveRows);
 

@@ -4,8 +4,8 @@
  * Covers ASCII 32-126
  */
 export const BIG_FLF = `flf2a$ 8 6 25 15 3
-Big (FigMe)
-Big bold font for FigMe
+Big (Figmii)
+Big bold font for Figmii
 Large ASCII art font
   $@
   $@

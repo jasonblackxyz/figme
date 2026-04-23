@@ -1,4 +1,4 @@
-const SESSION_KEY = 'figme_tab_id';
+const SESSION_KEY = 'figmii_tab_id';
 
 export function getTabId(): string {
   let tabId = sessionStorage.getItem(SESSION_KEY);

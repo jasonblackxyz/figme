@@ -1,21 +1,21 @@
 import { deserializeDocument } from '@primitives/document-model/serialization.ts';
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument } from '@primitives/document-model/types.ts';
 
-const DB_NAME = 'figme-persistence';
+const DB_NAME = 'figmii-persistence';
 const DB_VERSION = 2;
 const STORE_NAME = 'saves';
 const MAX_SAVES = 5;
-export const LEGACY_LOCAL_STORAGE_KEY = 'figme_autosave';
+export const LEGACY_LOCAL_STORAGE_KEY = 'figmii_autosave';
 
 function localStorageKey(tabId: string): string {
-  return `figme_autosave_${tabId}`;
+  return `figmii_autosave_${tabId}`;
 }
 
 interface SaveRecord {
   id?: number;
   timestamp: number;
   tabId: string;
-  document: FigMeDocument;
+  document: FigmiiDocument;
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -49,7 +49,7 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 export async function saveToDB(
-  doc: FigMeDocument,
+  doc: FigmiiDocument,
   tabId: string,
 ): Promise<void> {
   const db = await openDb();
@@ -105,10 +105,10 @@ export async function saveToDB(
 
 export async function loadLatestFromDB(
   tabId: string,
-): Promise<FigMeDocument | null> {
+): Promise<FigmiiDocument | null> {
   const db = await openDb();
   try {
-    return await new Promise<FigMeDocument | null>((resolve, reject) => {
+    return await new Promise<FigmiiDocument | null>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const index = tx.objectStore(STORE_NAME).index('tabId_timestamp');
       const range = IDBKeyRange.bound([tabId, 0], [tabId, Infinity]);
@@ -168,7 +168,7 @@ export async function clearTabFromDB(tabId: string): Promise<void> {
 
 // --- localStorage helpers ---
 
-export function loadFromLocalStorage(tabId: string): FigMeDocument | null {
+export function loadFromLocalStorage(tabId: string): FigmiiDocument | null {
   try {
     const saved = localStorage.getItem(localStorageKey(tabId));
     if (saved) return deserializeDocument(saved);
@@ -178,7 +178,7 @@ export function loadFromLocalStorage(tabId: string): FigMeDocument | null {
   return null;
 }
 
-export function saveToLocalStorage(doc: FigMeDocument, tabId: string): void {
+export function saveToLocalStorage(doc: FigmiiDocument, tabId: string): void {
   try {
     localStorage.setItem(localStorageKey(tabId), JSON.stringify(doc));
   } catch {
@@ -190,7 +190,7 @@ export function saveToLocalStorage(doc: FigMeDocument, tabId: string): void {
 
 export async function loadPersistedDocument(
   tabId: string,
-): Promise<FigMeDocument | null> {
+): Promise<FigmiiDocument | null> {
   // Try IndexedDB first (primary, larger capacity)
   try {
     const doc = await loadLatestFromDB(tabId);
@@ -204,12 +204,12 @@ export async function loadPersistedDocument(
 
 // --- Legacy v1 loaders (migration only) ---
 
-export async function loadLegacyDocument(): Promise<FigMeDocument | null> {
+export async function loadLegacyDocument(): Promise<FigmiiDocument | null> {
   // Try IndexedDB: get most recent record regardless of tabId
   try {
     const db = await openDb();
     try {
-      const doc = await new Promise<FigMeDocument | null>(
+      const doc = await new Promise<FigmiiDocument | null>(
         (resolve, reject) => {
           const tx = db.transaction(STORE_NAME, 'readonly');
           const index = tx.objectStore(STORE_NAME).index('timestamp');
