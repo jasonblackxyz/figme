@@ -166,4 +166,32 @@ describe('batch()', () => {
       expect(api.getDocument().activePageId).toBe(originalPageId);
     });
   });
+
+  it('keeps runtime semantic mutations inside batch', () => {
+    const pageId = api.getDocument().activePageId;
+    let annotationId: string | null = null;
+
+    api.batch(() => {
+      api.setPageRuntime(pageId, { screenId: 'search', exportAsScreen: true });
+      annotationId = api.createRuntimeAnnotation({
+        pageId,
+        semanticId: 'search-input',
+        rect: { col: 2, row: 3, width: 24, height: 3 },
+        role: 'input',
+        componentKind: 'text-input',
+        componentId: 'query.input',
+      });
+
+      expect(api.getPageRuntime(pageId)?.screenId).toBe('search');
+      expect(Object.keys(api.getDocument().runtime?.annotations ?? {})).toContain(annotationId);
+    });
+
+    const doc = api.getDocument();
+    expect(doc.pages.find((page) => page.id === pageId)?.runtime?.screenId).toBe('search');
+    expect(Object.keys(doc.runtime?.annotations ?? {})).toContain(annotationId);
+
+    useDocumentStore.getState().undo();
+    expect(api.getPageRuntime(pageId)?.screenId).not.toBe('search');
+    expect(Object.keys(api.getDocument().runtime?.annotations ?? {})).not.toContain(annotationId);
+  });
 });

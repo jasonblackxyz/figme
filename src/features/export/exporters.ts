@@ -116,7 +116,7 @@ body {
 ${bodyRows}<div class="semantic-layer" aria-hidden="true">
 ${semanticOverlays}
 </div>
-<script type="application/json" data-runtime-semantics>${escapeHtml(runtimeJson)}</script>
+<script type="application/json" data-runtime-semantics>${escapeJsonScript(runtimeJson)}</script>
 </div>
 </body>
 </html>`;
@@ -162,4 +162,12 @@ function escapeHtml(str: string): string {
 
 function escapeAttr(str: string): string {
   return str.replace(/"/g, '&quot;');
+}
+
+function escapeJsonScript(str: string): string {
+  return str
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }

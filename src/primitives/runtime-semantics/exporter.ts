@@ -170,13 +170,15 @@ function resolveComponentId(
   annotation: RuntimeAnnotation,
   componentsById: Record<string, RuntimeComponentDef>,
 ): string {
-  if (annotation.componentId && componentsById[annotation.componentId]) {
-    return annotation.componentId;
+  const authoredComponentId = annotation.componentId?.trim();
+  if (authoredComponentId && componentsById[authoredComponentId]) {
+    return authoredComponentId;
   }
   if (annotation.componentKind === 'text-input' || annotation.role === 'input') {
     return 'query.input';
   }
   if (annotation.componentKind === 'custom-module' || annotation.role === 'custom') {
+    if (authoredComponentId) return authoredComponentId;
     return `module.${slugifyRuntimeId(annotation.customModuleKind ?? annotation.semanticId, 'custom')}`;
   }
   return 'panel.frame';
