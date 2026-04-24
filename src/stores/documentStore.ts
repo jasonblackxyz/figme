@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { FigMeDocument, FigMePage, SwatchCollection } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument, FigmiiPage, SwatchCollection } from '@primitives/document-model/types.ts';
 import type {
   DesignBinding,
   DesignInteraction,
@@ -40,6 +40,7 @@ import {
   slugifyRuntimeId,
 } from '@primitives/runtime-semantics/defaults.ts';
 import { inferRuntimeSemantics as inferRuntimeSemanticsOp } from '@primitives/runtime-semantics/inference.ts';
+import { mergeImportedDocuments } from '@features/import/importMerge.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 
 interface CellCoord {
@@ -52,10 +53,10 @@ interface PaintMutationOptions {
 }
 
 interface DocumentState {
-  document: FigMeDocument;
-  undoStack: FigMeDocument[];
-  redoStack: FigMeDocument[];
-  setDocument: (doc: FigMeDocument) => void;
+  document: FigmiiDocument;
+  undoStack: FigmiiDocument[];
+  redoStack: FigmiiDocument[];
+  setDocument: (doc: FigmiiDocument) => void;
   initializeFromPersistence: (tabId: string) => Promise<void>;
   undo: () => void;
   redo: () => void;
@@ -85,6 +86,7 @@ interface DocumentState {
   renameSwatchCollection: (collectionId: string, name: string) => void;
   addColorToCollection: (collectionId: string, hex: string) => void;
   removeColorFromCollection: (collectionId: string, colorIndex: number) => void;
+  appendImportedDocuments: (docs: FigmiiDocument[]) => void;
   setPageCellOverride: (
     row: number,
     col: number,
@@ -143,7 +145,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   undoStack: [],
   redoStack: [],
 
-  setDocument: (doc: FigMeDocument) => {
+  setDocument: (doc: FigmiiDocument) => {
     set({ document: doc });
   },
 
@@ -201,9 +203,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   toggleLayerVisibility: (layerId: string) => {
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) { console.warn('FigMe store: toggleLayerVisibility skipped \u2014 no active page.'); return; }
+    if (!page) { console.warn('Figmii store: toggleLayerVisibility skipped \u2014 no active page.'); return; }
     const layer = page.layers[layerId];
-    if (!layer) { console.warn(`FigMe store: toggleLayerVisibility skipped \u2014 layer "${layerId}" not found.`); return; }
+    if (!layer) { console.warn(`Figmii store: toggleLayerVisibility skipped \u2014 layer "${layerId}" not found.`); return; }
     get().pushUndo();
     const updatedPage = updateLayer(page, layerId, { visible: !layer.visible });
     set({
@@ -217,9 +219,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   toggleLayerLock: (layerId: string) => {
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) { console.warn('FigMe store: toggleLayerLock skipped \u2014 no active page.'); return; }
+    if (!page) { console.warn('Figmii store: toggleLayerLock skipped \u2014 no active page.'); return; }
     const layer = page.layers[layerId];
-    if (!layer) { console.warn(`FigMe store: toggleLayerLock skipped \u2014 layer "${layerId}" not found.`); return; }
+    if (!layer) { console.warn(`Figmii store: toggleLayerLock skipped \u2014 layer "${layerId}" not found.`); return; }
     get().pushUndo();
     const updatedPage = updateLayer(page, layerId, { locked: !layer.locked });
     set({
@@ -233,9 +235,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   renameLayer: (layerId: string, name: string) => {
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) { console.warn('FigMe store: renameLayer skipped \u2014 no active page.'); return; }
+    if (!page) { console.warn('Figmii store: renameLayer skipped \u2014 no active page.'); return; }
     const layer = page.layers[layerId];
-    if (!layer) { console.warn(`FigMe store: renameLayer skipped \u2014 layer "${layerId}" not found.`); return; }
+    if (!layer) { console.warn(`Figmii store: renameLayer skipped \u2014 layer "${layerId}" not found.`); return; }
     get().pushUndo();
     const updatedPage = updateLayer(page, layerId, { name });
     set({
@@ -334,8 +336,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   updateLayerColors: (layerId: string, customColors: { color?: string; bg?: string } | undefined) => {
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) { console.warn('FigMe store: updateLayerColors skipped \u2014 no active page.'); return; }
-    if (!page.layers[layerId]) { console.warn(`FigMe store: updateLayerColors skipped \u2014 layer "${layerId}" not found.`); return; }
+    if (!page) { console.warn('Figmii store: updateLayerColors skipped \u2014 no active page.'); return; }
+    if (!page.layers[layerId]) { console.warn(`Figmii store: updateLayerColors skipped \u2014 layer "${layerId}" not found.`); return; }
     get().pushUndo();
     const updatedPage = updateLayer(page, layerId, { customColors });
     set({
@@ -365,9 +367,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     if (cells.length === 0) return;
     const { document: doc } = get();
     const page = doc.pages.find(p => p.id === doc.activePageId);
-    if (!page) { console.warn('FigMe store: setLayerCellOverridesBulk skipped \u2014 no active page.'); return; }
+    if (!page) { console.warn('Figmii store: setLayerCellOverridesBulk skipped \u2014 no active page.'); return; }
     const layer = page.layers[layerId];
-    if (!layer) { console.warn(`FigMe store: setLayerCellOverridesBulk skipped \u2014 layer "${layerId}" not found.`); return; }
+    if (!layer) { console.warn(`Figmii store: setLayerCellOverridesBulk skipped \u2014 layer "${layerId}" not found.`); return; }
     if (options?.pushUndo !== false) {
       get().pushUndo();
     }
@@ -451,6 +453,15 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         ),
       },
     });
+  },
+
+  appendImportedDocuments: (docs: FigmiiDocument[]) => {
+    if (docs.length === 0) return;
+    const { document: doc } = get();
+    const merged = mergeImportedDocuments(doc, docs);
+    get().pushUndo();
+    set({ document: merged });
+    useUiStore.getState().setSelectedLayers([]);
   },
 
   setPageCellOverride: (
@@ -770,7 +781,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 type StoreGet = () => DocumentState;
 type StoreSet = (partial: Partial<DocumentState>) => void;
 
-function commitPage(set: StoreSet, doc: FigMeDocument, oldPage: FigMePage, newPage: FigMePage) {
+function commitPage(set: StoreSet, doc: FigmiiDocument, oldPage: FigmiiPage, newPage: FigmiiPage) {
   set({
     document: {
       ...doc,
@@ -779,7 +790,7 @@ function commitPage(set: StoreSet, doc: FigMeDocument, oldPage: FigMePage, newPa
   });
 }
 
-function applyZOrder(getState: StoreGet, set: StoreSet, op: (page: FigMePage, layerId: string) => FigMePage) {
+function applyZOrder(getState: StoreGet, set: StoreSet, op: (page: FigmiiPage, layerId: string) => FigmiiPage) {
   const doc = getState().document;
   const page = doc.pages.find(p => p.id === doc.activePageId);
   const selected = useUiStore.getState().selectedLayerIds;
@@ -793,10 +804,10 @@ function applyZOrder(getState: StoreGet, set: StoreSet, op: (page: FigMePage, la
 }
 
 function duplicateRuntimeAnnotations(
-  doc: FigMeDocument,
+  doc: FigmiiDocument,
   pageId: string,
   layerIdMap: Map<string, string>,
-): FigMeDocument {
+): FigmiiDocument {
   if (layerIdMap.size === 0) return doc;
   const runtime = normalizeRuntimeMetadata(doc.runtime);
   const annotations = { ...runtime.annotations };

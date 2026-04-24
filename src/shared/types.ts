@@ -20,8 +20,8 @@ export type { StampBuffer } from '@primitives/stamp-system/types.ts';
 export type {
   Layer,
   LayerKind,
-  FigMePage,
-  FigMeDocument,
+  FigmiiPage,
+  FigmiiDocument,
   ComponentDef,
   ComponentInstanceProperties,
   FigMeRuntimeMetadata,

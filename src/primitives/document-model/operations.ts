@@ -1,7 +1,7 @@
 import type {
   Layer,
-  FigMePage,
-  FigMeDocument,
+  FigmiiPage,
+  FigmiiDocument,
   ComponentDef,
   LayerKind,
   LayerProperties,
@@ -22,13 +22,13 @@ function generateId(): string {
  * Add a layer to a page. Returns the updated page.
  */
 export function addLayer(
-  page: FigMePage,
+  page: FigmiiPage,
   kind: LayerKind,
   name: string,
   rect: GridRect,
   styleKey: StyleKey,
   properties: LayerProperties,
-): FigMePage {
+): FigmiiPage {
   const id = generateId();
   const layer: Layer = {
     id,
@@ -53,7 +53,7 @@ export function addLayer(
  * Remove a layer from a page by ID.
  * Refuses to remove Background layers. Handles hierarchy cleanup.
  */
-export function removeLayer(page: FigMePage, layerId: string): FigMePage {
+export function removeLayer(page: FigmiiPage, layerId: string): FigmiiPage {
   const layer = page.layers[layerId];
   if (!layer) return page;
   if (layer.isBackground) return page;
@@ -103,10 +103,10 @@ export function removeLayer(page: FigMePage, layerId: string): FigMePage {
  * Update a layer's properties. Returns the updated page.
  */
 export function updateLayer(
-  page: FigMePage,
+  page: FigmiiPage,
   layerId: string,
   updates: Partial<Layer>,
-): FigMePage {
+): FigmiiPage {
   const existing = page.layers[layerId];
   if (!existing) return page;
 
@@ -123,11 +123,11 @@ export function updateLayer(
  * Move a layer to a new grid position.
  */
 export function moveLayer(
-  page: FigMePage,
+  page: FigmiiPage,
   layerId: string,
   col: number,
   row: number,
-): FigMePage {
+): FigmiiPage {
   const existing = page.layers[layerId];
   if (!existing) return page;
 
@@ -140,9 +140,9 @@ export function moveLayer(
  * Reorder layers (change z-order).
  */
 export function reorderLayers(
-  page: FigMePage,
+  page: FigmiiPage,
   newOrder: string[],
-): FigMePage {
+): FigmiiPage {
   return { ...page, layerOrder: newOrder };
 }
 
@@ -150,9 +150,9 @@ export function reorderLayers(
  * Add a new page to the document.
  */
 export function addPage(
-  doc: FigMeDocument,
+  doc: FigmiiDocument,
   name: string,
-): FigMeDocument {
+): FigmiiDocument {
   const page = createEmptyPage(name);
   return {
     ...doc,
@@ -164,9 +164,9 @@ export function addPage(
  * Remove a page from the document by ID.
  */
 export function removePage(
-  doc: FigMeDocument,
+  doc: FigmiiDocument,
   pageId: string,
-): FigMeDocument {
+): FigmiiDocument {
   const pages = doc.pages.filter((p) => p.id !== pageId);
   const activePageId =
     doc.activePageId === pageId
@@ -180,9 +180,9 @@ export function removePage(
  * Set the active page in the document.
  */
 export function setActivePage(
-  doc: FigMeDocument,
+  doc: FigmiiDocument,
   pageId: string,
-): FigMeDocument {
+): FigmiiDocument {
   return { ...doc, activePageId: pageId };
 }
 
@@ -190,11 +190,11 @@ export function setActivePage(
  * Create a reusable component definition from layer IDs.
  */
 export function createComponent(
-  doc: FigMeDocument,
+  doc: FigmiiDocument,
   name: string,
   description: string,
   sourceLayerIds: string[],
-): FigMeDocument {
+): FigmiiDocument {
   const id = `comp_${Date.now()}_${++idCounter}`;
   const comp: ComponentDef = {
     id,
@@ -214,10 +214,10 @@ export function createComponent(
  */
 /* eslint-disable @typescript-eslint/no-unused-vars -- TODO: remove when implemented */
 export function instantiateComponent(
-  page: FigMePage,
+  page: FigmiiPage,
   _componentId: string,
   _rect: GridRect,
-): FigMePage {
+): FigmiiPage {
   return page;
 }
 
@@ -225,21 +225,21 @@ export function instantiateComponent(
  * Detach a component instance, converting it to regular layers (stub).
  */
 export function detachComponent(
-  page: FigMePage,
+  page: FigmiiPage,
   _layerId: string,
-): FigMePage {
+): FigmiiPage {
   return page;
 }
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 /**
- * Create an empty FigMe document with default configuration.
+ * Create an empty Figmii document with default configuration.
  */
 export function createEmptyDocument(
   name?: string,
   gridConfig?: GridConfig,
   palette?: Palette,
-): FigMeDocument {
+): FigmiiDocument {
   const defaultGridConfig: GridConfig = gridConfig ?? createDefaultGridConfig();
 
   const defaultPalette: Palette = palette ?? createMinimalPalette();
@@ -266,9 +266,9 @@ export function createEmptyDocument(
 }
 
 /**
- * Create an empty FigMe page with a default Background layer.
+ * Create an empty Figmii page with a default Background layer.
  */
-export function createEmptyPage(name?: string): FigMePage {
+export function createEmptyPage(name?: string): FigmiiPage {
   const bgId = generateId();
   const bgLayer: Layer = {
     id: bgId,
@@ -307,10 +307,10 @@ export function createEmptyPage(name?: string): FigMePage {
  * position of the frontmost selected element.
  */
 export function groupLayers(
-  page: FigMePage,
+  page: FigmiiPage,
   layerIds: string[],
   groupName?: string,
-): FigMePage {
+): FigmiiPage {
   if (layerIds.length === 0) return page;
 
   const layers = { ...page.layers };
@@ -388,7 +388,7 @@ export function groupLayers(
  * Dissolve a group — its children are spliced into the parent's order
  * at the group's position.
  */
-export function ungroupLayers(page: FigMePage, groupId: string): FigMePage {
+export function ungroupLayers(page: FigmiiPage, groupId: string): FigmiiPage {
   const group = page.layers[groupId];
   if (!group || group.kind !== 'group' || group.isBackground) return page;
 
@@ -431,7 +431,7 @@ export function ungroupLayers(page: FigMePage, groupId: string): FigMePage {
 // Z-order operations — work within sibling list
 // ---------------------------------------------------------------------------
 
-function getSiblingList(page: FigMePage, layerId: string): { list: string[]; key: 'layerOrder' | 'children'; parentId?: string } {
+function getSiblingList(page: FigmiiPage, layerId: string): { list: string[]; key: 'layerOrder' | 'children'; parentId?: string } {
   const layer = page.layers[layerId];
   if (!layer) return { list: [], key: 'layerOrder' };
   if (layer.parentId) {
@@ -441,7 +441,7 @@ function getSiblingList(page: FigMePage, layerId: string): { list: string[]; key
   return { list: page.layerOrder, key: 'layerOrder' };
 }
 
-function applySiblingOrder(page: FigMePage, newList: string[], parentId?: string): FigMePage {
+function applySiblingOrder(page: FigmiiPage, newList: string[], parentId?: string): FigmiiPage {
   if (parentId) {
     const parent = page.layers[parentId];
     if (!parent) return page;
@@ -454,13 +454,13 @@ function applySiblingOrder(page: FigMePage, newList: string[], parentId?: string
 }
 
 /** Smallest index that a non-background layer can occupy at root level. */
-function bgGuardIndex(page: FigMePage, siblings: string[]): number {
+function bgGuardIndex(page: FigmiiPage, siblings: string[]): number {
   const first = siblings[0];
   if (first && page.layers[first]?.isBackground) return 1;
   return 0;
 }
 
-export function bringForward(page: FigMePage, layerId: string): FigMePage {
+export function bringForward(page: FigmiiPage, layerId: string): FigmiiPage {
   if (page.layers[layerId]?.isBackground) return page;
   const { list, parentId } = getSiblingList(page, layerId);
   const idx = list.indexOf(layerId);
@@ -470,7 +470,7 @@ export function bringForward(page: FigMePage, layerId: string): FigMePage {
   return applySiblingOrder(page, next, parentId);
 }
 
-export function sendBackward(page: FigMePage, layerId: string): FigMePage {
+export function sendBackward(page: FigmiiPage, layerId: string): FigmiiPage {
   if (page.layers[layerId]?.isBackground) return page;
   const { list, parentId } = getSiblingList(page, layerId);
   const idx = list.indexOf(layerId);
@@ -481,7 +481,7 @@ export function sendBackward(page: FigMePage, layerId: string): FigMePage {
   return applySiblingOrder(page, next, parentId);
 }
 
-export function bringToFront(page: FigMePage, layerId: string): FigMePage {
+export function bringToFront(page: FigmiiPage, layerId: string): FigmiiPage {
   if (page.layers[layerId]?.isBackground) return page;
   const { list, parentId } = getSiblingList(page, layerId);
   const idx = list.indexOf(layerId);
@@ -491,7 +491,7 @@ export function bringToFront(page: FigMePage, layerId: string): FigMePage {
   return applySiblingOrder(page, next, parentId);
 }
 
-export function sendToBack(page: FigMePage, layerId: string): FigMePage {
+export function sendToBack(page: FigmiiPage, layerId: string): FigmiiPage {
   if (page.layers[layerId]?.isBackground) return page;
   const { list, parentId } = getSiblingList(page, layerId);
   const idx = list.indexOf(layerId);
@@ -511,11 +511,11 @@ export function sendToBack(page: FigMePage, layerId: string): FigMePage {
  * Validates against circular references.
  */
 export function moveLayerToGroup(
-  page: FigMePage,
+  page: FigmiiPage,
   layerId: string,
   targetGroupId: string | null,
   insertIndex?: number,
-): FigMePage {
+): FigmiiPage {
   const layer = page.layers[layerId];
   if (!layer || layer.isBackground) return page;
 

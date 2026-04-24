@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { addPage, removePage, setActivePage } from '@primitives/document-model/operations.ts';
-import type { FigMePage } from '@primitives/document-model/types.ts';
+import type { FigmiiPage } from '@primitives/document-model/types.ts';
 import styles from './ArtboardTabs.module.css';
 
 interface ContextMenuState {
@@ -74,7 +74,7 @@ export function ArtboardTabs() {
   );
 
   const handleDoubleClick = useCallback(
-    (page: FigMePage) => {
+    (page: FigmiiPage) => {
       setEditingPageId(page.id);
       setEditingName(page.name);
     },

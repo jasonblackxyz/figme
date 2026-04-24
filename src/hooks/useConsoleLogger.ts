@@ -9,7 +9,7 @@ import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
  * Hook that logs state changes to the console for agent consumption.
  *
  * Subscribes to document, tool, and UI store changes and logs structured
- * FIGME_* events that the AI coding agent can read via the browser console.
+ * FIGMII_* events that the AI coding agent can read via the browser console.
  */
 export function useConsoleLogger(): void {
   const prevDocRef = useRef(useDocumentStore.getState().document);
@@ -20,7 +20,7 @@ export function useConsoleLogger(): void {
   useEffect(() => {
     // Log initial state (summary only — avoid serialising the full document)
     const initDoc = useDocumentStore.getState().document;
-    console.log('FIGME_STATE', {
+    console.log('FIGMII_STATE', {
       action: 'init',
       timestamp: Date.now(),
       document: {
@@ -58,7 +58,7 @@ export function useConsoleLogger(): void {
               }
             }
             if (Object.keys(changes).length > 0) {
-              console.log('FIGME_PROPERTY_CHANGE', {
+              console.log('FIGMII_PROPERTY_CHANGE', {
                 timestamp: Date.now(),
                 layerId,
                 layerName: nextLayer.name,
@@ -70,10 +70,10 @@ export function useConsoleLogger(): void {
       }
 
       // Log a summary only — avoid serialising the full document on every change.
-      // Agents that need full document state should read window.FigMe.getDocument()
+      // Agents that need full document state should read window.Figmii.getDocument()
       // or the live [data-spec="full-document"] DOM element instead.
       const activePage = nextDoc.pages.find(p => p.id === nextDoc.activePageId);
-      console.log('FIGME_STATE', {
+      console.log('FIGMII_STATE', {
         action: 'document_change',
         timestamp: Date.now(),
         document: {
@@ -95,7 +95,7 @@ export function useConsoleLogger(): void {
 
       if (prevTool === nextTool) return;
 
-      console.log('FIGME_STATE', {
+      console.log('FIGMII_STATE', {
         action: 'tool_change',
         timestamp: Date.now(),
         previousTool: prevTool,
@@ -112,7 +112,7 @@ export function useConsoleLogger(): void {
 
       if (prevSelection === nextSelection) return;
 
-      console.log('FIGME_STATE', {
+      console.log('FIGMII_STATE', {
         action: 'selection_change',
         timestamp: Date.now(),
         previousSelection: prevSelection,
@@ -130,13 +130,13 @@ export function useConsoleLogger(): void {
       if (prevEditing === nextEditing) return;
 
       if (nextEditing) {
-        console.log('FIGME_STATE', {
+        console.log('FIGMII_STATE', {
           action: 'text_edit_start',
           timestamp: Date.now(),
           layerId: nextEditing,
         });
       } else if (prevEditing) {
-        console.log('FIGME_STATE', {
+        console.log('FIGMII_STATE', {
           action: 'text_edit_end',
           timestamp: Date.now(),
           layerId: prevEditing,

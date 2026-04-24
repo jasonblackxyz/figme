@@ -59,7 +59,7 @@ describe('IndexedDB persistence', () => {
 
     // Verify total count for tab-A is capped at 5
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open('figme-persistence', 2);
+      const req = indexedDB.open('figmii-persistence', 2);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
@@ -113,7 +113,7 @@ describe('Tab isolation', () => {
     }
 
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open('figme-persistence', 2);
+      const req = indexedDB.open('figmii-persistence', 2);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
@@ -195,7 +195,7 @@ describe('loadPersistedDocument', () => {
 describe('Legacy migration', () => {
   it('loadLegacyDocument reads from legacy localStorage key', async () => {
     const doc = createEmptyDocument('Legacy');
-    store['figme_autosave'] = JSON.stringify(doc);
+    store['figmii_autosave'] = JSON.stringify(doc);
     const loaded = await loadLegacyDocument();
     expect(loaded).not.toBeNull();
     expect(loaded!.name).toBe('Legacy');
@@ -211,7 +211,7 @@ describe('Legacy migration', () => {
   it('cleanupLegacyDB removes records with no tabId', async () => {
     // Manually insert a v1-style record (no tabId)
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open('figme-persistence', 2);
+      const req = indexedDB.open('figmii-persistence', 2);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
@@ -230,7 +230,7 @@ describe('Legacy migration', () => {
 
     // All records with missing tabId should be gone
     const db2 = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open('figme-persistence', 2);
+      const req = indexedDB.open('figmii-persistence', 2);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
@@ -253,7 +253,7 @@ describe('enforceGlobalCap', () => {
     await enforceGlobalCap(5);
 
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open('figme-persistence', 2);
+      const req = indexedDB.open('figmii-persistence', 2);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });

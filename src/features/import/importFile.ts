@@ -1,20 +1,28 @@
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument } from '@primitives/document-model/types.ts';
 import { deserializeDocument } from '@primitives/document-model/serialization.ts';
 import { importGridSpec } from './importGridSpec.ts';
 import { importHtml } from './importHtml.ts';
 import { importMarkdown } from './importMarkdown.ts';
 
 /**
- * Open a file picker and import the selected file into a FigMeDocument.
+ * Open a file picker and import the selected file into a FigmiiDocument.
  *
- * Supports: .figme, .json, .gridspec.json, .html, .md
+ * Supports: .figmii, .figme (legacy), .json, .gridspec.json, .html, .md
  * Detects format by file extension and routes to the appropriate parser.
  */
-export async function importFile(): Promise<FigMeDocument | null> {
-  const file = await pickFile();
+export async function importFile(): Promise<FigmiiDocument | null> {
+  const file = await pickImportFile();
   if (!file) return null;
 
-  const text = await file.text();
+  try {
+    return await parseImportFile(file);
+  } catch {
+    return null;
+  }
+}
+
+export async function parseImportFile(file: File): Promise<FigmiiDocument> {
+  const text = await readBlobText(file);
   const name = file.name.toLowerCase();
 
   try {
@@ -27,22 +35,21 @@ export async function importFile(): Promise<FigMeDocument | null> {
     if (name.endsWith('.md')) {
       return importMarkdown(text);
     }
-    // .figme or .json — raw FigMeDocument JSON (with migration)
     return deserializeDocument(text);
   } catch {
-    return null;
+    throw new Error(`Unable to import "${file.name}".`);
   }
 }
 
-async function pickFile(): Promise<File | null> {
+export async function pickImportFile(): Promise<File | null> {
   if ('showOpenFilePicker' in window) {
     try {
       const [handle] = await (window as unknown as FileSystemAccessWindow).showOpenFilePicker({
         types: [
           {
-            description: 'FigMe Files',
+            description: 'Figmii Files',
             accept: {
-              'application/json': ['.figme', '.json', '.gridspec.json'],
+              'application/json': ['.figmii', '.figme', '.json', '.gridspec.json'],
               'text/html': ['.html', '.htm'],
               'text/markdown': ['.md'],
             },
@@ -56,11 +63,10 @@ async function pickFile(): Promise<File | null> {
     }
   }
 
-  // Fallback: hidden file input
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.figme,.json,.gridspec.json,.html,.htm,.md';
+    input.accept = '.figmii,.figme,.json,.gridspec.json,.html,.htm,.md';
     input.onchange = () => {
       resolve(input.files?.[0] ?? null);
     };
@@ -76,4 +82,17 @@ interface FileSystemAccessWindow {
 
 interface FileSystemFileHandle {
   getFile(): Promise<File>;
+}
+
+async function readBlobText(blob: Blob): Promise<string> {
+  if (typeof blob.text === 'function') {
+    return blob.text();
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read import file.'));
+    reader.readAsText(blob);
+  });
 }

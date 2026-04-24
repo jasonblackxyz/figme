@@ -27,11 +27,11 @@ describe('getTabId', () => {
 
   it('stores the ID in sessionStorage', () => {
     const id = getTabId();
-    expect(store['figme_tab_id']).toBe(id);
+    expect(store['figmii_tab_id']).toBe(id);
   });
 
   it('uses an existing ID from sessionStorage', () => {
-    store['figme_tab_id'] = 'existing-tab-id';
+    store['figmii_tab_id'] = 'existing-tab-id';
     expect(getTabId()).toBe('existing-tab-id');
   });
 });

@@ -1,8 +1,8 @@
 import { useDocumentStore } from '@stores/documentStore.ts';
-import type { FigMeDocument } from '@primitives/document-model/types.ts';
+import type { FigmiiDocument } from '@primitives/document-model/types.ts';
 
 let depth = 0;
-let pendingDoc: FigMeDocument | null = null;
+let pendingDoc: FigmiiDocument | null = null;
 
 /**
  * Returns true if currently inside a batch() call.
@@ -18,7 +18,7 @@ export function isBatching(): boolean {
  * Read helpers in agentApi should prefer this over store.getState() so that
  * mutations within a batch are visible to subsequent reads.
  */
-export function getPendingDocument(): FigMeDocument | null {
+export function getPendingDocument(): FigmiiDocument | null {
   return pendingDoc;
 }
 
@@ -26,7 +26,7 @@ export function getPendingDocument(): FigMeDocument | null {
  * Update the pending document state during a batch.
  * Throws if called outside a batch — callers should use store.setDocument() instead.
  */
-export function setPendingDocument(doc: FigMeDocument): void {
+export function setPendingDocument(doc: FigmiiDocument): void {
   if (depth === 0) {
     throw new Error('setPendingDocument called outside batch — use store.setDocument() instead');
   }
@@ -45,7 +45,7 @@ export function setPendingDocument(doc: FigMeDocument): void {
  * On error, pending changes are discarded (transactional rollback) and the error
  * is re-thrown. The document remains unchanged.
  *
- * Usage from console: FigMe.batch(() => { FigMe.addLayer(...); FigMe.addLayer(...); })
+ * Usage from console: Figmii.batch(() => { Figmii.addLayer(...); Figmii.addLayer(...); })
  */
 export function batch(fn: () => void): void {
   if (depth === 0) {

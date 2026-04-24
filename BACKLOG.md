@@ -1,6 +1,6 @@
 # Backlog
 
-Ideas and deferred work items for FigMe.
+Ideas and deferred work items for Figmii.
 
 ## Auto-save / State Persistence
 

@@ -7,7 +7,7 @@ import type {
 
 /** Top-level GridSpec document — the structured export format. */
 export interface GridSpec {
-  $schema: 'figme-gridspec-v1';
+  $schema: 'figmii-gridspec-v1';
   document: {
     id: string;
     name: string;

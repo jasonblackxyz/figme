@@ -1,7 +1,10 @@
 export { ExportDialog } from './ExportDialog.tsx';
+export { createExportBundle, createPageExportContext, createSinglePageDocument } from './exportBundle.ts';
+export { buildPageExportBaseName, buildZipExportName, formatExportDate, sanitizeFilenameSegment } from './exportNaming.ts';
 export { exportAsJson, exportAsHtml, exportAsMarkdown } from './exporters.ts';
 export { downloadFile } from './downloadFile.ts';
 export { downloadBlob } from './downloadBlob.ts';
 export { renderBufferToCanvas } from './renderToCanvas.ts';
 export { exportAsGridSpec, exportGridSpecAsJson } from './gridspec/index.ts';
+export type { ExportFormat, ExportBundleOptions } from './types.ts';
 export type { GridSpec, GridSpecPage, GridSpecLayer, GridSpecResolved, GridSpecComponent, GridSpecExportOptions } from './gridspec/index.ts';

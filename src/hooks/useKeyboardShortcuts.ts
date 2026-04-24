@@ -5,7 +5,6 @@ import { useViewportStore } from '@stores/viewportStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { removeLayer } from '@primitives/document-model/operations.ts';
 import { saveDocument } from '@features/file-io/fileSaveLoad.ts';
-import { importFile } from '@features/import/importFile.ts';
 
 /**
  * Hook that registers global keyboard shortcuts for the design tool.
@@ -16,10 +15,18 @@ export function useKeyboardShortcuts(): void {
       const ctrl = e.ctrlKey || e.metaKey;
       const uiState = useUiStore.getState();
 
+      if (uiState.importDialogOpen) {
+        if (e.key === 'Escape' || (ctrl && !e.shiftKey && (e.key === 'O' || e.key === 'o'))) {
+          e.preventDefault();
+          uiState.setImportDialogOpen(false);
+        }
+        return;
+      }
+
       if (uiState.exportDialogOpen) {
         if (e.key === 'Escape' || (ctrl && e.shiftKey && (e.key === 'E' || e.key === 'e'))) {
           e.preventDefault();
-          uiState.toggleExportDialog();
+          uiState.setExportDialogOpen(false);
         }
         return;
       }
@@ -50,7 +57,7 @@ export function useKeyboardShortcuts(): void {
       // Ctrl+Shift+E: toggle export dialog
       if (ctrl && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
         e.preventDefault();
-        useUiStore.getState().toggleExportDialog();
+        useUiStore.getState().setExportDialogOpen(true);
         return;
       }
 
@@ -71,9 +78,7 @@ export function useKeyboardShortcuts(): void {
       // Ctrl+O: import file
       if (ctrl && !e.shiftKey && e.key === 'o') {
         e.preventDefault();
-        void importFile().then((doc) => {
-          if (doc) useDocumentStore.getState().setDocument(doc);
-        });
+        useUiStore.getState().setImportDialogOpen(true);
         return;
       }
 

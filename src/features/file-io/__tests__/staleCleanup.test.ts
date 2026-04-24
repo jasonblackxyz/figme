@@ -28,7 +28,7 @@ beforeEach(async () => {
 describe('writeHeartbeat', () => {
   it('writes a timestamp to localStorage', () => {
     writeHeartbeat('tab-1');
-    const ts = Number(store['figme_heartbeat_tab-1']);
+    const ts = Number(store['figmii_heartbeat_tab-1']);
     expect(ts).toBeGreaterThan(0);
     expect(Date.now() - ts).toBeLessThan(1000);
   });
@@ -38,27 +38,27 @@ describe('cleanupStaleTabs', () => {
   it('removes stale tab saves from localStorage and IndexedDB', async () => {
     const tabId = 'stale-tab';
     // Create a stale heartbeat (2 minutes ago)
-    store[`figme_heartbeat_${tabId}`] = String(Date.now() - 120_000);
-    store[`figme_autosave_${tabId}`] = JSON.stringify(createEmptyDocument('Stale'));
+    store[`figmii_heartbeat_${tabId}`] = String(Date.now() - 120_000);
+    store[`figmii_autosave_${tabId}`] = JSON.stringify(createEmptyDocument('Stale'));
     await saveToDB(createEmptyDocument('Stale DB'), tabId);
 
     await cleanupStaleTabs();
 
-    expect(store[`figme_heartbeat_${tabId}`]).toBeUndefined();
-    expect(store[`figme_autosave_${tabId}`]).toBeUndefined();
+    expect(store[`figmii_heartbeat_${tabId}`]).toBeUndefined();
+    expect(store[`figmii_autosave_${tabId}`]).toBeUndefined();
     expect(await loadLatestFromDB(tabId)).toBeNull();
   });
 
   it('preserves fresh tab saves', async () => {
     const tabId = 'fresh-tab';
     writeHeartbeat(tabId);
-    store[`figme_autosave_${tabId}`] = JSON.stringify(createEmptyDocument('Fresh'));
+    store[`figmii_autosave_${tabId}`] = JSON.stringify(createEmptyDocument('Fresh'));
     await saveToDB(createEmptyDocument('Fresh DB'), tabId);
 
     await cleanupStaleTabs();
 
-    expect(store[`figme_heartbeat_${tabId}`]).toBeDefined();
-    expect(store[`figme_autosave_${tabId}`]).toBeDefined();
+    expect(store[`figmii_heartbeat_${tabId}`]).toBeDefined();
+    expect(store[`figmii_autosave_${tabId}`]).toBeDefined();
     expect(await loadLatestFromDB(tabId)).not.toBeNull();
   });
 
@@ -66,8 +66,8 @@ describe('cleanupStaleTabs', () => {
     const staleId = 'stale';
     const freshId = 'fresh';
 
-    store[`figme_heartbeat_${staleId}`] = String(Date.now() - 120_000);
-    store[`figme_autosave_${staleId}`] = 'x';
+    store[`figmii_heartbeat_${staleId}`] = String(Date.now() - 120_000);
+    store[`figmii_autosave_${staleId}`] = 'x';
     await saveToDB(createEmptyDocument('Stale'), staleId);
 
     writeHeartbeat(freshId);
@@ -86,11 +86,11 @@ describe('Legacy migration helpers', () => {
   });
 
   it('cleanupLegacySaves removes legacy key and sets migrated flag', async () => {
-    store['figme_autosave'] = JSON.stringify(createEmptyDocument('Legacy'));
+    store['figmii_autosave'] = JSON.stringify(createEmptyDocument('Legacy'));
 
     await cleanupLegacySaves();
 
-    expect(store['figme_autosave']).toBeUndefined();
+    expect(store['figmii_autosave']).toBeUndefined();
     expect(isLegacyMigrated()).toBe(true);
   });
 });

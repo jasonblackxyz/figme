@@ -1,10 +1,10 @@
-import type { FigMePage, Layer } from './types.ts';
+import type { FigmiiPage, Layer } from './types.ts';
 
 /**
  * Recursively expand layerOrder (and group children) into a flat
  * rendering-order array.  First element = back, last = front.
  */
-export function flattenLayerOrder(page: FigMePage): string[] {
+export function flattenLayerOrder(page: FigmiiPage): string[] {
   const result: string[] = [];
 
   function walk(ids: string[]) {
@@ -25,7 +25,7 @@ export function flattenLayerOrder(page: FigMePage): string[] {
 /**
  * True if the layer itself or any ancestor is locked.
  */
-export function isEffectivelyLocked(page: FigMePage, layerId: string): boolean {
+export function isEffectivelyLocked(page: FigmiiPage, layerId: string): boolean {
   let id: string | undefined = layerId;
   while (id) {
     const layer: Layer | undefined = page.layers[id];
@@ -39,7 +39,7 @@ export function isEffectivelyLocked(page: FigMePage, layerId: string): boolean {
 /**
  * True if the layer itself or any ancestor is hidden.
  */
-export function isEffectivelyHidden(page: FigMePage, layerId: string): boolean {
+export function isEffectivelyHidden(page: FigmiiPage, layerId: string): boolean {
   let id: string | undefined = layerId;
   while (id) {
     const layer: Layer | undefined = page.layers[id];
@@ -53,7 +53,7 @@ export function isEffectivelyHidden(page: FigMePage, layerId: string): boolean {
 /**
  * Nesting depth (0 = root level).
  */
-export function getDepth(page: FigMePage, layerId: string): number {
+export function getDepth(page: FigmiiPage, layerId: string): number {
   let depth = 0;
   let current: Layer | undefined = page.layers[layerId];
   while (current?.parentId) {
