@@ -10,7 +10,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(680px, calc(100vw - 32px));
+  width: min(560px, calc(100vw - 32px));
   max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
@@ -64,125 +64,38 @@
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
   overflow-y: auto;
 }
 
-.fieldGroup {
+.importButton {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.fieldLabel {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--color-text, #1a1a2e);
-}
-
-.textInput {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border, #c0c0cc);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--color-text, #1a1a2e);
-  font: inherit;
-}
-
-.helpText {
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--color-text-dim, #6b6b80);
-}
-
-.section {
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px 16px;
   border: 1px solid var(--color-border, #c0c0cc);
   border-radius: 8px;
   background: var(--color-bg, #f4f4f8);
-}
-
-.sectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--color-border, #d1d1db);
-}
-
-.sectionTitle {
-  font-size: 12px;
-  font-weight: 700;
   color: var(--color-text, #1a1a2e);
+  text-align: left;
+  cursor: pointer;
 }
 
-.sectionMeta {
-  margin-top: 2px;
-  font-size: 11px;
-  color: var(--color-text-dim, #6b6b80);
+.importButton:hover:not(:disabled) {
+  border-color: var(--color-accent, #2563eb);
+  background: var(--color-hover, rgba(37, 99, 235, 0.08));
 }
 
-.inlineActions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.checkList {
-  display: flex;
-  flex-direction: column;
-}
-
-.checkRow,
-.toggleRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
-}
-
-.checkRow + .checkRow,
-.toggleRow {
-  border-top: 1px solid var(--color-border, #d9d9e2);
-}
-
-.checkRow input,
-.toggleRow input {
-  margin-top: 2px;
-  accent-color: var(--color-accent, #2563eb);
-}
-
-.checkContent {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.checkLabel {
+.importLabel {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text, #1a1a2e);
+  font-weight: 700;
 }
 
-.checkDescription {
+.importDescription {
   font-size: 11px;
   line-height: 1.5;
   color: var(--color-text-dim, #6b6b80);
-}
-
-.note {
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--color-text-dim, #5b6074);
-  background: rgba(37, 99, 235, 0.08);
-  border: 1px solid rgba(37, 99, 235, 0.18);
-  border-radius: 8px;
-  padding: 10px 12px;
-}
-
-.note code {
-  font-family: 'IBM Plex Mono', 'Courier New', monospace;
 }
 
 .errorMessage {
@@ -197,43 +110,35 @@
 
 .footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 14px 20px 18px;
   border-top: 1px solid var(--color-border, #c0c0cc);
 }
 
-.secondaryButton,
-.primaryButton {
+.secondaryButton {
   padding: 9px 14px;
   border-radius: 8px;
   font: inherit;
   cursor: pointer;
-}
-
-.secondaryButton {
   background: #fff;
   border: 1px solid var(--color-border, #c0c0cc);
   color: var(--color-text, #1a1a2e);
-}
-
-.primaryButton {
-  background: var(--color-accent, #2563eb);
-  border: 1px solid var(--color-accent, #2563eb);
-  color: #fff;
-  font-weight: 600;
 }
 
 .secondaryButton:hover:not(:disabled) {
   background: var(--color-hover, rgba(0, 0, 0, 0.04));
 }
 
-.primaryButton:hover:not(:disabled) {
-  filter: brightness(0.96);
+.statusText {
+  min-height: 18px;
+  font-size: 11px;
+  color: var(--color-text-dim, #6b6b80);
 }
 
 .secondaryButton:disabled,
-.primaryButton:disabled,
+.importButton:disabled,
 .closeButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;

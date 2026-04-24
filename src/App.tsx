@@ -7,11 +7,11 @@ import { Toolbar } from '@features/toolbar/Toolbar.tsx';
 import { StatusBar } from '@features/status-bar/StatusBar.tsx';
 import { SpecView } from '@features/spec-view/SpecView.tsx';
 import { ExportDialog } from '@features/export/ExportDialog.tsx';
+import { ImportDialog } from '@features/import/ImportDialog.tsx';
 import { ClearCanvasDialog } from '@features/clear-canvas/ClearCanvasDialog.tsx';
 import { useAutoSave } from '@features/file-io/autoSave.ts';
 import { getTabId } from '@features/file-io/tabSession.ts';
 import { cleanupStaleTabs } from '@features/file-io/staleCleanup.ts';
-import { importFile } from '@features/import/importFile.ts';
 import { useClipboard } from '@features/clipboard/useClipboard.ts';
 import { useKeyboardShortcuts } from '@hooks/useKeyboardShortcuts.ts';
 import { useConsoleLogger } from '@hooks/useConsoleLogger.ts';
@@ -44,7 +44,9 @@ export function App() {
   const specViewOpen = useUiStore((s) => s.specViewOpen);
   const toggleSpecView = useUiStore((s) => s.toggleSpecView);
   const exportDialogOpen = useUiStore((s) => s.exportDialogOpen);
-  const toggleExportDialog = useUiStore((s) => s.toggleExportDialog);
+  const setExportDialogOpen = useUiStore((s) => s.setExportDialogOpen);
+  const importDialogOpen = useUiStore((s) => s.importDialogOpen);
+  const setImportDialogOpen = useUiStore((s) => s.setImportDialogOpen);
   const clearCanvasDialogOpen = useUiStore((s) => s.clearCanvasDialogOpen);
   const toggleClearCanvasDialog = useUiStore((s) => s.toggleClearCanvasDialog);
   const interfaceMode = useUiStore((s) => s.interfaceMode);
@@ -85,11 +87,6 @@ export function App() {
     : undefined;
   const shellClassName = `${styles.shell} ${interfaceMode === 'ai' ? styles.shellAi : styles.shellHuman}`;
 
-  async function handleImport() {
-    const doc = await importFile();
-    if (doc) useDocumentStore.getState().setDocument(doc);
-  }
-
   return (
     <AppErrorBoundary>
     <div
@@ -114,7 +111,7 @@ export function App() {
         <div className={styles.topBarActions}>
           <button
             className={styles.actionButton}
-            onClick={handleImport}
+            onClick={() => setImportDialogOpen(true)}
             title="Import (Ctrl+O)"
             data-action="import"
           >
@@ -122,7 +119,7 @@ export function App() {
           </button>
           <button
             className={styles.actionButton}
-            onClick={toggleExportDialog}
+            onClick={() => setExportDialogOpen(true)}
             title="Export (Ctrl+Shift+E)"
             data-action="export"
           >
@@ -206,7 +203,8 @@ export function App() {
       ) : null}
       {interfaceMode === 'human' ? <StatusBar /> : null}
       <SpecView visible={specViewOpen} onClose={toggleSpecView} />
-      <ExportDialog visible={exportDialogOpen} onClose={toggleExportDialog} />
+      <ImportDialog visible={importDialogOpen} onClose={() => setImportDialogOpen(false)} />
+      <ExportDialog visible={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
       <ClearCanvasDialog visible={clearCanvasDialogOpen} onClose={toggleClearCanvasDialog} />
     </div>
     </AppErrorBoundary>

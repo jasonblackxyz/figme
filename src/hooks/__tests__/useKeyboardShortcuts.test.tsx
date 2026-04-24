@@ -46,6 +46,7 @@ describe('useKeyboardShortcuts', () => {
     useUiStore.setState({
       interfaceMode: 'ai',
       selectedLayerIds: ['layer1'],
+      importDialogOpen: false,
       exportDialogOpen: false,
       specViewOpen: false,
       editingLayerId: null,
@@ -96,5 +97,15 @@ describe('useKeyboardShortcuts', () => {
     fireEvent.keyDown(window, { key: 'E', ctrlKey: true, shiftKey: true });
 
     expect(useUiStore.getState().exportDialogOpen).toBe(false);
+  });
+
+  it('toggles the import dialog with Ctrl+O and lets Ctrl+O close it again', () => {
+    render(<KeyboardShortcutsHarness />);
+
+    fireEvent.keyDown(window, { key: 'o', ctrlKey: true });
+    expect(useUiStore.getState().importDialogOpen).toBe(true);
+
+    fireEvent.keyDown(window, { key: 'o', ctrlKey: true });
+    expect(useUiStore.getState().importDialogOpen).toBe(false);
   });
 });
