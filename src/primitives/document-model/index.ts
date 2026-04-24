@@ -13,6 +13,9 @@ export type {
   FigMePage,
   FigMeDocument,
   ComponentDef,
+  PageRuntimeMetadata,
+  LayerRuntimeMetadata,
+  FigMeRuntimeMetadata,
 } from './types.ts'
 export {
   addLayer,

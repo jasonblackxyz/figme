@@ -10,6 +10,7 @@ import type { GridRect } from '@primitives/grid-engine/types.ts';
 import type { StyleKey, Palette } from '@primitives/style-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import { createDefaultGridConfig } from '@primitives/grid-engine/measurement.ts';
+import { createEmptyRuntimeMetadata } from '@primitives/runtime-semantics/defaults.ts';
 
 let idCounter = 0;
 function generateId(): string {
@@ -255,6 +256,7 @@ export function createEmptyDocument(
     pages: [page],
     activePageId: page.id,
     components: {},
+    runtime: createEmptyRuntimeMetadata(),
     metadata: {
       createdAt: now,
       updatedAt: now,
@@ -289,6 +291,10 @@ export function createEmptyPage(name?: string): FigMePage {
     layerOrder: [bgId],
     canvasX: 0,
     canvasY: 0,
+    runtime: {
+      exportAsScreen: false,
+      desktopBehavior: 'centered-mobile-canvas',
+    },
   };
 }
 

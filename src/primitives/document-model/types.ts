@@ -1,6 +1,17 @@
 import type { StyleKey } from '@primitives/style-system/types.ts';
 import type { GridConfig, GridPosition, GridRect } from '@primitives/grid-engine/types.ts';
 import type { Palette } from '@primitives/style-system/types.ts';
+import type {
+  FigMeRuntimeMetadata,
+  LayerRuntimeMetadata,
+  PageRuntimeMetadata,
+} from '@primitives/runtime-semantics/types.ts';
+
+export type {
+  FigMeRuntimeMetadata,
+  LayerRuntimeMetadata,
+  PageRuntimeMetadata,
+} from '@primitives/runtime-semantics/types.ts';
 
 export type LayerKind =
   | 'border-box'
@@ -116,6 +127,7 @@ export interface Layer {
   autoLayout?: AutoLayoutConfig;
   customColors?: { color?: string; bg?: string };
   cellColorOverrides?: Record<string, string>;
+  runtime?: LayerRuntimeMetadata;
 }
 
 export interface FigMePage {
@@ -130,6 +142,7 @@ export interface FigMePage {
   canvasY: number;
   cellColorOverrides?: Record<string, string>;
   backgroundColor?: string;
+  runtime?: PageRuntimeMetadata;
 }
 
 export interface SwatchCollection {
@@ -147,6 +160,7 @@ export interface FigMeDocument {
   activePageId: string;
   components: Record<string, ComponentDef>;
   swatchCollections?: SwatchCollection[];
+  runtime?: FigMeRuntimeMetadata;
   metadata: {
     createdAt: string;
     updatedAt: string;

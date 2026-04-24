@@ -23,6 +23,10 @@ export function exportAsHtml(
   colorOverrides?: ColorOverrideMap,
 ): string {
   const palette = doc.palette;
+  const activePage = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
+  const runtimeAnnotations = activePage
+    ? Object.values(doc.runtime?.annotations ?? {}).filter((annotation) => annotation.pageId === activePage.id && annotation.export !== false)
+    : [];
 
   let bodyRows = '';
   for (let r = 0; r < buffer.height; r++) {
@@ -59,6 +63,30 @@ export function exportAsHtml(
     bodyRows += `<div class="row">${spans}</div>\n`;
   }
 
+  const semanticOverlays = runtimeAnnotations.map((annotation) => {
+    const attrs = [
+      `data-annotation-id="${escapeAttr(annotation.id)}"`,
+      `data-semantic-id="${escapeAttr(annotation.semanticId)}"`,
+      annotation.role ? `data-role="${escapeAttr(annotation.role)}"` : '',
+      annotation.componentId ? `data-component-id="${escapeAttr(annotation.componentId)}"` : '',
+      annotation.componentKind ? `data-component-kind="${escapeAttr(annotation.componentKind)}"` : '',
+      annotation.sourceLayerIds?.length ? `data-source-layer-ids="${escapeAttr(annotation.sourceLayerIds.join(','))}"` : '',
+    ].filter(Boolean).join(' ');
+    const style = [
+      `left:${annotation.rect.col * gridConfig.cellWidth}px`,
+      `top:${annotation.rect.row * gridConfig.cellHeight}px`,
+      `width:${annotation.rect.width * gridConfig.cellWidth}px`,
+      `height:${annotation.rect.height * gridConfig.cellHeight}px`,
+    ].join(';');
+    return `<div class="semantic-region" ${attrs} style="${style}"></div>`;
+  }).join('\n');
+
+  const runtimeJson = JSON.stringify({
+    pageId: activePage?.id,
+    annotations: runtimeAnnotations,
+    runtime: doc.runtime,
+  });
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -73,13 +101,23 @@ body {
   font-size: ${gridConfig.fontSize}px;
   line-height: ${gridConfig.lineHeight};
 }
-.grid { white-space: pre; }
+.grid { white-space: pre; position: relative; width: ${gridConfig.canvasCols * gridConfig.cellWidth}px; }
 .row { height: ${gridConfig.cellHeight}px; }
+.semantic-layer { position: absolute; inset: 0; pointer-events: none; }
+.semantic-region {
+  position: absolute;
+  border: 1px dashed rgba(255,255,255,0.6);
+  box-sizing: border-box;
+}
 </style>
 </head>
 <body>
 <div class="grid">
-${bodyRows}</div>
+${bodyRows}<div class="semantic-layer" aria-hidden="true">
+${semanticOverlays}
+</div>
+<script type="application/json" data-runtime-semantics>${escapeHtml(runtimeJson)}</script>
+</div>
 </body>
 </html>`;
 }

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
+import { buildRuntimeSemanticsExport, validateRuntimeSemantics } from '@primitives/runtime-semantics/index.ts';
 import styles from './SpecView.module.css';
 
 interface SpecViewProps {
@@ -19,6 +20,8 @@ export function SpecView({ visible, onClose }: SpecViewProps) {
   );
 
   const jsonString = JSON.stringify(document, null, 2);
+  const runtimeSemantics = buildRuntimeSemanticsExport(document);
+  const runtimeDiagnostics = validateRuntimeSemantics(document);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(jsonString).then(() => {
@@ -107,6 +110,24 @@ export function SpecView({ visible, onClose }: SpecViewProps) {
               </table>
             </div>
           )}
+
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Runtime Semantics</h3>
+            <div className={styles.summaryGrid}>
+              <div className={styles.summaryItem}>
+                <div className={styles.summaryValue}>{runtimeSemantics.screens.length}</div>
+                <div className={styles.summaryLabel}>Screens</div>
+              </div>
+              <div className={styles.summaryItem}>
+                <div className={styles.summaryValue}>{runtimeSemantics.components.length}</div>
+                <div className={styles.summaryLabel}>Components</div>
+              </div>
+              <div className={styles.summaryItem}>
+                <div className={styles.summaryValue}>{runtimeDiagnostics.length}</div>
+                <div className={styles.summaryLabel}>Diagnostics</div>
+              </div>
+            </div>
+          </div>
 
           {/* Full JSON Dump */}
           <div className={styles.section}>

@@ -3,6 +3,7 @@ import type { InterfaceMode } from '@stores/toolStore.ts';
 
 interface UiState {
   selectedLayerIds: string[];
+  selectedRuntimeAnnotationId: string | null;
   hoveredLayerId: string | null;
   interfaceMode: InterfaceMode;
   layersPanelOpen: boolean;
@@ -21,6 +22,7 @@ interface UiState {
   brushSize: 1 | 2 | 3;
   eraserMode: boolean;
   setSelectedLayers: (ids: string[]) => void;
+  setSelectedRuntimeAnnotation: (id: string | null) => void;
   setHoveredLayer: (id: string | null) => void;
   setInterfaceMode: (mode: InterfaceMode) => void;
   toggleInterfaceMode: () => void;
@@ -46,6 +48,7 @@ interface UiState {
 
 export const useUiStore = create<UiState>((set, get) => ({
   selectedLayerIds: [],
+  selectedRuntimeAnnotationId: null,
   hoveredLayerId: null,
   interfaceMode: 'ai',
   layersPanelOpen: true,
@@ -65,6 +68,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   eraserMode: false,
 
   setSelectedLayers: (ids: string[]) => set({ selectedLayerIds: ids }),
+  setSelectedRuntimeAnnotation: (id: string | null) => set({ selectedRuntimeAnnotationId: id }),
   setHoveredLayer: (id: string | null) => set({ hoveredLayerId: id }),
   setInterfaceMode: (mode: InterfaceMode) => set({ interfaceMode: mode }),
   toggleInterfaceMode: () =>

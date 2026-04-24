@@ -27,6 +27,21 @@ import {
   getVisiblePageContentBounds,
 } from '@primitives/document-model/canvasSize.ts';
 import { exportAsJson, exportAsMarkdown } from '@features/export/exporters.ts';
+import {
+  exportDesignPackageAsJson,
+  exportRuntimeSemanticsAsJson,
+  validateRuntimeSemantics,
+} from '@primitives/runtime-semantics/index.ts';
+import type {
+  DesignBinding,
+  DesignInteraction,
+  DesignStyleDef,
+  RuntimeAnnotation,
+  RuntimeComponentDef,
+  RuntimeInferenceOptions,
+  RuntimeManifestMetadata,
+  PageRuntimeMetadata,
+} from '@primitives/runtime-semantics/types.ts';
 import { batch, isBatching, getPendingDocument, setPendingDocument } from './batch.ts';
 
 // ---------------------------------------------------------------------------
@@ -276,6 +291,15 @@ export function buildApi() {
     getPage(id: string): FigMePage | undefined {
       return getCurrentDocument().pages.find(p => p.id === id);
     },
+    getPageRuntime(pageId: string): PageRuntimeMetadata | undefined {
+      return getCurrentDocument().pages.find(p => p.id === pageId)?.runtime;
+    },
+    setPageRuntime(pageId: string, metadata: Partial<PageRuntimeMetadata>): void {
+      useDocumentStore.getState().setPageRuntime(pageId, metadata);
+    },
+    setRuntimeManifest(metadata: Partial<RuntimeManifestMetadata>): void {
+      useDocumentStore.getState().setRuntimeManifest(metadata);
+    },
     getPageCanvasSize(pageId?: string) {
       const doc = getCurrentDocument();
       const page = getPageById(pageId);
@@ -450,6 +474,33 @@ export function buildApi() {
         return;
       }
       applyPageMutation(p => updateLayerOp(p, id, updates));
+    },
+    createRuntimeAnnotation(spec: Partial<RuntimeAnnotation>): string | null {
+      return useDocumentStore.getState().createRuntimeAnnotation(spec);
+    },
+    updateRuntimeAnnotation(id: string, updates: Partial<RuntimeAnnotation>): void {
+      useDocumentStore.getState().updateRuntimeAnnotation(id, updates);
+    },
+    removeRuntimeAnnotation(id: string): void {
+      useDocumentStore.getState().removeRuntimeAnnotation(id);
+    },
+    addRuntimeToken(id: string, token: DesignStyleDef): void {
+      useDocumentStore.getState().setRuntimeToken(id, token);
+    },
+    addRuntimeComponent(component: RuntimeComponentDef): void {
+      useDocumentStore.getState().setRuntimeComponent(component);
+    },
+    addBinding(binding: DesignBinding): void {
+      useDocumentStore.getState().setRuntimeBinding(binding);
+    },
+    addInteraction(interaction: DesignInteraction): void {
+      useDocumentStore.getState().setRuntimeInteraction(interaction);
+    },
+    inferRuntimeSemantics(options?: RuntimeInferenceOptions) {
+      return useDocumentStore.getState().inferRuntimeSemantics(options);
+    },
+    validateRuntimeSemantics() {
+      return validateRuntimeSemantics(getCurrentDocument());
     },
     moveLayer(id: string, col: number, row: number): void {
       const page = getActivePage();
@@ -627,6 +678,16 @@ export function buildApi() {
         const doc = getCurrentDocument();
         console.log('FIGME_EXPORT', { format: 'markdown', timestamp: Date.now() });
         return exportAsMarkdown(doc);
+      },
+      toDesignPackage(options?: { includeRenderOracle?: boolean }): string {
+        const doc = getCurrentDocument();
+        console.log('FIGME_EXPORT', { format: 'design-package', timestamp: Date.now() });
+        return exportDesignPackageAsJson(doc, options);
+      },
+      toSemantics(): string {
+        const doc = getCurrentDocument();
+        console.log('FIGME_EXPORT', { format: 'semantics', timestamp: Date.now() });
+        return exportRuntimeSemanticsAsJson(doc);
       },
       /** Returns the rendered ASCII characters for the active (or specified) page as a plain string. */
       toAscii(pageId?: string): string {
