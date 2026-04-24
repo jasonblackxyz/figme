@@ -1,27 +1,25 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
-import { exportAsJson, exportAsHtml, exportAsMarkdown } from './exporters.ts';
-import { exportGridSpecAsJson } from './gridspec/exporter.ts';
-import { downloadFile } from './downloadFile.ts';
 import { downloadBlob } from './downloadBlob.ts';
-import { renderBufferToCanvas } from './renderToCanvas.ts';
-import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
-import { computeColorOverrides } from '@primitives/document-model/colorOverrides.ts';
-import { applyPageCanvasSizeToGridConfig, getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
-import type { FigmiiDocument } from '@primitives/document-model/types.ts';
+import { createExportBundle } from './exportBundle.ts';
+import type { ExportFormat } from './types.ts';
 import styles from './ExportDialog.module.css';
 
-function getActivePageExportConfig(doc: FigmiiDocument) {
-  const activePage = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
-  if (!activePage) return null;
+const FORMAT_OPTIONS: Array<{ id: ExportFormat; label: string; description: string }> = [
+  { id: 'png', label: 'PNG Image', description: 'Rasterized image export for each selected page.' },
+  { id: 'html', label: 'HTML', description: 'Self-contained HTML snapshot for each selected page.' },
+  { id: 'figmii', label: 'JSON (.figmii)', description: 'One-page FIGMII document for round-tripping.' },
+  { id: 'gridspec', label: 'Grid Spec (.gridspec.json)', description: 'Structured dev spec export per page.' },
+  { id: 'markdown', label: 'Spec Markdown', description: 'Readable markdown summary for each page.' },
+];
 
-  const canvasSize = getPageCanvasSizeInfo(activePage, doc.gridConfig);
-  const pageGridConfig = applyPageCanvasSizeToGridConfig(activePage, doc.gridConfig);
-  const buffer = composePageBuffer(activePage, pageGridConfig);
-  const colorOverrides = computeColorOverrides(activePage);
-
-  return { activePage, canvasSize, pageGridConfig, buffer, colorOverrides };
-}
+const DEFAULT_FORMAT_SELECTIONS: Record<ExportFormat, boolean> = {
+  png: true,
+  html: true,
+  figmii: true,
+  gridspec: true,
+  markdown: true,
+};
 
 interface ExportDialogProps {
   visible: boolean;
@@ -30,12 +28,25 @@ interface ExportDialogProps {
 
 export function ExportDialog({ visible, onClose }: ExportDialogProps) {
   const doc = useDocumentStore((s) => s.document);
+  const setDocument = useDocumentStore((s) => s.setDocument);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [designName, setDesignName] = useState(doc.name);
+  const [selectedPageIds, setSelectedPageIds] = useState<string[]>(doc.pages.map((page) => page.id));
+  const [formatSelections, setFormatSelections] = useState(DEFAULT_FORMAT_SELECTIONS);
   const [includeBuffer, setIncludeBuffer] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (!visible) return undefined;
+
+    setDesignName(doc.name);
+    setSelectedPageIds(doc.pages.map((page) => page.id));
+    setFormatSelections(DEFAULT_FORMAT_SELECTIONS);
+    setIncludeBuffer(false);
+    setErrorMessage(null);
+    setIsExporting(false);
 
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeButtonRef.current?.focus();
@@ -45,7 +56,7 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
     };
   }, [visible]);
 
-  const handleDialogKeyDown = useCallback((e: ReactKeyboardEvent<HTMLDivElement>) => {
+  function handleDialogKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
     if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
@@ -80,54 +91,62 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
       e.preventDefault();
       first.focus();
     }
-  }, [onClose]);
+  }
 
-  const handlePngExport = useCallback(async () => {
-    const config = getActivePageExportConfig(doc);
-    if (!config) return;
+  function handleFormatToggle(format: ExportFormat, checked: boolean) {
+    setFormatSelections((current) => ({ ...current, [format]: checked }));
+    if (format === 'gridspec' && !checked) {
+      setIncludeBuffer(false);
+    }
+  }
 
-    const canvas = await renderBufferToCanvas(config.buffer, doc.palette, config.pageGridConfig, config.colorOverrides);
-
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const name = doc.name || 'untitled';
-        downloadBlob(
-          blob,
-          `${name}_${config.canvasSize.effectiveCols}x${config.canvasSize.effectiveRows}.png`,
-        );
+  function handlePageToggle(pageId: string, checked: boolean) {
+    setSelectedPageIds((current) => {
+      if (checked) {
+        return current.includes(pageId) ? current : [...current, pageId];
       }
-    }, 'image/png');
-    onClose();
-  }, [doc, onClose]);
+      return current.filter((id) => id !== pageId);
+    });
+  }
 
-  const handleHtmlExport = useCallback(() => {
-    const config = getActivePageExportConfig(doc);
-    if (!config) return;
+  async function handleExport() {
+    const selectedFormats = FORMAT_OPTIONS
+      .filter((option) => formatSelections[option.id])
+      .map((option) => option.id);
+    const resolvedDesignName = designName.trim() || doc.name || 'Untitled';
 
-    const html = exportAsHtml(doc, config.buffer, config.pageGridConfig, config.colorOverrides);
-    downloadFile(html, `${doc.name || 'untitled'}.html`, 'text/html');
-    onClose();
-  }, [doc, onClose]);
+    if (selectedFormats.length === 0 || selectedPageIds.length === 0) return;
 
-  const handleJsonExport = useCallback(() => {
-    const json = exportAsJson(doc);
-    downloadFile(json, `${doc.name || 'untitled'}.figmii`, 'application/json');
-    onClose();
-  }, [doc, onClose]);
+    setIsExporting(true);
+    setErrorMessage(null);
 
-  const handleGridSpecExport = useCallback(() => {
-    const json = exportGridSpecAsJson(doc, { includeBuffer });
-    downloadFile(json, `${doc.name || 'untitled'}.gridspec.json`, 'application/json');
-    onClose();
-  }, [doc, includeBuffer, onClose]);
+    try {
+      const { blob, filename } = await createExportBundle(doc, {
+        designName: resolvedDesignName,
+        selectedPageIds,
+        formats: selectedFormats,
+        includeBuffer,
+      });
+      downloadBlob(blob, filename);
 
-  const handleMarkdownExport = useCallback(() => {
-    const md = exportAsMarkdown(doc);
-    downloadFile(md, `${doc.name || 'untitled'}-spec.md`, 'text/markdown');
-    onClose();
-  }, [doc, onClose]);
+      const latestDocument = useDocumentStore.getState().document;
+      if (resolvedDesignName !== latestDocument.name) {
+        setDocument({ ...latestDocument, name: resolvedDesignName });
+      }
+
+      onClose();
+    } catch (error: unknown) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'The zip export could not be created.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   if (!visible) return null;
+
+  const selectedFormatCount = FORMAT_OPTIONS.filter((option) => formatSelections[option.id]).length;
 
   return (
     <>
@@ -142,69 +161,160 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
         onKeyDown={handleDialogKeyDown}
       >
         <div className={styles.header}>
-          <h2 className={styles.title}>Export Document</h2>
+          <div>
+            <h2 className={styles.title}>Export Zip Bundle</h2>
+            <p className={styles.subtitle}>
+              Export selected pages and formats into one zip file. Each page gets its own folder.
+            </p>
+          </div>
           <button
             ref={closeButtonRef}
             className={styles.closeButton}
             onClick={onClose}
             aria-label="Close export dialog"
+            disabled={isExporting}
           >
             x
           </button>
         </div>
+
         <div className={styles.body}>
-          <div className={styles.sectionLabel}>Visual</div>
+          <label className={styles.fieldGroup}>
+            <span className={styles.fieldLabel}>Design name</span>
+            <input
+              className={styles.textInput}
+              aria-label="Design name"
+              value={designName}
+              onChange={(e) => setDesignName(e.target.value)}
+              placeholder="Untitled"
+              disabled={isExporting}
+            />
+            <span className={styles.helpText}>
+              Saved back to the document after a successful export and used as the filename prefix.
+            </span>
+          </label>
 
-          <button className={styles.formatButton} onClick={handlePngExport}>
-            <span className={styles.formatIcon}>{'▣'}</span>
-            <div>
-              <div className={styles.formatLabel}>PNG Image</div>
-              <div className={styles.formatDesc}>Rasterized grid with dimensions in filename</div>
-            </div>
-          </button>
-
-          <button className={styles.formatButton} onClick={handleHtmlExport}>
-            <span className={styles.formatIcon}>{'<>'}</span>
-            <div>
-              <div className={styles.formatLabel}>HTML</div>
-              <div className={styles.formatDesc}>Self-contained HTML with inline styles</div>
-            </div>
-          </button>
-
-          <div className={styles.sectionLabel}>Data</div>
-
-          <button className={styles.formatButton} onClick={handleJsonExport}>
-            <span className={styles.formatIcon}>{'{}'}</span>
-            <div>
-              <div className={styles.formatLabel}>JSON (.figmii)</div>
-              <div className={styles.formatDesc}>Full document data, re-importable</div>
-            </div>
-          </button>
-
-          <div className={styles.formatGroup}>
-            <button className={styles.formatButton} onClick={handleGridSpecExport}>
-              <span className={styles.formatIcon}>{'⚙'}</span>
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
               <div>
-                <div className={styles.formatLabel}>Grid Spec (.gridspec.json)</div>
-                <div className={styles.formatDesc}>Structured dev spec with resolved styles and borders</div>
+                <div className={styles.sectionTitle}>Formats</div>
+                <div className={styles.sectionMeta}>
+                  {selectedFormatCount} of {FORMAT_OPTIONS.length} selected
+                </div>
               </div>
-            </button>
-            <label className={styles.optionToggle}>
+            </div>
+
+            <div className={styles.checkList}>
+              {FORMAT_OPTIONS.map((option) => (
+                <label key={option.id} className={styles.checkRow}>
+                  <input
+                    type="checkbox"
+                    aria-label={option.label}
+                    checked={formatSelections[option.id]}
+                    onChange={(e) => handleFormatToggle(option.id, e.target.checked)}
+                    disabled={isExporting}
+                  />
+                  <span className={styles.checkContent}>
+                    <span className={styles.checkLabel}>{option.label}</span>
+                    <span className={styles.checkDescription}>{option.description}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <label className={styles.toggleRow}>
               <input
                 type="checkbox"
+                aria-label="Include rendered buffer in Grid Spec exports"
                 checked={includeBuffer}
                 onChange={(e) => setIncludeBuffer(e.target.checked)}
+                disabled={!formatSelections.gridspec || isExporting}
               />
-              <span className={styles.optionLabel}>Include rendered buffer</span>
+              <span className={styles.checkContent}>
+                <span className={styles.checkLabel}>Include rendered buffer in Grid Spec exports</span>
+                <span className={styles.checkDescription}>
+                  Only applies to `.gridspec.json` files.
+                </span>
+              </span>
             </label>
+          </section>
+
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <div className={styles.sectionTitle}>Pages</div>
+                <div className={styles.sectionMeta}>
+                  {selectedPageIds.length} of {doc.pages.length} selected
+                </div>
+              </div>
+              <div className={styles.inlineActions}>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => setSelectedPageIds(doc.pages.map((page) => page.id))}
+                  disabled={isExporting}
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => setSelectedPageIds([])}
+                  disabled={isExporting}
+                >
+                  Deselect all
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.checkList}>
+              {doc.pages.map((page) => (
+                <label key={page.id} className={styles.checkRow}>
+                  <input
+                    type="checkbox"
+                    aria-label={page.name}
+                    checked={selectedPageIds.includes(page.id)}
+                    onChange={(e) => handlePageToggle(page.id, e.target.checked)}
+                    disabled={isExporting}
+                  />
+                  <span className={styles.checkContent}>
+                    <span className={styles.checkLabel}>{page.name}</span>
+                    <span className={styles.checkDescription}>
+                      Exports to its own folder once the zip is unzipped.
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <div className={styles.note}>
+            Files are named as <code>{'<design>_<page>_<dd-mm-yyyy>'}</code>.
           </div>
 
-          <button className={styles.formatButton} onClick={handleMarkdownExport}>
-            <span className={styles.formatIcon}>#</span>
-            <div>
-              <div className={styles.formatLabel}>Spec Markdown</div>
-              <div className={styles.formatDesc}>Human-readable layer table in markdown</div>
+          {errorMessage ? (
+            <div className={styles.errorMessage} role="alert">
+              {errorMessage}
             </div>
+          ) : null}
+        </div>
+
+        <div className={styles.footer}>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={onClose}
+            disabled={isExporting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={handleExport}
+            disabled={isExporting || selectedFormatCount === 0 || selectedPageIds.length === 0}
+          >
+            {isExporting ? 'Building zip...' : 'Export zip'}
           </button>
         </div>
       </div>

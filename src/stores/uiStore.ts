@@ -9,6 +9,7 @@ interface UiState {
   propertiesPanelOpen: boolean;
   specViewOpen: boolean;
   exportDialogOpen: boolean;
+  importDialogOpen: boolean;
   clearCanvasDialogOpen: boolean;
   isDragging: boolean;
   dragStartPos: { col: number; row: number } | null;
@@ -27,7 +28,10 @@ interface UiState {
   toggleLayersPanel: () => void;
   togglePropertiesPanel: () => void;
   toggleSpecView: () => void;
+  setExportDialogOpen: (open: boolean) => void;
   toggleExportDialog: () => void;
+  setImportDialogOpen: (open: boolean) => void;
+  toggleImportDialog: () => void;
   toggleClearCanvasDialog: () => void;
   setIsDragging: (v: boolean) => void;
   setDragStartPos: (pos: { col: number; row: number } | null) => void;
@@ -52,6 +56,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   propertiesPanelOpen: true,
   specViewOpen: false,
   exportDialogOpen: false,
+  importDialogOpen: false,
   clearCanvasDialogOpen: false,
   isDragging: false,
   dragStartPos: null,
@@ -74,7 +79,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   togglePropertiesPanel: () =>
     set((s) => ({ propertiesPanelOpen: !s.propertiesPanelOpen })),
   toggleSpecView: () => set((s) => ({ specViewOpen: !s.specViewOpen })),
+  setExportDialogOpen: (open: boolean) => set({ exportDialogOpen: open }),
   toggleExportDialog: () => set((s) => ({ exportDialogOpen: !s.exportDialogOpen })),
+  setImportDialogOpen: (open: boolean) => set({ importDialogOpen: open }),
+  toggleImportDialog: () => set((s) => ({ importDialogOpen: !s.importDialogOpen })),
   toggleClearCanvasDialog: () => set((s) => ({ clearCanvasDialogOpen: !s.clearCanvasDialogOpen })),
   setIsDragging: (v: boolean) => set({ isDragging: v }),
   setDragStartPos: (pos: { col: number; row: number } | null) => set({ dragStartPos: pos }),

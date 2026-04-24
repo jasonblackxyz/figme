@@ -48,6 +48,10 @@ vi.mock('@features/spec-view/SpecView.tsx', () => ({
   SpecView: () => null,
 }));
 
+vi.mock('@features/import/ImportDialog.tsx', () => ({
+  ImportDialog: ({ visible }: { visible: boolean }) => (visible ? <div>Import Dialog</div> : null),
+}));
+
 vi.mock('@features/export/ExportDialog.tsx', () => ({
   ExportDialog: ({ visible }: { visible: boolean }) => (visible ? <div>Export Dialog</div> : null),
 }));
@@ -93,6 +97,7 @@ beforeEach(() => {
     propertiesPanelOpen: true,
     specViewOpen: false,
     exportDialogOpen: false,
+    importDialogOpen: false,
     clearCanvasDialogOpen: false,
     isDragging: false,
     dragStartPos: null,
@@ -123,6 +128,16 @@ describe('App', () => {
 
     fireEvent.click(exportButton);
     expect(screen.getByText('Export Dialog')).toBeInTheDocument();
+  });
+
+  it('renders a visible import button and opens the dialog from it', () => {
+    render(<App />);
+
+    const importButton = screen.getByRole('button', { name: 'Import' });
+    expect(importButton).toBeInTheDocument();
+
+    fireEvent.click(importButton);
+    expect(screen.getByText('Import Dialog')).toBeInTheDocument();
   });
 
   it('switches to Human mode and restores the full shell', () => {

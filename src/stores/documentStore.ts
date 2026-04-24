@@ -23,6 +23,7 @@ import {
   sendToBack as sendToBackOp,
   moveLayerToGroup as moveLayerToGroupOp,
 } from '@primitives/document-model/operations.ts';
+import { mergeImportedDocuments } from '@features/import/importMerge.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 
 interface CellCoord {
@@ -68,6 +69,7 @@ interface DocumentState {
   renameSwatchCollection: (collectionId: string, name: string) => void;
   addColorToCollection: (collectionId: string, hex: string) => void;
   removeColorFromCollection: (collectionId: string, colorIndex: number) => void;
+  appendImportedDocuments: (docs: FigmiiDocument[]) => void;
   setPageCellOverride: (
     row: number,
     col: number,
@@ -422,6 +424,15 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         ),
       },
     });
+  },
+
+  appendImportedDocuments: (docs: FigmiiDocument[]) => {
+    if (docs.length === 0) return;
+    const { document: doc } = get();
+    const merged = mergeImportedDocuments(doc, docs);
+    get().pushUndo();
+    set({ document: merged });
+    useUiStore.getState().setSelectedLayers([]);
   },
 
   setPageCellOverride: (

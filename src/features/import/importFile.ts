@@ -11,10 +11,18 @@ import { importMarkdown } from './importMarkdown.ts';
  * Detects format by file extension and routes to the appropriate parser.
  */
 export async function importFile(): Promise<FigmiiDocument | null> {
-  const file = await pickFile();
+  const file = await pickImportFile();
   if (!file) return null;
 
-  const text = await file.text();
+  try {
+    return await parseImportFile(file);
+  } catch {
+    return null;
+  }
+}
+
+export async function parseImportFile(file: File): Promise<FigmiiDocument> {
+  const text = await readBlobText(file);
   const name = file.name.toLowerCase();
 
   try {
@@ -27,14 +35,13 @@ export async function importFile(): Promise<FigmiiDocument | null> {
     if (name.endsWith('.md')) {
       return importMarkdown(text);
     }
-    // .figmii/.figme or .json — raw FigmiiDocument JSON (with migration)
     return deserializeDocument(text);
   } catch {
-    return null;
+    throw new Error(`Unable to import "${file.name}".`);
   }
 }
 
-async function pickFile(): Promise<File | null> {
+export async function pickImportFile(): Promise<File | null> {
   if ('showOpenFilePicker' in window) {
     try {
       const [handle] = await (window as unknown as FileSystemAccessWindow).showOpenFilePicker({
@@ -56,7 +63,6 @@ async function pickFile(): Promise<File | null> {
     }
   }
 
-  // Fallback: hidden file input
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -76,4 +82,17 @@ interface FileSystemAccessWindow {
 
 interface FileSystemFileHandle {
   getFile(): Promise<File>;
+}
+
+async function readBlobText(blob: Blob): Promise<string> {
+  if (typeof blob.text === 'function') {
+    return blob.text();
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read import file.'));
+    reader.readAsText(blob);
+  });
 }

@@ -81,4 +81,26 @@ describe('documentStore', () => {
     }
     expect(useDocumentStore.getState().undoStack.length).toBeLessThanOrEqual(50)
   })
+
+  it('appends imported documents as a single undoable action', () => {
+    const store = useDocumentStore.getState()
+    const imported = createEmptyDocument('Imported')
+    const importedPage = {
+      ...imported.pages[0]!,
+      id: 'imported-page',
+      name: 'Imported Page',
+    }
+
+    store.appendImportedDocuments([{
+      ...imported,
+      pages: [importedPage],
+      activePageId: importedPage.id,
+    }])
+
+    expect(useDocumentStore.getState().document.pages).toHaveLength(2)
+    expect(useDocumentStore.getState().undoStack).toHaveLength(1)
+
+    useDocumentStore.getState().undo()
+    expect(useDocumentStore.getState().document.pages).toHaveLength(1)
+  })
 })
