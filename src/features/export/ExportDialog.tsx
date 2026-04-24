@@ -1,3 +1,4 @@
+import { ExportPrepMode } from '@features/export-prep/ExportPrepMode.tsx';
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { downloadBlob } from './downloadBlob.ts';
@@ -37,10 +38,12 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
   const [includeBuffer, setIncludeBuffer] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [mode, setMode] = useState<'bundle' | 'runtime'>('bundle');
 
   useEffect(() => {
     if (!visible) return undefined;
 
+    setMode('bundle');
     setDesignName(doc.name);
     setSelectedPageIds(doc.pages.map((page) => page.id));
     setFormatSelections(DEFAULT_FORMAT_SELECTIONS);
@@ -145,6 +148,9 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
   }
 
   if (!visible) return null;
+  if (mode === 'runtime') {
+    return <ExportPrepMode visible={visible} onClose={onClose} />;
+  }
 
   const selectedFormatCount = FORMAT_OPTIONS.filter((option) => formatSelections[option.id]).length;
 
@@ -167,6 +173,14 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
               Export selected pages and formats into one zip file. Each page gets its own folder.
             </p>
           </div>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={() => setMode('runtime')}
+            disabled={isExporting}
+          >
+            Runtime export
+          </button>
           <button
             ref={closeButtonRef}
             className={styles.closeButton}

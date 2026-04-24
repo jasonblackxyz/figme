@@ -1,4 +1,9 @@
 import type { StyleDef } from '@primitives/style-system/types.ts';
+import type {
+  FigMeRuntimeMetadata,
+  LayerRuntimeMetadata,
+  PageRuntimeMetadata,
+} from '@primitives/runtime-semantics/types.ts';
 
 /** Top-level GridSpec document — the structured export format. */
 export interface GridSpec {
@@ -24,6 +29,7 @@ export interface GridSpec {
   palette: Record<string, StyleDef>;
   pages: GridSpecPage[];
   components: GridSpecComponent[];
+  runtime?: FigMeRuntimeMetadata;
 }
 
 export interface GridSpecPage {
@@ -32,6 +38,7 @@ export interface GridSpecPage {
   gridOverride?: { cols: number; rows: number };
   layers: GridSpecLayer[];
   buffer?: GridSpecCompactBuffer;
+  runtime?: PageRuntimeMetadata;
 }
 
 export interface GridSpecLayer {
@@ -68,6 +75,8 @@ export interface GridSpecLayer {
   };
   /** Raw properties passed through from the document model. */
   properties: Record<string, unknown>;
+  /** Optional semantic metadata authored in FIGMII. */
+  runtime?: LayerRuntimeMetadata;
   /** Pre-computed convenience data resolved by the exporter. */
   resolved: GridSpecResolved;
 }

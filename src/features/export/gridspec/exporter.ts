@@ -68,6 +68,7 @@ export function exportAsGridSpec(doc: FigmiiDocument, options?: GridSpecExportOp
         },
       } : {}),
       layers,
+      ...(page.runtime ? { runtime: page.runtime } : {}),
     };
 
     if (includeBuffer) {
@@ -112,6 +113,7 @@ export function exportAsGridSpec(doc: FigmiiDocument, options?: GridSpecExportOp
     palette: palette as Record<string, StyleDef>,
     pages,
     components,
+    ...(doc.runtime ? { runtime: doc.runtime } : {}),
   };
 }
 
@@ -203,6 +205,7 @@ function buildSpecLayer(
     ...(childNames && childNames.length > 0 ? { childNames } : {}),
     ...(layer.autoLayout ? { autoLayout: layer.autoLayout } : {}),
     properties: layer.properties as Record<string, unknown>,
+    ...(layer.runtime ? { runtime: layer.runtime } : {}),
     resolved,
   };
 }

@@ -60,6 +60,16 @@ export function SpecView({ document, selectedLayerIds }: SpecViewProps): ReactNo
       name: c.name,
       description: c.description,
     })),
+    runtime: document.runtime
+      ? {
+          manifest: document.runtime.manifest,
+          tokenCount: Object.keys(document.runtime.tokens).length,
+          componentCount: Object.keys(document.runtime.components).length,
+          bindingCount: Object.keys(document.runtime.bindings).length,
+          interactionCount: Object.keys(document.runtime.interactions).length,
+          annotationCount: Object.keys(document.runtime.annotations).length,
+        }
+      : null,
   };
 
   return (

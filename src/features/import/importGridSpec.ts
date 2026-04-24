@@ -2,6 +2,7 @@ import type { FigmiiDocument, FigmiiPage, Layer, LayerKind, LayerProperties, Com
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
 import type { GridSpec, GridSpecPage, GridSpecLayer } from '@features/export/gridspec/types.ts';
+import { normalizeRuntimeMetadata } from '@primitives/runtime-semantics/defaults.ts';
 
 /**
  * Import a GridSpec JSON string back into a FigmiiDocument.
@@ -53,6 +54,7 @@ export function importGridSpec(json: string): FigmiiDocument {
     pages,
     activePageId: pages[0]?.id ?? '',
     components,
+    runtime: normalizeRuntimeMetadata(spec.runtime),
     metadata: {
       createdAt: spec.document.createdAt,
       updatedAt: spec.document.updatedAt,
@@ -80,6 +82,7 @@ function rebuildPage(specPage: GridSpecPage): FigmiiPage {
     canvasRowsOverride: specPage.gridOverride?.rows,
     canvasX: 0,
     canvasY: 0,
+    runtime: specPage.runtime,
   };
 }
 
@@ -109,6 +112,9 @@ function rebuildLayer(specLayer: GridSpecLayer): Layer {
   }
   if (specLayer.autoLayout) {
     layer.autoLayout = { ...specLayer.autoLayout };
+  }
+  if (specLayer.runtime) {
+    layer.runtime = { ...specLayer.runtime };
   }
 
   return layer;

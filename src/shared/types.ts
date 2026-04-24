@@ -24,6 +24,9 @@ export type {
   FigmiiDocument,
   ComponentDef,
   ComponentInstanceProperties,
+  FigMeRuntimeMetadata,
+  LayerRuntimeMetadata,
+  PageRuntimeMetadata,
 } from '@primitives/document-model/types.ts';
 
 export type {

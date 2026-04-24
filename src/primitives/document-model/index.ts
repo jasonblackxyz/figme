@@ -13,6 +13,9 @@ export type {
   FigmiiPage,
   FigmiiDocument,
   ComponentDef,
+  PageRuntimeMetadata,
+  LayerRuntimeMetadata,
+  FigMeRuntimeMetadata,
 } from './types.ts'
 export {
   addLayer,

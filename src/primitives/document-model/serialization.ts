@@ -1,4 +1,5 @@
 import type { FigmiiDocument, FigmiiPage, Layer } from './types.ts';
+import { normalizeRuntimeMetadata } from '@primitives/runtime-semantics/defaults.ts';
 
 let migrationIdCounter = 0;
 
@@ -28,10 +29,21 @@ export function deserializeDocument(json: string): FigmiiDocument {
 function migrateDocument(doc: FigmiiDocument): FigmiiDocument {
   let changed = false;
   const pages = doc.pages.map((page): FigmiiPage => {
+    let nextPage = page.runtime
+      ? page
+      : {
+          ...page,
+          runtime: {
+            exportAsScreen: false,
+            desktopBehavior: 'centered-mobile-canvas' as const,
+          },
+        };
+    if (!page.runtime) changed = true;
+
     const hasBackground = Object.values(page.layers).some(
       (l: Layer | undefined) => l?.isBackground,
     );
-    if (hasBackground) return page;
+    if (hasBackground) return nextPage;
 
     changed = true;
     const bgId = `layer_migrate_${Date.now()}_${++migrationIdCounter}`;
@@ -48,12 +60,16 @@ function migrateDocument(doc: FigmiiDocument): FigmiiDocument {
       isBackground: true,
       properties: {},
     };
-    return {
-      ...page,
-      layers: { ...page.layers, [bgId]: bgLayer },
-      layerOrder: [bgId, ...page.layerOrder],
+    nextPage = {
+      ...nextPage,
+      layers: { ...nextPage.layers, [bgId]: bgLayer },
+      layerOrder: [bgId, ...nextPage.layerOrder],
     };
+    return nextPage;
   });
 
-  return changed ? { ...doc, pages } : doc;
+  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  if (!doc.runtime) changed = true;
+
+  return changed ? { ...doc, pages, runtime } : { ...doc, runtime };
 }

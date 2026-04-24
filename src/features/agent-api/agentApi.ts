@@ -27,6 +27,26 @@ import {
   getVisiblePageContentBounds,
 } from '@primitives/document-model/canvasSize.ts';
 import { exportAsJson, exportAsMarkdown } from '@features/export/exporters.ts';
+import {
+  exportDesignPackageAsJson,
+  exportRuntimeSemanticsAsJson,
+  generateRuntimeId,
+  inferRuntimeSemantics as inferRuntimeSemanticsOp,
+  normalizeRuntimeMetadata,
+  slugifyRuntimeId,
+  validateRuntimeSemantics,
+} from '@primitives/runtime-semantics/index.ts';
+import type {
+  DesignBinding,
+  DesignInteraction,
+  DesignStyleDef,
+  FigMeRuntimeMetadata,
+  RuntimeAnnotation,
+  RuntimeComponentDef,
+  RuntimeInferenceOptions,
+  RuntimeManifestMetadata,
+  PageRuntimeMetadata,
+} from '@primitives/runtime-semantics/types.ts';
 import { batch, isBatching, getPendingDocument, setPendingDocument } from './batch.ts';
 
 // ---------------------------------------------------------------------------
@@ -146,6 +166,168 @@ function applyTargetPageMutation(pageId: string | undefined, fn: (page: FigmiiPa
   commitDocument(nextDoc);
 }
 
+function setRuntimeManifest(metadata: Partial<RuntimeManifestMetadata>): void {
+  const doc = getCurrentDocument();
+  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  commitDocument({
+    ...doc,
+    runtime: {
+      ...runtime,
+      manifest: { ...runtime.manifest, ...metadata },
+    },
+  });
+}
+
+function setPageRuntime(pageId: string, metadata: Partial<PageRuntimeMetadata>): void {
+  const doc = getCurrentDocument();
+  if (!doc.pages.some((page) => page.id === pageId)) return;
+  commitDocument({
+    ...doc,
+    pages: doc.pages.map((page) =>
+      page.id === pageId
+        ? { ...page, runtime: { ...page.runtime, ...metadata } }
+        : page,
+    ),
+  });
+}
+
+function setRuntimeToken(id: string, token: DesignStyleDef): void {
+  if (!id.trim()) return;
+  const doc = getCurrentDocument();
+  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  commitDocument({
+    ...doc,
+    runtime: {
+      ...runtime,
+      tokens: { ...runtime.tokens, [id]: token },
+    },
+  });
+}
+
+function setRuntimeComponent(component: RuntimeComponentDef): void {
+  if (!component.id.trim()) return;
+  const doc = getCurrentDocument();
+  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  commitDocument({
+    ...doc,
+    runtime: {
+      ...runtime,
+      components: { ...runtime.components, [component.id]: component },
+    },
+  });
+}
+
+function setRuntimeBinding(binding: DesignBinding): void {
+  if (!binding.id.trim()) return;
+  const doc = getCurrentDocument();
+  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  commitDocument({
+    ...doc,
+    runtime: {
+      ...runtime,
+      bindings: { ...runtime.bindings, [binding.id]: binding },
+    },
+  });
+}
+
+function setRuntimeInteraction(interaction: DesignInteraction): void {
+  if (!interaction.id.trim()) return;
+  const doc = getCurrentDocument();
+  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  commitDocument({
+    ...doc,
+    runtime: {
+      ...runtime,
+      interactions: { ...runtime.interactions, [interaction.id]: interaction },
+    },
+  });
+}
+
+function createRuntimeAnnotation(spec: Partial<RuntimeAnnotation>): string | null {
+  const doc = getCurrentDocument();
+  const activePage = doc.pages.find((page) => page.id === doc.activePageId);
+  const pageId = spec.pageId ?? activePage?.id;
+  const page = doc.pages.find((candidate) => candidate.id === pageId);
+  if (!page) return null;
+
+  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  const id = spec.id ?? generateRuntimeId('annotation');
+  const semanticId = spec.semanticId?.trim() || uniqueRuntimeSemanticId(
+    runtime,
+    page.id,
+    spec.name ?? 'node',
+  );
+  const rect = spec.rect ?? { col: 0, row: 0, width: 8, height: 3 };
+  const annotation: RuntimeAnnotation = {
+    id,
+    pageId: page.id,
+    semanticId,
+    rect,
+    export: spec.export ?? true,
+    ...(spec.name ? { name: spec.name } : {}),
+    ...(spec.z !== undefined ? { z: spec.z } : {}),
+    ...(spec.sourceLayerIds ? { sourceLayerIds: [...spec.sourceLayerIds] } : {}),
+    ...(spec.role ? { role: spec.role } : {}),
+    ...(spec.componentId ? { componentId: spec.componentId } : {}),
+    ...(spec.componentKind ? { componentKind: spec.componentKind } : {}),
+    ...(spec.props ? { props: { ...spec.props } } : {}),
+    ...(spec.bindingSlots ? { bindingSlots: { ...spec.bindingSlots } } : {}),
+    ...(spec.interactionIds ? { interactionIds: [...spec.interactionIds] } : {}),
+    ...(spec.sticky ? { sticky: spec.sticky } : {}),
+    ...(spec.scrollContainerId ? { scrollContainerId: spec.scrollContainerId } : {}),
+    ...(spec.constraints ? { constraints: spec.constraints } : {}),
+    ...(spec.customModuleKind ? { customModuleKind: spec.customModuleKind } : {}),
+    ...(spec.inputShape ? { inputShape: spec.inputShape } : {}),
+    ...(spec.breakpointBehavior ? { breakpointBehavior: spec.breakpointBehavior } : {}),
+    ...(spec.tags ? { tags: [...spec.tags] } : {}),
+    ...(spec.provenance ? { provenance: spec.provenance } : {}),
+  };
+
+  commitDocument({
+    ...doc,
+    runtime: {
+      ...runtime,
+      annotations: { ...runtime.annotations, [id]: annotation },
+    },
+  });
+  return id;
+}
+
+function updateRuntimeAnnotation(id: string, updates: Partial<RuntimeAnnotation>): void {
+  const doc = getCurrentDocument();
+  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  const existing = runtime.annotations[id];
+  if (!existing) return;
+  commitDocument({
+    ...doc,
+    runtime: {
+      ...runtime,
+      annotations: {
+        ...runtime.annotations,
+        [id]: { ...existing, ...updates, id },
+      },
+    },
+  });
+}
+
+function removeRuntimeAnnotation(id: string): void {
+  const doc = getCurrentDocument();
+  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  if (!runtime.annotations[id]) return;
+  const annotations = { ...runtime.annotations };
+  delete annotations[id];
+  commitDocument({
+    ...doc,
+    runtime: { ...runtime, annotations },
+  });
+}
+
+function inferRuntimeSemantics(options?: RuntimeInferenceOptions) {
+  const result = inferRuntimeSemanticsOp(getCurrentDocument(), options);
+  commitDocument(result.document);
+  return result.diagnostics;
+}
+
 function assertPositiveInteger(value: number, field: 'cols' | 'rows'): number {
   if (!Number.isInteger(value) || value <= 0) {
     throw new Error(`Figmii.setPageCanvasSize: "${field}" must be a positive integer.`);
@@ -180,6 +362,23 @@ function defaultPropsForKind(kind: LayerKind): LayerProperties {
     case 'canvas':
       return { content: '', cellColors: {} };
   }
+}
+
+function uniqueRuntimeSemanticId(
+  runtime: FigMeRuntimeMetadata,
+  pageId: string,
+  base: string,
+): string {
+  const normalized = slugifyRuntimeId(base, 'node');
+  const existing = new Set(
+    Object.values(runtime.annotations)
+      .filter((annotation) => annotation.pageId === pageId)
+      .map((annotation) => annotation.semanticId),
+  );
+  if (!existing.has(normalized)) return normalized;
+  let index = 2;
+  while (existing.has(`${normalized}-${index}`)) index += 1;
+  return `${normalized}-${index}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -275,6 +474,15 @@ export function buildApi() {
     },
     getPage(id: string): FigmiiPage | undefined {
       return getCurrentDocument().pages.find(p => p.id === id);
+    },
+    getPageRuntime(pageId: string): PageRuntimeMetadata | undefined {
+      return getCurrentDocument().pages.find(p => p.id === pageId)?.runtime;
+    },
+    setPageRuntime(pageId: string, metadata: Partial<PageRuntimeMetadata>): void {
+      setPageRuntime(pageId, metadata);
+    },
+    setRuntimeManifest(metadata: Partial<RuntimeManifestMetadata>): void {
+      setRuntimeManifest(metadata);
     },
     getPageCanvasSize(pageId?: string) {
       const doc = getCurrentDocument();
@@ -450,6 +658,33 @@ export function buildApi() {
         return;
       }
       applyPageMutation(p => updateLayerOp(p, id, updates));
+    },
+    createRuntimeAnnotation(spec: Partial<RuntimeAnnotation>): string | null {
+      return createRuntimeAnnotation(spec);
+    },
+    updateRuntimeAnnotation(id: string, updates: Partial<RuntimeAnnotation>): void {
+      updateRuntimeAnnotation(id, updates);
+    },
+    removeRuntimeAnnotation(id: string): void {
+      removeRuntimeAnnotation(id);
+    },
+    addRuntimeToken(id: string, token: DesignStyleDef): void {
+      setRuntimeToken(id, token);
+    },
+    addRuntimeComponent(component: RuntimeComponentDef): void {
+      setRuntimeComponent(component);
+    },
+    addBinding(binding: DesignBinding): void {
+      setRuntimeBinding(binding);
+    },
+    addInteraction(interaction: DesignInteraction): void {
+      setRuntimeInteraction(interaction);
+    },
+    inferRuntimeSemantics(options?: RuntimeInferenceOptions) {
+      return inferRuntimeSemantics(options);
+    },
+    validateRuntimeSemantics() {
+      return validateRuntimeSemantics(getCurrentDocument());
     },
     moveLayer(id: string, col: number, row: number): void {
       const page = getActivePage();
@@ -627,6 +862,16 @@ export function buildApi() {
         const doc = getCurrentDocument();
         console.log('FIGMII_EXPORT', { format: 'markdown', timestamp: Date.now() });
         return exportAsMarkdown(doc);
+      },
+      toDesignPackage(options?: { includeRenderOracle?: boolean }): string {
+        const doc = getCurrentDocument();
+        console.log('FIGME_EXPORT', { format: 'design-package', timestamp: Date.now() });
+        return exportDesignPackageAsJson(doc, options);
+      },
+      toSemantics(): string {
+        const doc = getCurrentDocument();
+        console.log('FIGME_EXPORT', { format: 'semantics', timestamp: Date.now() });
+        return exportRuntimeSemanticsAsJson(doc);
       },
       /** Returns the rendered ASCII characters for the active (or specified) page as a plain string. */
       toAscii(pageId?: string): string {
