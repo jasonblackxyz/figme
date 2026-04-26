@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent }
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { downloadBlob } from './downloadBlob.ts';
 import { createExportBundle } from './exportBundle.ts';
+import { DesignPackageExportError, buildDesignPackageExport } from './design-package/index.ts';
+import { sanitizeFilenameSegment } from './exportNaming.ts';
 import type { ExportFormat } from './types.ts';
 import styles from './ExportDialog.module.css';
 
@@ -36,6 +38,8 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
   const [selectedPageIds, setSelectedPageIds] = useState<string[]>(doc.pages.map((page) => page.id));
   const [formatSelections, setFormatSelections] = useState(DEFAULT_FORMAT_SELECTIONS);
   const [includeBuffer, setIncludeBuffer] = useState(false);
+  const [strictDesignPackage, setStrictDesignPackage] = useState(true);
+  const [includeRenderOracle, setIncludeRenderOracle] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [mode, setMode] = useState<'bundle' | 'runtime'>('bundle');
@@ -48,6 +52,8 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
     setSelectedPageIds(doc.pages.map((page) => page.id));
     setFormatSelections(DEFAULT_FORMAT_SELECTIONS);
     setIncludeBuffer(false);
+    setStrictDesignPackage(true);
+    setIncludeRenderOracle(false);
     setErrorMessage(null);
     setIsExporting(false);
 
@@ -57,7 +63,7 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
     return () => {
       previousFocus?.focus();
     };
-  }, [visible]);
+  }, [visible, doc.name, doc.pages]);
 
   function handleDialogKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
     if (e.key === 'Escape') {
@@ -142,6 +148,39 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
       setErrorMessage(
         error instanceof Error ? error.message : 'The zip export could not be created.',
       );
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  function handleDesignPackageExport() {
+    const resolvedDesignName = designName.trim() || doc.name || 'Untitled';
+    if (selectedPageIds.length === 0) return;
+
+    setIsExporting(true);
+    setErrorMessage(null);
+
+    try {
+      const result = buildDesignPackageExport(
+        { ...doc, name: resolvedDesignName },
+        {
+          selectedPageIds,
+          strict: strictDesignPackage,
+          includeRenderOracle,
+        },
+      );
+      const blob = new Blob([JSON.stringify(result.package, null, 2)], { type: 'application/json' });
+      const filename = `${sanitizeFilenameSegment(resolvedDesignName, 'figmii-design')}.design-package.json`;
+      downloadBlob(blob, filename);
+
+      const latestDocument = useDocumentStore.getState().document;
+      if (resolvedDesignName !== latestDocument.name) {
+        setDocument({ ...latestDocument, name: resolvedDesignName });
+      }
+
+      onClose();
+    } catch (error: unknown) {
+      setErrorMessage(formatDesignPackageError(error));
     } finally {
       setIsExporting(false);
     }
@@ -256,6 +295,57 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <div>
+                <div className={styles.sectionTitle}>Design Package</div>
+                <div className={styles.sectionMeta}>
+                  Exports selected runtime pages to one `.design-package.json` file
+                </div>
+              </div>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={handleDesignPackageExport}
+                disabled={isExporting || selectedPageIds.length === 0}
+              >
+                Design Package (.design-package.json)
+              </button>
+            </div>
+
+            <label className={styles.toggleRow}>
+              <input
+                type="checkbox"
+                aria-label="Strict Design Package validation"
+                checked={strictDesignPackage}
+                onChange={(e) => setStrictDesignPackage(e.target.checked)}
+                disabled={isExporting}
+              />
+              <span className={styles.checkContent}>
+                <span className={styles.checkLabel}>Strict Design Package validation</span>
+                <span className={styles.checkDescription}>
+                  Stops export when selected pages are missing runtime screen IDs or the package contract fails.
+                </span>
+              </span>
+            </label>
+
+            <label className={styles.toggleRow}>
+              <input
+                type="checkbox"
+                aria-label="Include render oracle in Design Package"
+                checked={includeRenderOracle}
+                onChange={(e) => setIncludeRenderOracle(e.target.checked)}
+                disabled={isExporting}
+              />
+              <span className={styles.checkContent}>
+                <span className={styles.checkLabel}>Include render oracle in Design Package</span>
+                <span className={styles.checkDescription}>
+                  Adds the composed FIGMII buffer for cross-repo fixture checks.
+                </span>
+              </span>
+            </label>
+          </section>
+
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <div>
                 <div className={styles.sectionTitle}>Pages</div>
                 <div className={styles.sectionMeta}>
                   {selectedPageIds.length} of {doc.pages.length} selected
@@ -334,4 +424,16 @@ export function ExportDialog({ visible, onClose }: ExportDialogProps) {
       </div>
     </>
   );
+}
+
+function formatDesignPackageError(error: unknown): string {
+  if (error instanceof DesignPackageExportError) {
+    const errors = error.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+    const summary = errors.slice(0, 3).map((diagnostic) => diagnostic.message).join(' ');
+    return summary || error.message;
+  }
+
+  return error instanceof Error
+    ? error.message
+    : 'The Design Package export could not be created.';
 }

@@ -135,6 +135,9 @@ export interface FigmiiPage {
   name: string;
   layers: Record<string, Layer>;
   layerOrder: string[];
+  /** Region labels consumed by the Design Package exporter. Phase E owns authoring UI/API. */
+  regions?: Record<string, unknown>;
+  regionOrder?: string[];
   viewportPreset?: string;
   canvasColsOverride?: number;
   canvasRowsOverride?: number;
