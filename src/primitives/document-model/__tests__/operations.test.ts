@@ -5,6 +5,12 @@ import {
   addLayer,
   removeLayer,
   updateLayer,
+  addRegion,
+  updateRegion,
+  removeRegion,
+  updateRegionShape,
+  updatePageRuntime,
+  updateDocumentRuntime,
   moveLayer,
   reorderLayers,
   addPage,
@@ -12,6 +18,8 @@ import {
   setActivePage,
   createComponent,
 } from '../operations.ts'
+import { deserializeDocument, serializeDocument } from '../serialization.ts'
+import { RUNTIME_COMPONENT_KINDS, type FIGMIIPage, type SemanticRegion } from '../types.ts'
 // Types imported as needed via function return types
 
 describe('createEmptyDocument', () => {
@@ -24,7 +32,9 @@ describe('createEmptyDocument', () => {
     expect(doc.gridConfig.canvasRows).toBe(57)
     expect(doc.pages).toHaveLength(1)
     expect(doc.activePageId).toBe(doc.pages[0]!.id)
-    expect(doc.metadata.version).toBe(1)
+    expect(doc.metadata.version).toBe(2)
+    expect(doc.pages[0]!.regions).toEqual({})
+    expect(doc.pages[0]!.regionOrder).toEqual([])
   })
 
   it('accepts custom name', () => {
@@ -114,6 +124,158 @@ describe('updateLayer', () => {
     expect(updated.layers[layerId]!.opacity).toBe(0.5)
     // Unchanged fields preserved
     expect(updated.layers[layerId]!.kind).toBe('text-block')
+  })
+})
+
+describe('semantic region operations', () => {
+  const baseRegion: SemanticRegion = {
+    id: 'region-search-input',
+    componentKind: 'text-input',
+    semanticId: 'search',
+    role: 'input',
+    shape: {
+      rect: { col: 2, row: 3, width: 20, height: 3 },
+      exclude: [{ col: 2, row: 3 }],
+    },
+    bindings: [{ slot: 'value', path: 'search.query', fallback: '', required: true }],
+    interactions: [{ id: 'submitQuery', action: { kind: 'submitQuery', target: 'search' } }],
+    props: { placeholder: 'Search' },
+    provenance: { source: 'human', confidence: 1, reviewed: true },
+  }
+
+  it('adds, updates, and removes a region without mutating the original page', () => {
+    const page = createEmptyPage('Regions')
+    const withRegion = addRegion(page, baseRegion)
+
+    expect(page.regions).toEqual({})
+    expect(withRegion.regions?.[baseRegion.id]).toEqual(baseRegion)
+    expect(withRegion.regionOrder).toEqual([baseRegion.id])
+
+    const updated = updateRegion(withRegion, baseRegion.id, {
+      componentKind: 'button',
+      semanticId: 'submit-button',
+    })
+
+    expect(updated.regions?.[baseRegion.id]?.componentKind).toBe('button')
+    expect(updated.regions?.[baseRegion.id]?.semanticId).toBe('submit-button')
+    expect(updated.regions?.[baseRegion.id]?.bindings).toEqual(baseRegion.bindings)
+
+    const removed = removeRegion(updated, baseRegion.id)
+    expect(removed.regions).toEqual({})
+    expect(removed.regionOrder).toEqual([])
+  })
+
+  it('updates only the region shape', () => {
+    const page = addRegion(createEmptyPage('Regions'), baseRegion)
+    const updated = updateRegionShape(page, baseRegion.id, {
+      rect: { col: 5, row: 6, width: 12, height: 4 },
+      exclude: [{ col: 6, row: 7 }],
+    })
+
+    expect(updated.regions?.[baseRegion.id]?.shape).toEqual({
+      rect: { col: 5, row: 6, width: 12, height: 4 },
+      exclude: [{ col: 6, row: 7 }],
+    })
+    expect(updated.regions?.[baseRegion.id]?.componentKind).toBe('text-input')
+    expect(updated.regions?.[baseRegion.id]?.bindings).toEqual(baseRegion.bindings)
+  })
+
+  it('updates page and document runtime metadata additively', () => {
+    const page = createEmptyPage('Runtime')
+    const withScreen = updatePageRuntime(page, { screenId: 'search' })
+    const withRoute = updatePageRuntime(withScreen, {
+      routeTarget: '/search',
+      desktopBehavior: 'centered-mobile-canvas',
+    })
+
+    expect(withRoute.runtime).toMatchObject({
+      exportAsScreen: false,
+      screenId: 'search',
+      routeTarget: '/search',
+      desktopBehavior: 'centered-mobile-canvas',
+    })
+
+    const doc = createEmptyDocument('Runtime')
+    const withFamily = updateDocumentRuntime(doc, { designFamily: 'starter-circuit' })
+    const withVersion = updateDocumentRuntime(withFamily, {
+      packageVersion: 'readme-design-package-v1',
+      sourceRefs: ['figmii://doc/runtime'],
+    })
+
+    expect(withVersion.runtime?.manifest).toMatchObject({
+      family: 'starter-circuit',
+      version: 'readme-design-package-v1',
+      sourceRefs: ['figmii://doc/runtime'],
+    })
+  })
+
+  it('round-trips regions with excluded cells through serialization', () => {
+    let doc = updateDocumentRuntime(createEmptyDocument('Region Roundtrip'), {
+      designFamily: 'starter-circuit',
+      packageVersion: 'readme-design-package-v1',
+    })
+    const page = addRegion(doc.pages[0]!, baseRegion)
+    doc = {
+      ...doc,
+      pages: [page],
+      activePageId: page.id,
+    }
+
+    const loaded = deserializeDocument(serializeDocument(doc))
+    const region = loaded.pages[0]!.regions?.[baseRegion.id]
+
+    expect(loaded.metadata.version).toBe(2)
+    expect(loaded.runtime?.manifest?.family).toBe('starter-circuit')
+    expect(loaded.runtime?.manifest?.version).toBe('readme-design-package-v1')
+    expect(region?.shape.exclude).toEqual([{ col: 2, row: 3 }])
+    expect(region?.bindings?.[0]).toEqual(baseRegion.bindings?.[0])
+    expect(region?.interactions?.[0]).toEqual(baseRegion.interactions?.[0])
+  })
+
+  it('migrates v1 pages to v2 with an empty regions map', () => {
+    const page = createEmptyPage('Legacy')
+    const legacyPage: FIGMIIPage = { ...page, regions: undefined, regionOrder: undefined }
+    const baseDoc = createEmptyDocument('Legacy')
+    const v1Doc = {
+      ...baseDoc,
+      pages: [legacyPage as FIGMIIPage],
+      activePageId: legacyPage.id,
+      metadata: {
+        ...baseDoc.metadata,
+        version: 1,
+      },
+    }
+
+    const loaded = deserializeDocument(JSON.stringify(v1Doc))
+
+    expect(loaded.metadata.version).toBe(2)
+    expect(loaded.pages[0]!.regions).toEqual({})
+    expect(loaded.pages[0]!.regionOrder).toEqual([])
+  })
+
+  it('persists every reserved runtime component kind', () => {
+    let page = createEmptyPage('Enum Coverage')
+
+    for (const kind of RUNTIME_COMPONENT_KINDS) {
+      page = addRegion(page, {
+        id: `region-${kind}`,
+        componentKind: kind,
+        shape: { rect: { col: 0, row: 0, width: 1, height: 1 } },
+      })
+    }
+
+    const doc = {
+      ...createEmptyDocument('Enum Coverage'),
+      pages: [page],
+      activePageId: page.id,
+    }
+
+    const loaded = deserializeDocument(serializeDocument(doc))
+
+    expect(Object.keys(loaded.pages[0]!.regions ?? {})).toHaveLength(RUNTIME_COMPONENT_KINDS.length)
+    for (const kind of RUNTIME_COMPONENT_KINDS) {
+      expect(loaded.pages[0]!.regions?.[`region-${kind}`]?.componentKind).toBe(kind)
+    }
   })
 })
 

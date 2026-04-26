@@ -1,8 +1,8 @@
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
-import type { FigmiiDocument, FigmiiPage, Layer } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument, FIGMIIPage, Layer } from '@primitives/document-model/types.ts';
 import { mergeImportedDocuments } from './importMerge.ts';
 
-function makePage(id: string, name: string): FigmiiPage {
+function makePage(id: string, name: string): FIGMIIPage {
   const page = createEmptyDocument(name).pages[0]!;
   return {
     ...page,
@@ -11,7 +11,7 @@ function makePage(id: string, name: string): FigmiiPage {
   };
 }
 
-function makeComponentDoc(pageName: string): FigmiiDocument {
+function makeComponentDoc(pageName: string): FIGMIIDocument {
   const doc = createEmptyDocument(pageName);
   const sourceLayer: Layer = {
     id: 'layer-source',

@@ -1,8 +1,8 @@
 import JSZip from 'jszip';
-import type { FigmiiDocument } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument } from '@primitives/document-model/types.ts';
 import { deserializeDocument } from '@primitives/document-model/serialization.ts';
 
-export async function importFigmeZipFile(file: File): Promise<FigmiiDocument[]> {
+export async function importFigmeZipFile(file: File): Promise<FIGMIIDocument[]> {
   const zip = await JSZip.loadAsync(file);
   const entries = Object.values(zip.files)
     .filter((entry) => !entry.dir && isFigmiiFilename(entry.name))
@@ -12,7 +12,7 @@ export async function importFigmeZipFile(file: File): Promise<FigmiiDocument[]> 
     throw new Error('No .figmii or .figme files were found in the selected zip archive.');
   }
 
-  const documents: FigmiiDocument[] = [];
+  const documents: FIGMIIDocument[] = [];
   for (const entry of entries) {
     const text = await entry.async('string');
     documents.push(parseFigmeText(text, entry.name));
@@ -21,7 +21,7 @@ export async function importFigmeZipFile(file: File): Promise<FigmiiDocument[]> 
   return documents;
 }
 
-export async function importFigmeDirectoryFiles(files: File[]): Promise<FigmiiDocument[]> {
+export async function importFigmeDirectoryFiles(files: File[]): Promise<FIGMIIDocument[]> {
   const figmeFiles = files
     .filter((file) => isFigmiiFilename(file.name))
     .sort((a, b) => getRelativeFilePath(a).localeCompare(getRelativeFilePath(b)));
@@ -30,7 +30,7 @@ export async function importFigmeDirectoryFiles(files: File[]): Promise<FigmiiDo
     throw new Error('No .figmii or .figme files were found in the selected folder.');
   }
 
-  const documents: FigmiiDocument[] = [];
+  const documents: FIGMIIDocument[] = [];
   for (const file of figmeFiles) {
     const text = await readBlobText(file);
     documents.push(parseFigmeText(text, getRelativeFilePath(file)));
@@ -92,7 +92,7 @@ function isFigmiiFilename(filename: string): boolean {
   return lower.endsWith('.figmii') || lower.endsWith('.figme');
 }
 
-function parseFigmeText(text: string, sourceName: string): FigmiiDocument {
+function parseFigmeText(text: string, sourceName: string): FIGMIIDocument {
   try {
     return deserializeDocument(text);
   } catch {

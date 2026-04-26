@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
-import type { FigmiiDocument, FigmiiPage } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument, FIGMIIPage } from '@primitives/document-model/types.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { ExportDialog } from './ExportDialog.tsx';
 import { createExportBundle } from './exportBundle.ts';
@@ -14,16 +14,16 @@ vi.mock('./downloadBlob.ts', () => ({
   downloadBlob: vi.fn(),
 }));
 
-function makeDocument(name = 'Starter Kit'): FigmiiDocument {
+function makeDocument(name = 'Starter Kit'): FIGMIIDocument {
   const base = createEmptyDocument(name);
   const secondBase = createEmptyDocument('Second');
 
-  const pageOne: FigmiiPage = {
+  const pageOne: FIGMIIPage = {
     ...base.pages[0]!,
     id: 'page-one',
     name: 'Page One',
   };
-  const pageTwo: FigmiiPage = {
+  const pageTwo: FIGMIIPage = {
     ...secondBase.pages[0]!,
     id: 'page-two',
     name: 'Page Two',

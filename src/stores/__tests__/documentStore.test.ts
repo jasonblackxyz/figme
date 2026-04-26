@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useDocumentStore } from '../documentStore.ts'
 import { createEmptyDocument } from '@primitives/document-model/operations.ts'
+import type { SemanticRegion } from '@primitives/document-model/types.ts'
 
 describe('documentStore', () => {
   beforeEach(() => {
@@ -102,5 +103,63 @@ describe('documentStore', () => {
 
     useDocumentStore.getState().undo()
     expect(useDocumentStore.getState().document.pages).toHaveLength(1)
+  })
+
+  it('adds, updates, removes, and redoes regions through the undo stack', () => {
+    const region: SemanticRegion = {
+      id: 'region-submit',
+      componentKind: 'button',
+      semanticId: 'submit',
+      shape: { rect: { col: 4, row: 5, width: 12, height: 3 } },
+      interactions: [{ id: 'submitQuery', action: { kind: 'submitQuery', target: 'search' } }],
+    }
+
+    const store = useDocumentStore.getState()
+    store.addRegion(region)
+    expect(useDocumentStore.getState().document.pages[0]!.regions?.[region.id]).toEqual(region)
+    expect(useDocumentStore.getState().undoStack).toHaveLength(1)
+
+    useDocumentStore.getState().updateRegion(region.id, { componentKind: 'link', semanticId: 'submit-link' })
+    expect(useDocumentStore.getState().document.pages[0]!.regions?.[region.id]?.componentKind).toBe('link')
+    expect(useDocumentStore.getState().document.pages[0]!.regions?.[region.id]?.interactions).toEqual(region.interactions)
+
+    useDocumentStore.getState().updateRegionShape(region.id, {
+      rect: { col: 6, row: 7, width: 10, height: 2 },
+      exclude: [{ col: 7, row: 7 }],
+    })
+    expect(useDocumentStore.getState().document.pages[0]!.regions?.[region.id]?.shape.exclude).toEqual([{ col: 7, row: 7 }])
+
+    useDocumentStore.getState().removeRegion(region.id)
+    expect(useDocumentStore.getState().document.pages[0]!.regions?.[region.id]).toBeUndefined()
+
+    useDocumentStore.getState().undo()
+    expect(useDocumentStore.getState().document.pages[0]!.regions?.[region.id]?.shape.exclude).toEqual([{ col: 7, row: 7 }])
+
+    useDocumentStore.getState().redo()
+    expect(useDocumentStore.getState().document.pages[0]!.regions?.[region.id]).toBeUndefined()
+  })
+
+  it('updates page and document runtime metadata with undo', () => {
+    const store = useDocumentStore.getState()
+
+    store.updateActivePageRuntime({ screenId: 'search', desktopBehavior: 'centered-mobile-canvas' })
+    expect(useDocumentStore.getState().document.pages[0]!.runtime).toMatchObject({
+      exportAsScreen: false,
+      screenId: 'search',
+      desktopBehavior: 'centered-mobile-canvas',
+    })
+
+    useDocumentStore.getState().updateDocumentRuntime({
+      designFamily: 'starter-circuit',
+      packageVersion: 'readme-design-package-v1',
+    })
+    expect(useDocumentStore.getState().document.runtime?.manifest).toMatchObject({
+      family: 'starter-circuit',
+      version: 'readme-design-package-v1',
+    })
+
+    useDocumentStore.getState().undo()
+    expect(useDocumentStore.getState().document.runtime?.manifest?.family).toBeUndefined()
+    expect(useDocumentStore.getState().document.pages[0]!.runtime?.screenId).toBe('search')
   })
 })

@@ -1,4 +1,4 @@
-import type { ComponentDef, FigmiiDocument, FigmiiPage, Layer, LayerProperties } from '@primitives/document-model/types.ts';
+import type { ComponentDef, FIGMIIDocument, FIGMIIPage, Layer, LayerProperties } from '@primitives/document-model/types.ts';
 
 interface ImportIdCounters {
   page: number;
@@ -7,9 +7,9 @@ interface ImportIdCounters {
 }
 
 export function mergeImportedDocuments(
-  currentDoc: FigmiiDocument,
-  importedDocs: FigmiiDocument[],
-): FigmiiDocument {
+  currentDoc: FIGMIIDocument,
+  importedDocs: FIGMIIDocument[],
+): FIGMIIDocument {
   if (importedDocs.length === 0) return currentDoc;
 
   const nextDoc = cloneValue(currentDoc);
@@ -63,13 +63,13 @@ export function mergeImportedDocuments(
 }
 
 function remapImportedPage(
-  page: FigmiiPage,
+  page: FIGMIIPage,
   layerIdMap: Map<string, string>,
   componentIdMap: Map<string, string>,
   usedPageIds: Set<string>,
   usedPageNames: Set<string>,
   counters: ImportIdCounters,
-): FigmiiPage {
+): FIGMIIPage {
   const pageId = createUniqueId('page_import', usedPageIds, counters, 'page');
   const nextLayers: Record<string, Layer> = {};
 
@@ -184,7 +184,7 @@ function createUniqueId(
   return nextId;
 }
 
-function collectLayerIds(doc: FigmiiDocument): string[] {
+function collectLayerIds(doc: FIGMIIDocument): string[] {
   return doc.pages.flatMap((page) => Object.keys(page.layers));
 }
 

@@ -1,6 +1,6 @@
 import type {
-  FigmiiDocument,
-  FigmiiPage,
+  FIGMIIDocument,
+  FIGMIIPage,
   Layer,
   LayerKind,
   LayerProperties,
@@ -14,13 +14,13 @@ import type { StyleKey } from '@primitives/style-system/types.ts';
 import { createEmptyDocument, createEmptyPage } from '@primitives/document-model/operations.ts';
 
 /**
- * Import a Figmii-exported Markdown spec back into a FigmiiDocument.
+ * Import a Figmii-exported Markdown spec back into a FIGMIIDocument.
  *
  * Reconstructs layer shells (position, size, kind, style, visibility)
  * from the markdown table. Layer content is not preserved in markdown
  * exports, so imported layers have default/empty properties.
  */
-export function importMarkdown(md: string): FigmiiDocument {
+export function importMarkdown(md: string): FIGMIIDocument {
   const lines = md.split('\n');
 
   const name = extractDocName(lines);
@@ -72,8 +72,8 @@ function extractGridDimensions(lines: string[]): { cols: number; rows: number } 
   return null;
 }
 
-function parsePages(lines: string[]): FigmiiPage[] {
-  const pages: FigmiiPage[] = [];
+function parsePages(lines: string[]): FIGMIIPage[] {
+  const pages: FIGMIIPage[] = [];
   let currentPageName: string | null = null;
   let tableRows: string[] = [];
   let headerSeen = false;

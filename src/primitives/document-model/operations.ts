@@ -1,16 +1,21 @@
 import type {
   Layer,
-  FigmiiPage,
-  FigmiiDocument,
+  FIGMIIPage,
+  FIGMIIDocument,
   ComponentDef,
   LayerKind,
   LayerProperties,
+  SemanticRegion,
+  RegionShape,
+  FIGMIIPageRuntime,
+  DocumentRuntimeSemantics,
 } from './types.ts';
+import { DOCUMENT_SCHEMA_VERSION } from './types.ts';
 import type { GridRect } from '@primitives/grid-engine/types.ts';
 import type { StyleKey, Palette } from '@primitives/style-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import { createDefaultGridConfig } from '@primitives/grid-engine/measurement.ts';
-import { createEmptyRuntimeMetadata } from '@primitives/runtime-semantics/defaults.ts';
+import { createEmptyRuntimeMetadata, normalizeRuntimeMetadata } from '@primitives/runtime-semantics/defaults.ts';
 
 let idCounter = 0;
 function generateId(): string {
@@ -22,13 +27,13 @@ function generateId(): string {
  * Add a layer to a page. Returns the updated page.
  */
 export function addLayer(
-  page: FigmiiPage,
+  page: FIGMIIPage,
   kind: LayerKind,
   name: string,
   rect: GridRect,
   styleKey: StyleKey,
   properties: LayerProperties,
-): FigmiiPage {
+): FIGMIIPage {
   const id = generateId();
   const layer: Layer = {
     id,
@@ -53,7 +58,7 @@ export function addLayer(
  * Remove a layer from a page by ID.
  * Refuses to remove Background layers. Handles hierarchy cleanup.
  */
-export function removeLayer(page: FigmiiPage, layerId: string): FigmiiPage {
+export function removeLayer(page: FIGMIIPage, layerId: string): FIGMIIPage {
   const layer = page.layers[layerId];
   if (!layer) return page;
   if (layer.isBackground) return page;
@@ -103,10 +108,10 @@ export function removeLayer(page: FigmiiPage, layerId: string): FigmiiPage {
  * Update a layer's properties. Returns the updated page.
  */
 export function updateLayer(
-  page: FigmiiPage,
+  page: FIGMIIPage,
   layerId: string,
   updates: Partial<Layer>,
-): FigmiiPage {
+): FIGMIIPage {
   const existing = page.layers[layerId];
   if (!existing) return page;
 
@@ -120,14 +125,108 @@ export function updateLayer(
 }
 
 /**
+ * Add or replace a semantic runtime region on a page.
+ */
+export function addRegion(page: FIGMIIPage, region: SemanticRegion): FIGMIIPage {
+  const regions = { ...(page.regions ?? {}), [region.id]: region };
+  const existingOrder = page.regionOrder ?? Object.keys(page.regions ?? {});
+  const regionOrder = existingOrder.includes(region.id)
+    ? existingOrder
+    : [...existingOrder, region.id];
+
+  return { ...page, regions, regionOrder };
+}
+
+/**
+ * Update a semantic region while preserving all unspecified fields.
+ */
+export function updateRegion(
+  page: FIGMIIPage,
+  regionId: string,
+  updates: Partial<Omit<SemanticRegion, 'id'>>,
+): FIGMIIPage {
+  const existing = page.regions?.[regionId];
+  if (!existing) return page;
+
+  return {
+    ...page,
+    regions: {
+      ...(page.regions ?? {}),
+      [regionId]: { ...existing, ...updates, id: regionId },
+    },
+  };
+}
+
+/**
+ * Remove a semantic region and its iteration-order entry.
+ */
+export function removeRegion(page: FIGMIIPage, regionId: string): FIGMIIPage {
+  if (!page.regions?.[regionId]) return page;
+
+  const regions = { ...page.regions };
+  delete regions[regionId];
+
+  return {
+    ...page,
+    regions,
+    regionOrder: (page.regionOrder ?? Object.keys(page.regions)).filter((id) => id !== regionId),
+  };
+}
+
+/**
+ * Update only a region's shape so cell-painting tools can mutate efficiently.
+ */
+export function updateRegionShape(
+  page: FIGMIIPage,
+  regionId: string,
+  shape: RegionShape,
+): FIGMIIPage {
+  return updateRegion(page, regionId, { shape });
+}
+
+export function updatePageRuntime(
+  page: FIGMIIPage,
+  runtime: Partial<FIGMIIPageRuntime> | undefined,
+): FIGMIIPage {
+  return {
+    ...page,
+    runtime: runtime === undefined ? undefined : { ...(page.runtime ?? {}), ...runtime },
+  };
+}
+
+export function updateDocumentRuntime(
+  doc: FIGMIIDocument,
+  runtime: Partial<DocumentRuntimeSemantics> | undefined,
+): FIGMIIDocument {
+  if (runtime === undefined) {
+    return { ...doc, runtime: undefined };
+  }
+
+  const nextRuntime = normalizeRuntimeMetadata(doc.runtime);
+
+  return {
+    ...doc,
+    runtime: {
+      ...nextRuntime,
+      manifest: {
+        ...nextRuntime.manifest,
+        ...(runtime.designFamily !== undefined ? { family: runtime.designFamily } : {}),
+        ...(runtime.packageVersion !== undefined ? { version: runtime.packageVersion } : {}),
+        ...(runtime.sourceRefs !== undefined ? { sourceRefs: [...runtime.sourceRefs] } : {}),
+      },
+    },
+  };
+}
+
+/**
  * Move a layer to a new grid position.
  */
 export function moveLayer(
-  page: FigmiiPage,
+  page: FIGMIIPage,
   layerId: string,
   col: number,
   row: number,
-): FigmiiPage {
+): FIGMIIPage {
   const existing = page.layers[layerId];
   if (!existing) return page;
 
@@ -140,9 +239,9 @@ export function moveLayer(
  * Reorder layers (change z-order).
  */
 export function reorderLayers(
-  page: FigmiiPage,
+  page: FIGMIIPage,
   newOrder: string[],
-): FigmiiPage {
+): FIGMIIPage {
   return { ...page, layerOrder: newOrder };
 }
 
@@ -150,9 +249,9 @@ export function reorderLayers(
  * Add a new page to the document.
  */
 export function addPage(
-  doc: FigmiiDocument,
+  doc: FIGMIIDocument,
   name: string,
-): FigmiiDocument {
+): FIGMIIDocument {
   const page = createEmptyPage(name);
   return {
     ...doc,
@@ -164,9 +263,9 @@ export function addPage(
  * Remove a page from the document by ID.
  */
 export function removePage(
-  doc: FigmiiDocument,
+  doc: FIGMIIDocument,
   pageId: string,
-): FigmiiDocument {
+): FIGMIIDocument {
   const pages = doc.pages.filter((p) => p.id !== pageId);
   const activePageId =
     doc.activePageId === pageId
@@ -180,9 +279,9 @@ export function removePage(
  * Set the active page in the document.
  */
 export function setActivePage(
-  doc: FigmiiDocument,
+  doc: FIGMIIDocument,
   pageId: string,
-): FigmiiDocument {
+): FIGMIIDocument {
   return { ...doc, activePageId: pageId };
 }
 
@@ -190,11 +289,11 @@ export function setActivePage(
  * Create a reusable component definition from layer IDs.
  */
 export function createComponent(
-  doc: FigmiiDocument,
+  doc: FIGMIIDocument,
   name: string,
   description: string,
   sourceLayerIds: string[],
-): FigmiiDocument {
+): FIGMIIDocument {
   const id = `comp_${Date.now()}_${++idCounter}`;
   const comp: ComponentDef = {
     id,
@@ -212,12 +311,11 @@ export function createComponent(
 /**
  * Instantiate a component on a page (stub).
  */
-/* eslint-disable @typescript-eslint/no-unused-vars -- TODO: remove when implemented */
 export function instantiateComponent(
-  page: FigmiiPage,
+  page: FIGMIIPage,
   _componentId: string,
   _rect: GridRect,
-): FigmiiPage {
+): FIGMIIPage {
   return page;
 }
 
@@ -225,21 +323,20 @@ export function instantiateComponent(
  * Detach a component instance, converting it to regular layers (stub).
  */
 export function detachComponent(
-  page: FigmiiPage,
+  page: FIGMIIPage,
   _layerId: string,
-): FigmiiPage {
+): FIGMIIPage {
   return page;
 }
-/* eslint-enable @typescript-eslint/no-unused-vars */
 
 /**
- * Create an empty Figmii document with default configuration.
+ * Create an empty FIGMII document with default configuration.
  */
 export function createEmptyDocument(
   name?: string,
   gridConfig?: GridConfig,
   palette?: Palette,
-): FigmiiDocument {
+): FIGMIIDocument {
   const defaultGridConfig: GridConfig = gridConfig ?? createDefaultGridConfig();
 
   const defaultPalette: Palette = palette ?? createMinimalPalette();
@@ -260,15 +357,15 @@ export function createEmptyDocument(
     metadata: {
       createdAt: now,
       updatedAt: now,
-      version: 1,
+      version: DOCUMENT_SCHEMA_VERSION,
     },
   };
 }
 
 /**
- * Create an empty Figmii page with a default Background layer.
+ * Create an empty FIGMII page with a default Background layer.
  */
-export function createEmptyPage(name?: string): FigmiiPage {
+export function createEmptyPage(name?: string): FIGMIIPage {
   const bgId = generateId();
   const bgLayer: Layer = {
     id: bgId,
@@ -289,6 +386,8 @@ export function createEmptyPage(name?: string): FigmiiPage {
     name: name ?? 'Untitled Page',
     layers: { [bgId]: bgLayer },
     layerOrder: [bgId],
+    regions: {},
+    regionOrder: [],
     canvasX: 0,
     canvasY: 0,
     runtime: {
@@ -307,10 +406,10 @@ export function createEmptyPage(name?: string): FigmiiPage {
  * position of the frontmost selected element.
  */
 export function groupLayers(
-  page: FigmiiPage,
+  page: FIGMIIPage,
   layerIds: string[],
   groupName?: string,
-): FigmiiPage {
+): FIGMIIPage {
   if (layerIds.length === 0) return page;
 
   const layers = { ...page.layers };
@@ -388,7 +487,7 @@ export function groupLayers(
  * Dissolve a group — its children are spliced into the parent's order
  * at the group's position.
  */
-export function ungroupLayers(page: FigmiiPage, groupId: string): FigmiiPage {
+export function ungroupLayers(page: FIGMIIPage, groupId: string): FIGMIIPage {
   const group = page.layers[groupId];
   if (!group || group.kind !== 'group' || group.isBackground) return page;
 
@@ -431,7 +530,7 @@ export function ungroupLayers(page: FigmiiPage, groupId: string): FigmiiPage {
 // Z-order operations — work within sibling list
 // ---------------------------------------------------------------------------
 
-function getSiblingList(page: FigmiiPage, layerId: string): { list: string[]; key: 'layerOrder' | 'children'; parentId?: string } {
+function getSiblingList(page: FIGMIIPage, layerId: string): { list: string[]; key: 'layerOrder' | 'children'; parentId?: string } {
   const layer = page.layers[layerId];
   if (!layer) return { list: [], key: 'layerOrder' };
   if (layer.parentId) {
@@ -441,7 +540,7 @@ function getSiblingList(page: FigmiiPage, layerId: string): { list: string[]; ke
   return { list: page.layerOrder, key: 'layerOrder' };
 }
 
-function applySiblingOrder(page: FigmiiPage, newList: string[], parentId?: string): FigmiiPage {
+function applySiblingOrder(page: FIGMIIPage, newList: string[], parentId?: string): FIGMIIPage {
   if (parentId) {
     const parent = page.layers[parentId];
     if (!parent) return page;
@@ -454,13 +553,13 @@ function applySiblingOrder(page: FigmiiPage, newList: string[], parentId?: strin
 }
 
 /** Smallest index that a non-background layer can occupy at root level. */
-function bgGuardIndex(page: FigmiiPage, siblings: string[]): number {
+function bgGuardIndex(page: FIGMIIPage, siblings: string[]): number {
   const first = siblings[0];
   if (first && page.layers[first]?.isBackground) return 1;
   return 0;
 }
 
-export function bringForward(page: FigmiiPage, layerId: string): FigmiiPage {
+export function bringForward(page: FIGMIIPage, layerId: string): FIGMIIPage {
   if (page.layers[layerId]?.isBackground) return page;
   const { list, parentId } = getSiblingList(page, layerId);
   const idx = list.indexOf(layerId);
@@ -470,7 +569,7 @@ export function bringForward(page: FigmiiPage, layerId: string): FigmiiPage {
   return applySiblingOrder(page, next, parentId);
 }
 
-export function sendBackward(page: FigmiiPage, layerId: string): FigmiiPage {
+export function sendBackward(page: FIGMIIPage, layerId: string): FIGMIIPage {
   if (page.layers[layerId]?.isBackground) return page;
   const { list, parentId } = getSiblingList(page, layerId);
   const idx = list.indexOf(layerId);
@@ -481,7 +580,7 @@ export function sendBackward(page: FigmiiPage, layerId: string): FigmiiPage {
   return applySiblingOrder(page, next, parentId);
 }
 
-export function bringToFront(page: FigmiiPage, layerId: string): FigmiiPage {
+export function bringToFront(page: FIGMIIPage, layerId: string): FIGMIIPage {
   if (page.layers[layerId]?.isBackground) return page;
   const { list, parentId } = getSiblingList(page, layerId);
   const idx = list.indexOf(layerId);
@@ -491,7 +590,7 @@ export function bringToFront(page: FigmiiPage, layerId: string): FigmiiPage {
   return applySiblingOrder(page, next, parentId);
 }
 
-export function sendToBack(page: FigmiiPage, layerId: string): FigmiiPage {
+export function sendToBack(page: FIGMIIPage, layerId: string): FIGMIIPage {
   if (page.layers[layerId]?.isBackground) return page;
   const { list, parentId } = getSiblingList(page, layerId);
   const idx = list.indexOf(layerId);
@@ -511,11 +610,11 @@ export function sendToBack(page: FigmiiPage, layerId: string): FigmiiPage {
  * Validates against circular references.
  */
 export function moveLayerToGroup(
-  page: FigmiiPage,
+  page: FIGMIIPage,
   layerId: string,
   targetGroupId: string | null,
   insertIndex?: number,
-): FigmiiPage {
+): FIGMIIPage {
   const layer = page.layers[layerId];
   if (!layer || layer.isBackground) return page;
 
