@@ -1,7 +1,7 @@
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { LayerRow } from './LayerRow.tsx';
-import type { FigmiiPage } from '@primitives/document-model/types.ts';
+import type { FIGMIIPage } from '@primitives/document-model/types.ts';
 import styles from './LayersPanel.module.css';
 
 export function LayersPanel() {
@@ -25,7 +25,7 @@ export function LayersPanel() {
     }
   }
 
-  function renderTree(ids: string[], page: FigmiiPage, depth: number) {
+  function renderTree(ids: string[], page: FIGMIIPage, depth: number) {
     // Reverse so top = front (highest z-order first in the UI)
     const reversed = [...ids].reverse();
     return reversed.map(id => {

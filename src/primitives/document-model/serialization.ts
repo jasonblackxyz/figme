@@ -1,34 +1,32 @@
-import type { FigmiiDocument, FigmiiPage, Layer } from './types.ts';
+import type { FIGMIIDocument, FIGMIIPage, Layer } from './types.ts';
+import { DOCUMENT_SCHEMA_VERSION } from './types.ts';
 import { normalizeRuntimeMetadata } from '@primitives/runtime-semantics/defaults.ts';
 
 let migrationIdCounter = 0;
 
 /**
- * Serialize a FigmiiDocument to a JSON string.
- *
- * Stub: uses JSON.stringify. Real implementation may add
- * versioning, compression, or custom serialization logic.
+ * Serialize a FIGMIIDocument to a JSON string.
  */
-export function serializeDocument(doc: FigmiiDocument): string {
-  return JSON.stringify(doc, null, 2);
+export function serializeDocument(doc: FIGMIIDocument): string {
+  return JSON.stringify(migrateDocument(doc), null, 2);
 }
 
 /**
- * Deserialize a JSON string into a FigmiiDocument.
+ * Deserialize a JSON string into a FIGMIIDocument.
  * Applies migrations for older document versions.
  */
-export function deserializeDocument(json: string): FigmiiDocument {
-  const doc = JSON.parse(json) as FigmiiDocument;
+export function deserializeDocument(json: string): FIGMIIDocument {
+  const doc = JSON.parse(json) as FIGMIIDocument;
   return migrateDocument(doc);
 }
 
 /**
- * Ensure every page has a Background layer.
- * Handles documents saved before the layer hierarchy was introduced.
+ * Ensure older documents load into the current additive schema.
+ * Handles documents saved before background layers and runtime regions existed.
  */
-function migrateDocument(doc: FigmiiDocument): FigmiiDocument {
-  let changed = false;
-  const pages = doc.pages.map((page): FigmiiPage => {
+export function migrateDocument(doc: FIGMIIDocument): FIGMIIDocument {
+  let changed = doc.metadata.version !== DOCUMENT_SCHEMA_VERSION;
+  const pages = doc.pages.map((page): FIGMIIPage => {
     let nextPage = page.runtime
       ? page
       : {
@@ -40,7 +38,22 @@ function migrateDocument(doc: FigmiiDocument): FigmiiDocument {
         };
     if (!page.runtime) changed = true;
 
-    const hasBackground = Object.values(page.layers).some(
+    if (nextPage.regions === undefined) {
+      changed = true;
+      nextPage = {
+        ...nextPage,
+        regions: {},
+        regionOrder: nextPage.regionOrder ?? [],
+      };
+    } else if (nextPage.regionOrder === undefined) {
+      changed = true;
+      nextPage = {
+        ...nextPage,
+        regionOrder: Object.keys(nextPage.regions),
+      };
+    }
+
+    const hasBackground = Object.values(nextPage.layers).some(
       (l: Layer | undefined) => l?.isBackground,
     );
     if (hasBackground) return nextPage;
@@ -71,5 +84,15 @@ function migrateDocument(doc: FigmiiDocument): FigmiiDocument {
   const runtime = normalizeRuntimeMetadata(doc.runtime);
   if (!doc.runtime) changed = true;
 
-  return changed ? { ...doc, pages, runtime } : { ...doc, runtime };
+  if (!changed) return { ...doc, runtime };
+
+  return {
+    ...doc,
+    pages,
+    runtime,
+    metadata: {
+      ...doc.metadata,
+      version: DOCUMENT_SCHEMA_VERSION,
+    },
+  };
 }

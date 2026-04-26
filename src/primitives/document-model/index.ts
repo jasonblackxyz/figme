@@ -10,17 +10,40 @@ export type {
   CustomBorderChars,
   AutoLayoutConfig,
   LayerProperties,
-  FigmiiPage,
-  FigmiiDocument,
+  RuntimeRole,
+  RuntimeComponentKind,
+  RuntimeAction,
+  RegionShape,
+  RuntimeBindingRef,
+  RuntimeInteractionRef,
+  RuntimeProvenance,
+  SemanticRegion,
+  PageRuntimeSemantics,
+  DocumentRuntimeSemantics,
+  FIGMIIPage,
+  FIGMIIDocument,
   ComponentDef,
   PageRuntimeMetadata,
   LayerRuntimeMetadata,
   FigMeRuntimeMetadata,
 } from './types.ts'
 export {
+  DOCUMENT_SCHEMA_VERSION,
+  RUNTIME_ROLES,
+  RUNTIME_TIER_1_COMPONENT_KINDS,
+  RUNTIME_TIER_2_COMPONENT_KINDS,
+  RUNTIME_COMPONENT_KINDS,
+} from './types.ts'
+export {
   addLayer,
   removeLayer,
   updateLayer,
+  addRegion,
+  updateRegion,
+  removeRegion,
+  updateRegionShape,
+  updatePageRuntime,
+  updateDocumentRuntime,
   moveLayer,
   reorderLayers,
   addPage,
@@ -50,6 +73,6 @@ export {
   applyPageCanvasSizeToGridConfig,
   getVisiblePageContentBounds,
 } from './canvasSize.ts'
-export { serializeDocument, deserializeDocument } from './serialization.ts'
+export { serializeDocument, deserializeDocument, migrateDocument } from './serialization.ts'
 export type { ColorOverrideMap } from './colorOverrides.ts'
 export { computeColorOverrides } from './colorOverrides.ts'

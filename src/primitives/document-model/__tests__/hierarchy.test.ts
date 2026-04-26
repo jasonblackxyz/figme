@@ -17,10 +17,10 @@ import {
   moveLayerToGroup,
   removeLayer,
 } from '../operations.ts';
-import type { FigmiiPage } from '../types.ts';
+import type { FIGMIIPage } from '../types.ts';
 
 /** Helper: create a page with N layers (on top of the Background layer). */
-function pageWithLayers(count: number): FigmiiPage {
+function pageWithLayers(count: number): FIGMIIPage {
   let page = createEmptyPage('Test');
   for (let i = 0; i < count; i++) {
     page = addLayer(page, 'border-box', `Layer ${i}`, { col: i * 5, row: 0, width: 4, height: 4 }, 'border', {
@@ -32,11 +32,11 @@ function pageWithLayers(count: number): FigmiiPage {
 }
 
 /** Get IDs of non-background layers in layerOrder order. */
-function contentIds(page: FigmiiPage): string[] {
+function contentIds(page: FIGMIIPage): string[] {
   return page.layerOrder.filter((id) => !page.layers[id]?.isBackground);
 }
 
-function bgId(page: FigmiiPage): string {
+function bgId(page: FIGMIIPage): string {
   return page.layerOrder.find((id) => page.layers[id]?.isBackground)!;
 }
 

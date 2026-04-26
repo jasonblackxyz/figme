@@ -39,7 +39,7 @@ export async function migrateFigmeToFigmii(): Promise<void> {
     await migrateIndexedDB();
     localStorage.setItem(SENTINEL_KEY, 'true');
   } catch (err) {
-    console.warn('[Figmii] Legacy storage migration failed:', err);
+    console.warn('[FIGMII] Legacy storage migration failed:', err);
   }
 }
 

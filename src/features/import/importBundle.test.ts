@@ -1,9 +1,9 @@
 import JSZip from 'jszip';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
-import type { FigmiiDocument } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument } from '@primitives/document-model/types.ts';
 import { importFigmeDirectoryFiles, importFigmeZipFile } from './importBundle.ts';
 
-function makeDoc(name: string, pageName: string): FigmiiDocument {
+function makeDoc(name: string, pageName: string): FIGMIIDocument {
   const doc = createEmptyDocument(name);
   const page = doc.pages[0]!;
 
@@ -14,7 +14,7 @@ function makeDoc(name: string, pageName: string): FigmiiDocument {
   };
 }
 
-function makeFigmiiFile(filename: string, doc: FigmiiDocument, relativePath?: string): File {
+function makeFigmiiFile(filename: string, doc: FIGMIIDocument, relativePath?: string): File {
   const file = new File([JSON.stringify(doc)], filename, { type: 'application/json' });
   if (relativePath) {
     Object.defineProperty(file, 'webkitRelativePath', {

@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import type { FigmiiDocument } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument } from '@primitives/document-model/types.ts';
 import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
 
 interface SpecViewProps {
-  document: FigmiiDocument;
+  document: FIGMIIDocument;
   selectedLayerIds: string[];
 }
 

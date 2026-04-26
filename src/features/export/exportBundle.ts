@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 import { composePageBuffer } from '@primitives/stamp-system/composeBuffer.ts';
 import { computeColorOverrides } from '@primitives/document-model/colorOverrides.ts';
 import { applyPageCanvasSizeToGridConfig, getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
-import type { ComponentDef, FigmiiDocument, FigmiiPage, Layer } from '@primitives/document-model/types.ts';
+import type { ComponentDef, FIGMIIDocument, FIGMIIPage, Layer } from '@primitives/document-model/types.ts';
 import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
@@ -13,14 +13,14 @@ import { buildPageExportBaseName, buildZipExportName } from './exportNaming.ts';
 import type { ExportBundleOptions } from './types.ts';
 
 export interface PageExportContext {
-  page: FigmiiPage;
+  page: FIGMIIPage;
   buffer: StampBuffer;
   pageGridConfig: GridConfig;
   colorOverrides: ColorOverrideMap;
   canvasSize: ReturnType<typeof getPageCanvasSizeInfo>;
 }
 
-export function createPageExportContext(doc: FigmiiDocument, page: FigmiiPage): PageExportContext {
+export function createPageExportContext(doc: FIGMIIDocument, page: FIGMIIPage): PageExportContext {
   const canvasSize = getPageCanvasSizeInfo(page, doc.gridConfig);
   const pageGridConfig = applyPageCanvasSizeToGridConfig(page, doc.gridConfig);
   const buffer = composePageBuffer(page, pageGridConfig);
@@ -30,10 +30,10 @@ export function createPageExportContext(doc: FigmiiDocument, page: FigmiiPage): 
 }
 
 export function createSinglePageDocument(
-  doc: FigmiiDocument,
-  page: FigmiiPage,
+  doc: FIGMIIDocument,
+  page: FIGMIIPage,
   designName: string,
-): FigmiiDocument {
+): FIGMIIDocument {
   return {
     ...doc,
     name: designName,
@@ -44,8 +44,8 @@ export function createSinglePageDocument(
 }
 
 function collectPageComponents(
-  doc: FigmiiDocument,
-  page: FigmiiPage,
+  doc: FIGMIIDocument,
+  page: FIGMIIPage,
 ): Record<string, ComponentDef> {
   const pageLayerIds = new Set(Object.keys(page.layers));
   const componentIds = new Set<string>();
@@ -76,13 +76,13 @@ function getComponentLayerId(layer: Layer): string | null {
 }
 
 export async function createExportBundle(
-  doc: FigmiiDocument,
+  doc: FIGMIIDocument,
   options: ExportBundleOptions,
 ): Promise<{ blob: Blob; filename: string }> {
   const designName = options.designName.trim() || doc.name || 'Untitled';
   const selectedPages = options.selectedPageIds
     .map((pageId) => doc.pages.find((page) => page.id === pageId))
-    .filter((page): page is FigmiiPage => page !== undefined);
+    .filter((page): page is FIGMIIPage => page !== undefined);
 
   if (selectedPages.length === 0) {
     throw new Error('Select at least one page to export.');

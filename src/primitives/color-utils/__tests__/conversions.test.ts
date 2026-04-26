@@ -8,7 +8,7 @@ import {
   isValidHex,
   extractDocumentColors,
 } from '../conversions.ts';
-import type { FigmiiPage } from '@primitives/document-model/types.ts';
+import type { FIGMIIPage } from '@primitives/document-model/types.ts';
 import type { Palette } from '@primitives/style-system/types.ts';
 
 describe('hexToRgb', () => {
@@ -88,7 +88,7 @@ describe('extractDocumentColors', () => {
   } as unknown as Palette;
 
   it('extracts palette colors from layers', () => {
-    const page: FigmiiPage = {
+    const page: FIGMIIPage = {
       id: 'p1',
       name: 'Page 1',
       layers: {
@@ -107,7 +107,7 @@ describe('extractDocumentColors', () => {
   });
 
   it('includes customColors overrides', () => {
-    const page: FigmiiPage = {
+    const page: FIGMIIPage = {
       id: 'p1',
       name: 'Page 1',
       layers: {
@@ -127,7 +127,7 @@ describe('extractDocumentColors', () => {
   });
 
   it('includes cellColorOverrides', () => {
-    const page: FigmiiPage = {
+    const page: FIGMIIPage = {
       id: 'p1',
       name: 'Page 1',
       layers: {
@@ -147,7 +147,7 @@ describe('extractDocumentColors', () => {
   });
 
   it('deduplicates colors', () => {
-    const page: FigmiiPage = {
+    const page: FIGMIIPage = {
       id: 'p1',
       name: 'Page 1',
       layers: {

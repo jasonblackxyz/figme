@@ -1,16 +1,16 @@
-import type { FigmiiDocument } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument } from '@primitives/document-model/types.ts';
 import { deserializeDocument } from '@primitives/document-model/serialization.ts';
 import { importGridSpec } from './importGridSpec.ts';
 import { importHtml } from './importHtml.ts';
 import { importMarkdown } from './importMarkdown.ts';
 
 /**
- * Open a file picker and import the selected file into a FigmiiDocument.
+ * Open a file picker and import the selected file into a FIGMIIDocument.
  *
  * Supports: .figmii, .figme (legacy), .json, .gridspec.json, .html, .md
  * Detects format by file extension and routes to the appropriate parser.
  */
-export async function importFile(): Promise<FigmiiDocument | null> {
+export async function importFile(): Promise<FIGMIIDocument | null> {
   const file = await pickImportFile();
   if (!file) return null;
 
@@ -21,7 +21,7 @@ export async function importFile(): Promise<FigmiiDocument | null> {
   }
 }
 
-export async function parseImportFile(file: File): Promise<FigmiiDocument> {
+export async function parseImportFile(file: File): Promise<FIGMIIDocument> {
   const text = await readBlobText(file);
   const name = file.name.toLowerCase();
 

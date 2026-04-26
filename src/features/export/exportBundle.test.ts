@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
-import type { FigmiiDocument, FigmiiPage, Layer } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument, FIGMIIPage, Layer } from '@primitives/document-model/types.ts';
 import { createExportBundle } from './exportBundle.ts';
 import { buildPageExportBaseName } from './exportNaming.ts';
 import { renderBufferToCanvas } from './renderToCanvas.ts';
@@ -13,16 +13,16 @@ vi.mock('./renderToCanvas.ts', () => ({
   })),
 }));
 
-function makeDocument(): FigmiiDocument {
+function makeDocument(): FIGMIIDocument {
   const base = createEmptyDocument('Source Document');
   const secondBase = createEmptyDocument('Second Document');
 
-  const pageOne: FigmiiPage = {
+  const pageOne: FIGMIIPage = {
     ...base.pages[0]!,
     id: 'page-one',
     name: 'Page One',
   };
-  const pageTwo: FigmiiPage = {
+  const pageTwo: FIGMIIPage = {
     ...secondBase.pages[0]!,
     id: 'page-two',
     name: 'Page Two',
@@ -99,7 +99,7 @@ describe('createExportBundle', () => {
     const file = zip.file(`${pageBase}/${pageBase}.figmii`);
 
     expect(file).not.toBeNull();
-    const exportedDoc = JSON.parse(await file!.async('string')) as FigmiiDocument;
+    const exportedDoc = JSON.parse(await file!.async('string')) as FIGMIIDocument;
 
     expect(exportedDoc.name).toBe('Circuit');
     expect(exportedDoc.pages).toHaveLength(1);
@@ -147,7 +147,7 @@ describe('createExportBundle', () => {
       },
       layerOrder: [...doc.pages[1]!.layerOrder, sourceOnlyLayer.id],
     };
-    const componentDoc: FigmiiDocument = {
+    const componentDoc: FIGMIIDocument = {
       ...doc,
       pages: [pageOne, pageTwo],
       components: {
@@ -177,7 +177,7 @@ describe('createExportBundle', () => {
     const zip = await loadZip(blob);
     const pageBase = buildPageExportBaseName('Circuit', 'Page One', date);
     const file = zip.file(`${pageBase}/${pageBase}.figmii`);
-    const exportedDoc = JSON.parse(await file!.async('string')) as FigmiiDocument;
+    const exportedDoc = JSON.parse(await file!.async('string')) as FIGMIIDocument;
 
     expect(Object.keys(exportedDoc.components)).toEqual(['component-page-one']);
   });

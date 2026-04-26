@@ -1,5 +1,5 @@
-import { deserializeDocument } from '@primitives/document-model/serialization.ts';
-import type { FigmiiDocument } from '@primitives/document-model/types.ts';
+import { deserializeDocument, migrateDocument, serializeDocument } from '@primitives/document-model/serialization.ts';
+import type { FIGMIIDocument } from '@primitives/document-model/types.ts';
 
 const DB_NAME = 'figmii-persistence';
 const DB_VERSION = 2;
@@ -15,7 +15,7 @@ interface SaveRecord {
   id?: number;
   timestamp: number;
   tabId: string;
-  document: FigmiiDocument;
+  document: FIGMIIDocument;
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -49,7 +49,7 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 export async function saveToDB(
-  doc: FigmiiDocument,
+  doc: FIGMIIDocument,
   tabId: string,
 ): Promise<void> {
   const db = await openDb();
@@ -57,7 +57,7 @@ export async function saveToDB(
     const record: SaveRecord = {
       timestamp: Date.now(),
       tabId,
-      document: doc,
+      document: migrateDocument(doc),
     };
 
     // Write new save
@@ -105,10 +105,10 @@ export async function saveToDB(
 
 export async function loadLatestFromDB(
   tabId: string,
-): Promise<FigmiiDocument | null> {
+): Promise<FIGMIIDocument | null> {
   const db = await openDb();
   try {
-    return await new Promise<FigmiiDocument | null>((resolve, reject) => {
+    return await new Promise<FIGMIIDocument | null>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const index = tx.objectStore(STORE_NAME).index('tabId_timestamp');
       const range = IDBKeyRange.bound([tabId, 0], [tabId, Infinity]);
@@ -116,7 +116,7 @@ export async function loadLatestFromDB(
       cursor.onsuccess = () => {
         const c = cursor.result;
         if (c) {
-          resolve((c.value as SaveRecord).document);
+          resolve(migrateDocument((c.value as SaveRecord).document));
         } else {
           resolve(null);
         }
@@ -168,7 +168,7 @@ export async function clearTabFromDB(tabId: string): Promise<void> {
 
 // --- localStorage helpers ---
 
-export function loadFromLocalStorage(tabId: string): FigmiiDocument | null {
+export function loadFromLocalStorage(tabId: string): FIGMIIDocument | null {
   try {
     const saved = localStorage.getItem(localStorageKey(tabId));
     if (saved) return deserializeDocument(saved);
@@ -178,9 +178,9 @@ export function loadFromLocalStorage(tabId: string): FigmiiDocument | null {
   return null;
 }
 
-export function saveToLocalStorage(doc: FigmiiDocument, tabId: string): void {
+export function saveToLocalStorage(doc: FIGMIIDocument, tabId: string): void {
   try {
-    localStorage.setItem(localStorageKey(tabId), JSON.stringify(doc));
+    localStorage.setItem(localStorageKey(tabId), serializeDocument(doc));
   } catch {
     // Storage full or unavailable -- silently skip
   }
@@ -190,7 +190,7 @@ export function saveToLocalStorage(doc: FigmiiDocument, tabId: string): void {
 
 export async function loadPersistedDocument(
   tabId: string,
-): Promise<FigmiiDocument | null> {
+): Promise<FIGMIIDocument | null> {
   // Try IndexedDB first (primary, larger capacity)
   try {
     const doc = await loadLatestFromDB(tabId);
@@ -204,12 +204,12 @@ export async function loadPersistedDocument(
 
 // --- Legacy v1 loaders (migration only) ---
 
-export async function loadLegacyDocument(): Promise<FigmiiDocument | null> {
+export async function loadLegacyDocument(): Promise<FIGMIIDocument | null> {
   // Try IndexedDB: get most recent record regardless of tabId
   try {
     const db = await openDb();
     try {
-      const doc = await new Promise<FigmiiDocument | null>(
+      const doc = await new Promise<FIGMIIDocument | null>(
         (resolve, reject) => {
           const tx = db.transaction(STORE_NAME, 'readonly');
           const index = tx.objectStore(STORE_NAME).index('timestamp');
@@ -217,7 +217,7 @@ export async function loadLegacyDocument(): Promise<FigmiiDocument | null> {
           cursor.onsuccess = () => {
             const c = cursor.result;
             if (c) {
-              resolve((c.value as SaveRecord).document);
+              resolve(migrateDocument((c.value as SaveRecord).document));
             } else {
               resolve(null);
             }

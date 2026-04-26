@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-control-regex -- Filename sanitization intentionally strips ASCII control chars.
 const INVALID_FILENAME_CHARS = /[<>:"/\\|?*\u0000-\u001f]/g;
 const TRAILING_DOTS = /\.+$/g;
 
