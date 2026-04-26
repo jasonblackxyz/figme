@@ -142,6 +142,72 @@ describe('design-package exporter', () => {
     expect(() => buildDesignPackageExport(doc, { strict: true })).toThrow(DesignPackageExportError);
   });
 
+  it('falls back to the selected screen when the authored default is excluded', () => {
+    const firstDoc = withRegions(
+      withPageRuntime(createEmptyDocument('Subset'), { screenId: 'screen-a' }),
+      [region('button', 0, { id: 'button-a', semanticId: 'button-a' })],
+    );
+    const secondDoc = withRegions(
+      withPageRuntime(createEmptyDocument('Subset Page 2'), { screenId: 'screen-b' }),
+      [region('button', 1, { id: 'button-b', semanticId: 'button-b' })],
+    );
+    const secondPage = { ...secondDoc.pages[0]!, id: 'page-b', name: 'Page B' };
+    const doc: FigmiiDocument = {
+      ...firstDoc,
+      runtime: {
+        ...firstDoc.runtime!,
+        manifest: { ...firstDoc.runtime!.manifest, defaultScreen: 'screen-a' },
+      },
+      pages: [
+        { ...firstDoc.pages[0]!, id: 'page-a', name: 'Page A' },
+        secondPage,
+      ],
+    };
+
+    const result = buildDesignPackageExport(doc, { selectedPageIds: ['page-b'], strict: true });
+
+    expect(result.package.screens.map((screen) => screen.id)).toEqual(['screen-b']);
+    expect(result.package.manifest.defaultScreen).toBe('screen-b');
+  });
+
+  it('normalizes self-targeted interactions to the exported node id', () => {
+    const doc = withRegions(
+      withPageRuntime(createEmptyDocument('Targets'), { screenId: 'targets' }),
+      [
+        region('text-input', 0, {
+          id: 'Search_Input',
+          semanticId: 'Search Input',
+          interactions: [{ id: 'focusSearch', action: { kind: 'focusInput', target: 'Search Input' } }],
+        }),
+      ],
+    );
+
+    const pkg = buildDesignPackage(doc);
+
+    expect(pkg.screens[0]?.nodes[0]?.id).toBe('search-input');
+    expect(pkg.interactions?.focussearch?.action).toMatchObject({
+      kind: 'focusInput',
+      target: 'search-input',
+    });
+  });
+
+  it('treats input regions without value bindings as strict export errors', () => {
+    const doc = withRegions(
+      withPageRuntime(createEmptyDocument('Missing Binding'), { screenId: 'missing-binding' }),
+      [region('text-input', 0, { bindings: [] })],
+    );
+    const relaxed = buildDesignPackageExport(doc);
+    const validation = validateDesignPackage(relaxed.package);
+
+    expect(relaxed.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'INPUT_WITHOUT_VALUE_BINDING', severity: 'error' }),
+    ]));
+    expect(validation.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'TEXT_INPUT_MISSING_VALUE_BINDING', severity: 'error' }),
+    ]));
+    expect(() => buildDesignPackageExport(doc, { strict: true })).toThrow(DesignPackageExportError);
+  });
+
   it('emits render oracle only when requested and respects oracle-only regions', () => {
     const doc = withRegions(
       withPageRuntime(createEmptyDocument('Oracle'), { screenId: 'oracle' }),

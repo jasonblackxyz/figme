@@ -309,7 +309,7 @@ function validateScreens(pkg: Partial<DesignPackage>, add: (diagnostic: DesignDi
   }
 
   forDuplicateIds(pkg.screens, 'screens', add);
-  const componentIds = new Set((pkg.components ?? []).map((component) => component.id));
+  const componentById = new Map((pkg.components ?? []).map((component) => [component.id, component]));
   const screenIds = new Set(pkg.screens.map((screen) => screen.id));
   if (pkg.manifest?.defaultScreen && !screenIds.has(pkg.manifest.defaultScreen)) {
     add({
@@ -321,14 +321,14 @@ function validateScreens(pkg: Partial<DesignPackage>, add: (diagnostic: DesignDi
   }
 
   for (const [screenIndex, screen] of pkg.screens.entries()) {
-    validateScreen(screen, screenIndex, componentIds, pkg, add);
+    validateScreen(screen, screenIndex, componentById, pkg, add);
   }
 }
 
 function validateScreen(
   screen: DesignScreenSpec,
   screenIndex: number,
-  componentIds: Set<string | undefined>,
+  componentById: Map<string | undefined, DesignComponentDef>,
   pkg: Partial<DesignPackage>,
   add: (diagnostic: DesignDiagnostic) => void,
 ): void {
@@ -355,12 +355,22 @@ function validateScreen(
   forDuplicateIds(screen.nodes, `${screenPath}.nodes`, add);
   for (const [nodeIndex, node] of screen.nodes.entries()) {
     const nodePath = `${screenPath}.nodes.${nodeIndex}`;
-    if (!componentIds.has(node.componentId)) {
+    const component = componentById.get(node.componentId);
+    if (!component) {
       add({
         severity: 'error',
         code: 'MISSING_COMPONENT',
         message: `Node "${node.id}" references missing component "${node.componentId}".`,
         path: `${nodePath}.componentId`,
+        provenance: node.provenance,
+      });
+    }
+    if ((component?.kind === 'text-input' || component?.kind === 'textarea') && !node.bindings?.value) {
+      add({
+        severity: 'error',
+        code: 'TEXT_INPUT_MISSING_VALUE_BINDING',
+        message: `Input node "${node.id}" must bind its value slot.`,
+        path: `${nodePath}.bindings.value`,
         provenance: node.provenance,
       });
     }

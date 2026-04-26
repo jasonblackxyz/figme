@@ -168,7 +168,7 @@ export function buildDesignPackageExport(
       nodeIds.add(nodeId);
 
       const nodeBindings = collectRegionBindings(region, nodeId, bindings, diagnostics, regionPath);
-      const nodeInteractionIds = collectRegionInteractions(region, interactions, diagnostics, regionPath);
+      const nodeInteractionIds = collectRegionInteractions(region, nodeId, interactions, diagnostics, regionPath);
       const node: DesignScreenNode = {
         id: nodeId,
         componentId,
@@ -408,6 +408,7 @@ function collectRegionBindings(
 
 function collectRegionInteractions(
   region: SemanticRegion,
+  nodeId: string,
   interactions: Record<string, DesignInteraction>,
   diagnostics: DesignDiagnostic[],
   regionPath: string,
@@ -424,14 +425,15 @@ function collectRegionInteractions(
       });
       continue;
     }
+    const action = normalizeRegionAction(interaction.action, region, nodeId);
     const id = uniqueCatalogId(
       slugifyId(interaction.id, 'interaction'),
       interactions,
-      (existing) => sameInteraction(existing, interaction),
+      (existing) => stableStringify(existing.action) === stableStringify(action),
     );
     interactions[id] = {
       id,
-      action: { ...interaction.action },
+      action,
       ...(region.provenance ? { provenance: mapProvenance(region.provenance) } : {}),
     };
     ids.push(id);
@@ -447,7 +449,7 @@ function addRegionAuthoringDiagnostics(
 ): void {
   if ((region.componentKind === 'text-input' || region.componentKind === 'textarea') && !node.bindings?.value) {
     diagnostics.push({
-      severity: 'warning',
+      severity: 'error',
       code: 'INPUT_WITHOUT_VALUE_BINDING',
       message: `Region "${region.id}" is ${region.componentKind} but does not bind a value slot.`,
       path: `${regionPath}.bindings`,
@@ -493,7 +495,11 @@ function buildManifest(
   const id = stringFromRecord(legacyManifest, 'id') || fallbackId;
   const family = stringFromRecord(runtime, 'designFamily') || stringFromRecord(legacyManifest, 'family') || fallbackId;
   const version = stringFromRecord(runtime, 'packageVersion') || stringFromRecord(legacyManifest, 'version') || '0.1.0';
-  const defaultScreen = stringFromRecord(legacyManifest, 'defaultScreen') || screens[0]?.id;
+  const authoredDefaultScreen = stringFromRecord(legacyManifest, 'defaultScreen');
+  const screenIds = new Set(screens.map((screen) => screen.id));
+  const defaultScreen = authoredDefaultScreen && screenIds.has(authoredDefaultScreen)
+    ? authoredDefaultScreen
+    : screens[0]?.id;
   const desktopDefault = desktopBehaviorFromUnknown(legacyManifest.desktopDefault) || DEFAULT_DESKTOP_BEHAVIOR;
   const backgroundToken = stringFromRecord(legacyManifest, 'backgroundToken');
   const sourceRefs = stringArrayFromUnknown(runtime.sourceRefs) ?? stringArrayFromUnknown(legacyManifest.sourceRefs);
@@ -725,8 +731,20 @@ function sameBinding(existing: DesignBinding, binding: RuntimeBindingRef): boole
     stableStringify(existing.fallback) === stableStringify(binding.fallback);
 }
 
-function sameInteraction(existing: DesignInteraction, interaction: RuntimeInteractionRef): boolean {
-  return stableStringify(existing.action) === stableStringify(interaction.action);
+function normalizeRegionAction(
+  action: RuntimeInteractionRef['action'],
+  region: SemanticRegion,
+  nodeId: string,
+): RuntimeInteractionRef['action'] {
+  if (!('target' in action)) {
+    return { ...action };
+  }
+
+  const targetAliases = new Set([region.id, region.semanticId].filter(isNonEmptyString));
+  const target = typeof action.target === 'string' && targetAliases.has(action.target)
+    ? nodeId
+    : action.target;
+  return { ...action, ...(target !== undefined ? { target } : {}) };
 }
 
 function uniqueId(rawBase: string, existing: Set<string>, fallback: string): string {
@@ -813,6 +831,10 @@ function stringArrayFromUnknown(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const strings = value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
   return strings.length > 0 ? strings : undefined;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function recordFromUnknown(value: unknown): Record<string, unknown> {
