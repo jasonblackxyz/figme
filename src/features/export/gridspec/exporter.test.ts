@@ -1,5 +1,5 @@
 import { exportAsGridSpec } from './exporter.ts';
-import type { FigmiiDocument, FigmiiPage, Layer } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument, FIGMIIPage, Layer } from '@primitives/document-model/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import { createEmptyDocument } from '@primitives/document-model/operations.ts';
 
@@ -24,7 +24,7 @@ function makeBorderLayer(overrides: Partial<Layer> = {}): Layer {
 describe('exportAsGridSpec', () => {
   it('preserves stable ids and resolves component definitions by componentId', () => {
     const base = createEmptyDocument('GridSpec Review');
-    const page: FigmiiPage = {
+    const page: FIGMIIPage = {
       ...base.pages[0]!,
       id: 'page-main',
       name: 'Main',
@@ -61,7 +61,7 @@ describe('exportAsGridSpec', () => {
     };
     page.layerOrder = [parentLayer.id, childLayer.id, componentLayer.id];
 
-    const doc: FigmiiDocument = {
+    const doc: FIGMIIDocument = {
       ...base,
       id: 'doc-1',
       pages: [page],

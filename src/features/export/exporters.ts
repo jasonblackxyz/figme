@@ -1,15 +1,16 @@
-import type { FigmiiDocument } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument } from '@primitives/document-model/types.ts';
 import type { StampBuffer } from '@primitives/stamp-system/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { ColorOverrideMap } from '@primitives/document-model/colorOverrides.ts';
 import { flattenLayerOrder } from '@primitives/document-model/hierarchy.ts';
 import { getPageCanvasSizeInfo } from '@primitives/document-model/canvasSize.ts';
+import { serializeDocument } from '@primitives/document-model/serialization.ts';
 
 /**
  * Serialize the full document as formatted JSON.
  */
-export function exportAsJson(doc: FigmiiDocument): string {
-  return JSON.stringify(doc, null, 2);
+export function exportAsJson(doc: FIGMIIDocument): string {
+  return serializeDocument(doc);
 }
 
 /**
@@ -17,7 +18,7 @@ export function exportAsJson(doc: FigmiiDocument): string {
  * Each row becomes a <div> with <span> elements for styled character segments.
  */
 export function exportAsHtml(
-  doc: FigmiiDocument,
+  doc: FIGMIIDocument,
   buffer: StampBuffer,
   gridConfig: GridConfig,
   colorOverrides?: ColorOverrideMap,
@@ -125,7 +126,7 @@ ${semanticOverlays}
 /**
  * Generate a Markdown table summarizing all layers in the document.
  */
-export function exportAsMarkdown(doc: FigmiiDocument): string {
+export function exportAsMarkdown(doc: FIGMIIDocument): string {
   let md = `# ${doc.name}\n\n`;
   md += `- **Pages:** ${doc.pages.length}\n`;
   md += `- **Default Grid:** ${doc.gridConfig.canvasCols} x ${doc.gridConfig.canvasRows} cells\n\n`;

@@ -1,16 +1,17 @@
-import type { FigmiiDocument, FigmiiPage, Layer, LayerKind, LayerProperties, ComponentDef } from '@primitives/document-model/types.ts';
+import type { FIGMIIDocument, FIGMIIPage, Layer, LayerKind, LayerProperties, ComponentDef } from '@primitives/document-model/types.ts';
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
 import type { Palette, StyleKey } from '@primitives/style-system/types.ts';
 import type { GridSpec, GridSpecPage, GridSpecLayer } from '@features/export/gridspec/types.ts';
 import { normalizeRuntimeMetadata } from '@primitives/runtime-semantics/defaults.ts';
+import { migrateDocument } from '@primitives/document-model/serialization.ts';
 
 /**
- * Import a GridSpec JSON string back into a FigmiiDocument.
+ * Import a GridSpec JSON string back into a FIGMIIDocument.
  *
  * GridSpec preserves raw layer `properties`, so this is near-lossless.
  * Only `customColors`, `cellColorOverrides`, and viewport scroll are lost.
  */
-export function importGridSpec(json: string): FigmiiDocument {
+export function importGridSpec(json: string): FIGMIIDocument {
   const parsed: unknown = JSON.parse(json);
   const schema = (parsed as { $schema?: unknown }).$schema;
 
@@ -32,7 +33,7 @@ export function importGridSpec(json: string): FigmiiDocument {
 
   const palette = spec.palette as Palette;
 
-  const pages: FigmiiPage[] = spec.pages.map((specPage) =>
+  const pages: FIGMIIPage[] = spec.pages.map((specPage) =>
     rebuildPage(specPage),
   );
 
@@ -46,7 +47,7 @@ export function importGridSpec(json: string): FigmiiDocument {
     };
   }
 
-  return {
+  return migrateDocument({
     id: spec.document.id,
     name: spec.document.name,
     gridConfig,
@@ -60,10 +61,10 @@ export function importGridSpec(json: string): FigmiiDocument {
       updatedAt: spec.document.updatedAt,
       version: spec.document.version,
     },
-  };
+  });
 }
 
-function rebuildPage(specPage: GridSpecPage): FigmiiPage {
+function rebuildPage(specPage: GridSpecPage): FIGMIIPage {
   const layers: Record<string, Layer> = {};
   const layerOrder: string[] = [];
 
@@ -78,6 +79,8 @@ function rebuildPage(specPage: GridSpecPage): FigmiiPage {
     name: specPage.name,
     layers,
     layerOrder,
+    regions: {},
+    regionOrder: [],
     canvasColsOverride: specPage.gridOverride?.cols,
     canvasRowsOverride: specPage.gridOverride?.rows,
     canvasX: 0,

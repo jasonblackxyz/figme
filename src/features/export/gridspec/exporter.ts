@@ -1,5 +1,5 @@
 import type {
-  FigmiiDocument,
+  FIGMIIDocument,
   BorderBoxProperties,
   TextBlockProperties,
   FigletTextProperties,
@@ -28,7 +28,7 @@ function resolveStyle(palette: Palette, key: string | undefined): StyleDef | und
   return (palette as Record<string, StyleDef>)[key] ?? undefined;
 }
 
-function findLayerName(doc: FigmiiDocument, layerId: string): string {
+function findLayerName(doc: FIGMIIDocument, layerId: string): string {
   for (const page of doc.pages) {
     const layer = page.layers[layerId];
     if (layer) return layer.name;
@@ -36,7 +36,7 @@ function findLayerName(doc: FigmiiDocument, layerId: string): string {
   return layerId;
 }
 
-function resolveComponentDefinition(layer: Layer, doc: FigmiiDocument): ComponentDef | undefined {
+function resolveComponentDefinition(layer: Layer, doc: FIGMIIDocument): ComponentDef | undefined {
   const properties = layer.properties as Partial<ComponentInstanceProperties>;
   const componentId = typeof properties.componentId === 'string' ? properties.componentId : undefined;
   if (!componentId) return undefined;
@@ -44,9 +44,9 @@ function resolveComponentDefinition(layer: Layer, doc: FigmiiDocument): Componen
 }
 
 /**
- * Export a FigmiiDocument as a structured GridSpec object.
+ * Export a FIGMIIDocument as a structured GridSpec object.
  */
-export function exportAsGridSpec(doc: FigmiiDocument, options?: GridSpecExportOptions): GridSpec {
+export function exportAsGridSpec(doc: FIGMIIDocument, options?: GridSpecExportOptions): GridSpec {
   const { gridConfig, palette } = doc;
   const includeBuffer = options?.includeBuffer ?? false;
 
@@ -120,7 +120,7 @@ export function exportAsGridSpec(doc: FigmiiDocument, options?: GridSpecExportOp
 /**
  * Export as formatted JSON string.
  */
-export function exportGridSpecAsJson(doc: FigmiiDocument, options?: GridSpecExportOptions): string {
+export function exportGridSpecAsJson(doc: FIGMIIDocument, options?: GridSpecExportOptions): string {
   return JSON.stringify(exportAsGridSpec(doc, options), null, 2);
 }
 
@@ -170,7 +170,7 @@ function buildCompactBuffer(
 function buildSpecLayer(
   layer: Layer,
   allLayers: Record<string, Layer>,
-  doc: FigmiiDocument,
+  doc: FIGMIIDocument,
 ): GridSpecLayer {
   const { gridConfig, palette } = doc;
   const { rect } = layer;
@@ -213,7 +213,7 @@ function buildSpecLayer(
 function buildResolved(
   layer: Layer,
   allLayers: Record<string, Layer>,
-  doc: FigmiiDocument,
+  doc: FIGMIIDocument,
 ): GridSpecResolved {
   const { palette } = doc;
   const resolved: GridSpecResolved = {};

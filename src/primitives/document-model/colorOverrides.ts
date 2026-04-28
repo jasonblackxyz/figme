@@ -1,4 +1,4 @@
-import type { FigmiiPage, Layer, CanvasProperties } from './types.ts';
+import type { FIGMIIPage, Layer, CanvasProperties } from './types.ts';
 import { flattenLayerOrder, isEffectivelyHidden } from './hierarchy.ts';
 
 export type ColorOverrideMap = Record<string, { color?: string; bg?: string }>;
@@ -7,7 +7,7 @@ export type ColorOverrideMap = Record<string, { color?: string; bg?: string }>;
  * Compute color overrides from page-level and per-layer custom colors.
  * Pure function — no React or store dependencies.
  */
-export function computeColorOverrides(page: FigmiiPage): ColorOverrideMap {
+export function computeColorOverrides(page: FIGMIIPage): ColorOverrideMap {
   const colorOverrides: ColorOverrideMap = {};
 
   // Seed page-level cell overrides (drawn on bare canvas, below all layers)

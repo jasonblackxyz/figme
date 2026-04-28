@@ -22,6 +22,7 @@ export function FontSettings({ visible, onClose }: FontSettingsProps) {
 
   // Sync local state when doc changes externally (e.g. undo/redo)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- This mirrors external store changes into editable form state.
     setFontFamily(gridConfig.fontFamily);
     setFontSize(gridConfig.fontSize);
     setLineHeight(gridConfig.lineHeight);

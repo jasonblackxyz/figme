@@ -1,5 +1,5 @@
 import type { GridConfig } from '@primitives/grid-engine/types.ts';
-import type { CanvasProperties, FigmiiPage, Layer } from './types.ts';
+import type { CanvasProperties, FIGMIIPage, Layer } from './types.ts';
 import { flattenLayerOrder, isEffectivelyHidden } from './hierarchy.ts';
 
 export interface PageCanvasSizeInfo {
@@ -17,7 +17,7 @@ export interface PageContentBounds {
 }
 
 export function getPageCanvasSizeInfo(
-  page: Pick<FigmiiPage, 'id' | 'canvasColsOverride' | 'canvasRowsOverride'>,
+  page: Pick<FIGMIIPage, 'id' | 'canvasColsOverride' | 'canvasRowsOverride'>,
   gridConfig: Pick<GridConfig, 'canvasCols' | 'canvasRows'>,
 ): PageCanvasSizeInfo {
   const defaultCols = gridConfig.canvasCols;
@@ -36,7 +36,7 @@ export function getPageCanvasSizeInfo(
 }
 
 export function applyPageCanvasSizeToGridConfig(
-  page: Pick<FigmiiPage, 'id' | 'canvasColsOverride' | 'canvasRowsOverride'>,
+  page: Pick<FIGMIIPage, 'id' | 'canvasColsOverride' | 'canvasRowsOverride'>,
   gridConfig: GridConfig,
 ): GridConfig {
   const { effectiveCols, effectiveRows } = getPageCanvasSizeInfo(page, gridConfig);
@@ -48,7 +48,7 @@ export function applyPageCanvasSizeToGridConfig(
   };
 }
 
-export function getVisiblePageContentBounds(page: FigmiiPage): PageContentBounds {
+export function getVisiblePageContentBounds(page: FIGMIIPage): PageContentBounds {
   let maxCol = 0;
   let maxRow = 0;
 

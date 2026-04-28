@@ -70,7 +70,7 @@ export function useConsoleLogger(): void {
       }
 
       // Log a summary only — avoid serialising the full document on every change.
-      // Agents that need full document state should read window.Figmii.getDocument()
+      // Agents that need full document state should read window.FIGMII.getDocument()
       // or the live [data-spec="full-document"] DOM element instead.
       const activePage = nextDoc.pages.find(p => p.id === nextDoc.activePageId);
       console.log('FIGMII_STATE', {

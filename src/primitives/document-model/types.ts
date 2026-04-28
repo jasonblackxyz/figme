@@ -13,6 +13,8 @@ export type {
   PageRuntimeMetadata,
 } from '@primitives/runtime-semantics/types.ts';
 
+export const DOCUMENT_SCHEMA_VERSION = 2;
+
 export type LayerKind =
   | 'border-box'
   | 'text-block'
@@ -130,14 +132,147 @@ export interface Layer {
   runtime?: LayerRuntimeMetadata;
 }
 
-export interface FigmiiPage {
+export const RUNTIME_ROLES = [
+  'input',
+  'button',
+  'link',
+  'container',
+  'content',
+  'decoration',
+  'navigation',
+  'list-item',
+  'status',
+  'form',
+  'header',
+  'main',
+  'footer',
+  'aside',
+] as const;
+
+export type RuntimeRole = typeof RUNTIME_ROLES[number];
+
+export const RUNTIME_TIER_1_COMPONENT_KINDS = [
+  'frame',
+  'card',
+  'modal',
+  'scroll-panel',
+  'text-input',
+  'textarea',
+  'button',
+  'link',
+  'text-block',
+  'chip',
+  'badge',
+  'icon',
+  'divider',
+  'spacer',
+  'list',
+  'list-item',
+  'tree',
+  'tab-bar',
+  'dock',
+  'slider',
+  'spinner',
+  'custom-module',
+] as const;
+
+export const RUNTIME_TIER_2_COMPONENT_KINDS = [
+  'toggle',
+  'select',
+  'radio-group',
+  'checkbox',
+  'avatar',
+  'image',
+  'progress-bar',
+  'table',
+  'accordion',
+  'tooltip',
+  'toast',
+  'breadcrumb',
+] as const;
+
+export const RUNTIME_COMPONENT_KINDS = [
+  ...RUNTIME_TIER_1_COMPONENT_KINDS,
+  ...RUNTIME_TIER_2_COMPONENT_KINDS,
+] as const;
+
+export type RuntimeComponentKind = typeof RUNTIME_COMPONENT_KINDS[number];
+
+export type RuntimeAction =
+  | { kind: 'focusInput'; target?: string; payload?: Record<string, unknown> }
+  | { kind: 'submitQuery'; target?: string; payload?: Record<string, unknown> }
+  | { kind: 'openSection'; target?: string; payload?: Record<string, unknown> }
+  | { kind: 'openRead'; target?: string; payload?: Record<string, unknown> }
+  | { kind: 'navigate'; route?: string; payload?: Record<string, unknown> }
+  | { kind: 'selectItem'; target?: string; payload?: Record<string, unknown> }
+  | { kind: 'toggleState'; target?: string; payload?: Record<string, unknown> }
+  | { kind: 'dismiss'; target?: string; payload?: Record<string, unknown> }
+  | { kind: 'copyValue'; target?: string; payload?: Record<string, unknown> }
+  | { kind: 'custom'; target?: string; payload?: Record<string, unknown> };
+
+export interface RegionShape {
+  rect: GridRect;
+  exclude?: GridPosition[];
+}
+
+export interface RuntimeBindingRef {
+  slot: string;
+  path: string;
+  fallback?: unknown;
+  required?: boolean;
+}
+
+export interface RuntimeInteractionRef {
+  id: string;
+  action: RuntimeAction;
+}
+
+export interface RuntimeProvenance {
+  source: 'human' | 'ai' | 'imported';
+  confidence?: number;
+  note?: string;
+  reviewed?: boolean;
+}
+
+export interface SemanticRegion {
+  id: string;
+  componentKind: RuntimeComponentKind;
+  semanticId?: string;
+  role?: RuntimeRole;
+  shape: RegionShape;
+  z?: number;
+  bindings?: RuntimeBindingRef[];
+  interactions?: RuntimeInteractionRef[];
+  props?: Record<string, unknown>;
+  exportMode?: 'runtime' | 'oracle-only' | 'ignore';
+  parentRegionId?: string;
+  provenance?: RuntimeProvenance;
+}
+
+export interface PageRuntimeSemantics {
+  screenId?: string;
+  routeTarget?: string;
+  defaultBreakpoint?: string;
+  desktopBehavior?: 'centered-mobile-canvas' | 'widen-modules' | 'split-pane' | 'custom';
+  scrollRootId?: string;
+}
+
+export type FIGMIIPageRuntime = PageRuntimeMetadata & PageRuntimeSemantics;
+
+export interface DocumentRuntimeSemantics {
+  designFamily?: string;
+  packageVersion?: string;
+  sourceRefs?: string[];
+}
+
+export interface FIGMIIPage {
   id: string;
   name: string;
   layers: Record<string, Layer>;
   layerOrder: string[];
-  /** Region labels consumed by the Design Package exporter. Phase E owns authoring UI/API. */
-  regions?: Record<string, unknown>;
+  regions?: Record<string, SemanticRegion>;
   regionOrder?: string[];
+  runtime?: FIGMIIPageRuntime;
   viewportPreset?: string;
   canvasColsOverride?: number;
   canvasRowsOverride?: number;
@@ -145,7 +280,6 @@ export interface FigmiiPage {
   canvasY: number;
   cellColorOverrides?: Record<string, string>;
   backgroundColor?: string;
-  runtime?: PageRuntimeMetadata;
 }
 
 export interface SwatchCollection {
@@ -154,12 +288,12 @@ export interface SwatchCollection {
   colors: string[];
 }
 
-export interface FigmiiDocument {
+export interface FIGMIIDocument {
   id: string;
   name: string;
   gridConfig: GridConfig;
   palette: Palette;
-  pages: FigmiiPage[];
+  pages: FIGMIIPage[];
   activePageId: string;
   components: Record<string, ComponentDef>;
   swatchCollections?: SwatchCollection[];
@@ -179,5 +313,7 @@ export interface ComponentDef {
   thumbnail?: string;
 }
 
-export type FigMePage = FigmiiPage;
-export type FigMeDocument = FigmiiDocument;
+export type FigmiiPage = FIGMIIPage;
+export type FigmiiDocument = FIGMIIDocument;
+export type FigMePage = FIGMIIPage;
+export type FigMeDocument = FIGMIIDocument;
