@@ -37,6 +37,32 @@ function makeDocument(name = 'Starter Kit'): FIGMIIDocument {
   };
 }
 
+function makeDesignPackageDocument(): FIGMIIDocument {
+  const doc = makeDocument();
+  const pageOne = doc.pages[0]!;
+  return {
+    ...doc,
+    pages: [
+      {
+        ...pageOne,
+        runtime: { ...pageOne.runtime, screenId: 'search' },
+        regions: {
+          search: {
+            id: 'search',
+            semanticId: 'search',
+            componentKind: 'text-input',
+            shape: { rect: { col: 2, row: 2, width: 20, height: 3 } },
+            bindings: [{ slot: 'value', path: 'search.query', fallback: '' }],
+            interactions: [{ id: 'submitSearch', action: { kind: 'submitQuery', target: 'search' } }],
+          },
+        },
+        regionOrder: ['search'],
+      },
+      doc.pages[1]!,
+    ],
+  };
+}
+
 describe('ExportDialog', () => {
   beforeEach(() => {
     useDocumentStore.setState({
@@ -106,5 +132,24 @@ describe('ExportDialog', () => {
     await waitFor(() => {
       expect(useDocumentStore.getState().document.name).toBe('Circuit Kit');
     });
+  });
+
+  it('exports a selected page as a Design Package JSON file', async () => {
+    useDocumentStore.setState({
+      document: makeDesignPackageDocument(),
+      undoStack: [],
+      redoStack: [],
+    });
+    const onClose = vi.fn();
+    render(<ExportDialog visible onClose={onClose} />);
+
+    fireEvent.click(screen.getByLabelText('Page Two'));
+    fireEvent.click(screen.getByLabelText('Include render oracle in Design Package'));
+    fireEvent.click(screen.getByRole('button', { name: 'Design Package (.design-package.json)' }));
+
+    await waitFor(() => {
+      expect(downloadBlob).toHaveBeenCalledWith(expect.any(Blob), 'Starter Kit.design-package.json');
+    });
+    expect(onClose).toHaveBeenCalled();
   });
 });

@@ -6,5 +6,13 @@ export { downloadFile } from './downloadFile.ts';
 export { downloadBlob } from './downloadBlob.ts';
 export { renderBufferToCanvas } from './renderToCanvas.ts';
 export { exportAsGridSpec, exportGridSpecAsJson } from './gridspec/index.ts';
+export { buildDesignPackage, buildDesignPackageExport, exportDesignPackageAsJson, validateDesignPackage } from './design-package/index.ts';
 export type { ExportFormat, ExportBundleOptions } from './types.ts';
 export type { GridSpec, GridSpecPage, GridSpecLayer, GridSpecResolved, GridSpecComponent, GridSpecExportOptions } from './gridspec/index.ts';
+export type {
+  DesignPackage,
+  DesignPackageExportOptions,
+  DesignPackageExportResult,
+  RuntimeComponentKind,
+  SemanticRegion,
+} from './design-package/index.ts';

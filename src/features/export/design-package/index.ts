@@ -1,0 +1,47 @@
+export {
+  DesignPackageExportError,
+  buildDesignPackage,
+  buildDesignPackageExport,
+  exportDesignPackageAsJson,
+} from './exporter.ts';
+export { validateDesignPackage } from './validator.ts';
+export type { ValidationResult } from './validator.ts';
+export type {
+  DesignBinding,
+  DesignBreakpoint,
+  DesignComponentDef,
+  DesignDiagnostic,
+  DesignInteraction,
+  DesignManifest,
+  DesignPackage,
+  DesignPackageExportOptions,
+  DesignPackageExportResult,
+  DesignPoint,
+  DesignProvenance,
+  DesignRect,
+  DesignScreenNode,
+  DesignScreenSpec,
+  DesignStyleDef,
+  DocumentRuntimeSemantics,
+  FrameChars,
+  PageRuntimeSemantics,
+  RegionBackedDocument,
+  RegionShape,
+  RenderOracle,
+  RuntimeAction,
+  RuntimeBindingRef,
+  RuntimeComponentKind,
+  RuntimeDesktopBehavior,
+  RuntimeExportMode,
+  RuntimeInteractionRef,
+  RuntimeProvenance,
+  RuntimeRole,
+  SemanticRegion,
+} from './types.ts';
+export {
+  DESIGN_PACKAGE_SCHEMA_VERSION,
+  RUNTIME_COMPONENT_KINDS,
+  RUNTIME_ROLES,
+  TIER1_COMPONENT_KINDS,
+  TIER2_COMPONENT_KINDS,
+} from './types.ts';
