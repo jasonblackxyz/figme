@@ -48,10 +48,11 @@ beforeEach(() => {
 });
 
 describe('PropertiesPanel', () => {
-  it('shows "No selection" when nothing selected', () => {
+  it('falls back to Page Runtime controls when nothing is selected', () => {
     render(<PropertiesPanel />);
-    expect(screen.getByText('No selection')).toBeInTheDocument();
     expect(document.querySelector('[data-component="properties-panel"]')).toBeInTheDocument();
+    expect(screen.getByText('Page Runtime')).toBeInTheDocument();
+    expect(document.querySelector('[data-component="page-runtime-properties"]')).toBeInTheDocument();
   });
 
   it('shows CommonProperties for selected layer', () => {

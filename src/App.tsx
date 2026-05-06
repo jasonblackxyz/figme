@@ -9,6 +9,7 @@ import { SpecView } from '@features/spec-view/SpecView.tsx';
 import { ExportDialog } from '@features/export/ExportDialog.tsx';
 import { ImportDialog } from '@features/import/ImportDialog.tsx';
 import { ClearCanvasDialog } from '@features/clear-canvas/ClearCanvasDialog.tsx';
+import { LabelPicker } from '@features/region-labeling/LabelPicker.tsx';
 import { useAutoSave } from '@features/file-io/autoSave.ts';
 import { getTabId } from '@features/file-io/tabSession.ts';
 import { cleanupStaleTabs } from '@features/file-io/staleCleanup.ts';
@@ -206,6 +207,7 @@ export function App() {
       <ImportDialog visible={importDialogOpen} onClose={() => setImportDialogOpen(false)} />
       <ExportDialog visible={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
       <ClearCanvasDialog visible={clearCanvasDialogOpen} onClose={toggleClearCanvasDialog} />
+      <LabelPicker />
     </div>
     </AppErrorBoundary>
   );

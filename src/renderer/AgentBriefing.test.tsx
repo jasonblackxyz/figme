@@ -44,4 +44,23 @@ describe('AgentBriefing', () => {
     expect(briefing.api.convenience.some(item => item.includes('getPageCanvasSize'))).toBe(true);
     expect(briefing.canvasSize.default).toEqual({ cols: 228, rows: 57 });
   });
+
+  it('includes regionLabeling section in both modes', () => {
+    for (const mode of ['ai', 'human'] as const) {
+      document.body.innerHTML = '';
+      useUiStore.setState({ interfaceMode: mode });
+      render(<AgentBriefing document={createEmptyDocument('Briefing Test')} />);
+      const el = document.getElementById('figmii-agent-briefing');
+      const briefing = JSON.parse(el!.textContent ?? '{}') as {
+        regionLabeling?: {
+          api?: { crud?: string[]; mark?: string[]; bulk?: string[]; validation?: string[] };
+        };
+      };
+      expect(briefing.regionLabeling).toBeDefined();
+      expect(briefing.regionLabeling?.api?.crud?.some((s) => s.includes('defineRegion'))).toBe(true);
+      expect(briefing.regionLabeling?.api?.mark?.some((s) => s.includes('markInput'))).toBe(true);
+      expect(briefing.regionLabeling?.api?.bulk?.some((s) => s.includes('labelByLayerBounds'))).toBe(true);
+      expect(briefing.regionLabeling?.api?.validation?.some((s) => s.includes('validateRegions'))).toBe(true);
+    }
+  });
 });

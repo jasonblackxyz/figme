@@ -11,7 +11,8 @@ export type ToolType =
   | 'image'
   | 'edge-path'
   | 'hand'
-  | 'draw';
+  | 'draw'
+  | 'region-paint';
 
 const AI_HIDDEN_TOOLS: ReadonlySet<ToolType> = new Set([
   'border-box',
@@ -19,6 +20,7 @@ const AI_HIDDEN_TOOLS: ReadonlySet<ToolType> = new Set([
   'text-block',
   'figlet-text',
   'draw',
+  'region-paint',
 ]);
 
 export function isToolAllowedInInterfaceMode(tool: ToolType, mode: InterfaceMode): boolean {

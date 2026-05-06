@@ -1,0 +1,82 @@
+.chrome {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--color-surface, rgba(20, 20, 25, 0.92));
+  border: 1px solid var(--color-border, #333);
+  border-radius: 6px;
+  backdrop-filter: blur(6px);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--color-text, #fff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+}
+
+.label {
+  color: var(--color-text-dim, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--color-border, #333);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.segment {
+  background: transparent;
+  color: var(--color-text-dim, #888);
+  border: none;
+  padding: 3px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.segmentActive {
+  background: var(--color-accent, #2563eb);
+  color: #fff;
+}
+
+.segment:not(.segmentActive):hover {
+  background: var(--color-surface-raised, rgba(255, 255, 255, 0.05));
+  color: var(--color-text, #fff);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid var(--color-border, #333);
+  color: var(--color-text-dim, #888);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.toggleActive {
+  border-color: var(--color-accent, #2563eb);
+  color: var(--color-text, #fff);
+}
+
+.divider {
+  width: 1px;
+  height: 14px;
+  background: var(--color-border, #333);
+}
+
+.count {
+  color: var(--color-text-dim, #888);
+}

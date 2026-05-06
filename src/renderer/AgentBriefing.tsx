@@ -16,6 +16,95 @@ function getActivePageCanvasInfo(document: FIGMIIDocument) {
   return activePage ? getPageCanvasSizeInfo(activePage, document.gridConfig) : null;
 }
 
+function buildRegionLabelingSection() {
+  return {
+    purpose:
+      'Semantic regions label patches of the grid (rect + optional excluded cells) with a runtime componentKind, role, bindings, and interactions. Regions live on the page, separate from layers — they describe what readme-app should render at each cell, while layers describe the visual composition.',
+    model: [
+      'A region has shape.rect plus optional shape.exclude cells for L/T-shapes.',
+      'Multiple visual layers can compose one region; one layer can underlie many regions; the grid is the contract.',
+      'Higher z wins overlap. parentRegionId is metadata only — set it to express nesting.',
+    ],
+    workflow: [
+      "FIGMII.regions.defineRegion({ rect:{col,row,width,height}, componentKind:'frame', semanticId:'card' })",
+      "FIGMII.regions.markInput({ layerId }, { semanticId:'search', valuePath:'search.query', submitInteractionId:'submitQuery' })",
+      "FIGMII.regions.markButton({ layerIds:[a,b] }, { semanticId:'submit', action:{kind:'submitQuery'} })",
+      "FIGMII.regions.setPageRuntime(pageId, { screenId:'search', exportAsScreen:true })",
+      "FIGMII.regions.validateRegions() // returns warnings/errors",
+      "FIGMII.export.toDesignPackage()",
+    ],
+    api: {
+      crud: [
+        'regions.defineRegion(input) => regionId',
+        'regions.defineRegionsBatch(inputs) => regionId[] // single undo entry',
+        'regions.updateRegion(regionId, updates)',
+        'regions.removeRegion(regionId)',
+        'regions.getRegion(regionId, pageId?) => SemanticRegion | undefined',
+        'regions.listRegions(pageId?) => SemanticRegion[]',
+      ],
+      shape: [
+        'regions.setRegionShape(regionId, { rect, exclude? })',
+        'regions.addCellsToRegion(regionId, [{row,col}, ...])',
+        'regions.removeCellsFromRegion(regionId, [{row,col}, ...]) // empties shape => removes region',
+      ],
+      bindings: [
+        'regions.addBinding(regionId, { slot, path, fallback?, required? })',
+        'regions.removeBinding(regionId, slot)',
+        'regions.addInteraction(regionId, { id, action })',
+        'regions.removeInteraction(regionId, interactionId)',
+      ],
+      mark: [
+        "regions.markInput(regionInput, { semanticId, valuePath, placeholder?, submitInteractionId? })",
+        "regions.markTextarea(regionInput, { semanticId, valuePath, placeholder? })",
+        "regions.markButton(regionInput, { semanticId, action, label? })",
+        "regions.markChip(regionInput, { semanticId, label?, toggleable? })",
+        "regions.markLink(regionInput, { semanticId, route?, externalUrl? })",
+        "regions.markDecoration(regionInput) // exportMode:'ignore', role:'decoration'",
+        "regions.markCustomModule(regionInput, { semanticId, moduleKind, props? })",
+      ],
+      bulk: [
+        'regions.labelByLayerBounds({ layerId | layerIds | layerSelector, componentKind, ...metadata })',
+        'regions.inferRegionFromGroupedLayers(groupId, componentKind, metadata?)',
+      ],
+      runtime: [
+        'regions.setPageRuntime(pageId, { screenId?, exportAsScreen?, desktopBehavior?, scrollRootId?, ... })',
+        'regions.getPageRuntime(pageId?)',
+        "regions.setDocumentRuntime({ designFamily, packageVersion, sourceRefs })",
+        'regions.getDocumentRuntime()',
+      ],
+      validation: [
+        'regions.validateRegions(pageId?) => Array<{severity, code, message}>',
+      ],
+    },
+    regionInputForms: [
+      "{ rect, exclude? } — explicit shape",
+      "{ layerId } — single layer's bounding rect",
+      "{ layerIds:[id1, id2, ...] } — bounding rect of multiple layers",
+      "{ layerSelector:{ name?, nameContains?, kind? } } — match layers by name/kind",
+    ],
+    workedExample: {
+      description: 'A search input made of 4 visual layers, labeled in 1 call.',
+      code: [
+        "// Build the visual elements",
+        "const bg = FIGMII.addLayer({kind:'border-box', col:2,row:2,width:32,height:3, color:'#ddd'});",
+        "const cursor = FIGMII.paint({col:3,row:3, content:'_', color:'#2563eb'});",
+        "const placeholder = FIGMII.paint({col:5,row:3, content:'Search...', color:'#999'});",
+        "// One label call covers all four layers",
+        "FIGMII.regions.markInput(",
+        "  { layerIds:[bg, cursor, placeholder] },",
+        "  { semanticId:'search', valuePath:'search.query', submitInteractionId:'submitQuery' }",
+        ");",
+      ],
+    },
+    notes: [
+      'Regions are independent of layers — refactoring layers does not break region semantics.',
+      'Use FIGMII.batch(() => ...) when defining many regions to keep undo/redo clean.',
+      'Provenance auto-defaults to {source:"ai", confidence:0.9} unless you pass one.',
+      'Tier 2 component kinds export valid packages but render as "unsupported" placeholders in readme-app until Phase G.',
+    ],
+  };
+}
+
 function buildFullBriefing(document: FIGMIIDocument) {
   const activePageCanvas = getActivePageCanvasInfo(document);
 
@@ -69,6 +158,7 @@ function buildFullBriefing(document: FIGMIIDocument) {
         "addLayer({kind, col, row, width, height, color?, bg?, ...props}) \u2014 returns layerId",
         'removeLayer(id)',
         'updateLayer(id, updates)',
+        'regions.* \u2014 region labeling surface (defineRegion, markInput, validateRegions, ...) \u2014 see runtimeSemantics + regionLabeling sections below',
         'createRuntimeAnnotation(spec) => annotationId',
         'updateRuntimeAnnotation(id, updates)',
         'removeRuntimeAnnotation(id)',
@@ -126,13 +216,14 @@ function buildFullBriefing(document: FIGMIIDocument) {
     runtimeSemantics: {
       purpose: 'Runtime annotations label exportable screens, components, bindings, interactions, and responsive behavior for readme-app Design Lab.',
       workflow: [
-        "FigMe.inferRuntimeSemantics({strategy:'aggressive'})",
-        "FigMe.setPageRuntime(pageId, {screenId, exportAsScreen:true, desktopBehavior:'centered-mobile-canvas'})",
-        'FigMe.createRuntimeAnnotation({pageId, semanticId, rect, role, componentKind, componentId, bindingSlots, interactionIds})',
-        'FigMe.validateRuntimeSemantics()',
-        'FigMe.export.toDesignPackage({includeRenderOracle:true})',
+        "FIGMII.inferRuntimeSemantics({strategy:'aggressive'})",
+        "FIGMII.setPageRuntime(pageId, {screenId, exportAsScreen:true, desktopBehavior:'centered-mobile-canvas'})",
+        'FIGMII.createRuntimeAnnotation({pageId, semanticId, rect, role, componentKind, componentId, bindingSlots, interactionIds})',
+        'FIGMII.validateRuntimeSemantics()',
+        'FIGMII.export.toDesignPackage({includeRenderOracle:true})',
       ],
     },
+    regionLabeling: buildRegionLabelingSection(),
     layerKinds: {
       'border-box': {
         desc: 'Rectangular border with optional title/fill/padding',
@@ -277,6 +368,7 @@ function buildFullBriefing(document: FIGMIIDocument) {
       'edge-path layers are experimental and frequently crash the renderer. Use text-block layers with box-drawing characters (\u2502\u2500\u250c\u2514\u251c\u2524\u25c6\u25cf) for connections instead.',
       "Never call mutation methods (addLayer, updateLayer, etc.) inside FIGMII.subscribe('document') callbacks \u2014 this creates an infinite loop.",
       'Always wrap multiple mutations in FIGMII.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
+      'Beautiful canvas() designs without semantic regions are not exportable as runtime UI. Always pair visual layers with FIGMII.regions.* labels (markInput, markButton, defineRegion, etc.) so readme-app knows what to render.',
     ],
     domSelectors: {
       toolbar: "[data-component='toolbar']",
@@ -386,6 +478,7 @@ function buildRawBriefing(document: FIGMIIDocument) {
       perCell: "FIGMII.stores.document.getState().setLayerCellOverridesBulk(layerId, [{row:0,col:0},{row:0,col:1}], '#ff6600')",
       pageBackground: "FIGMII.stores.document.getState().setPageCellOverridesBulk([{row:0,col:0}], '#0d1117')",
     },
+    regionLabeling: buildRegionLabelingSection(),
     recipes: {
       note: 'Use paint() for all design work. You have complete creative freedom over characters, layout, and colours.',
       operations: [
@@ -430,6 +523,7 @@ function buildRawBriefing(document: FIGMIIDocument) {
       'FIGMII.addLayer() rejects border-box, divider, and text-block in AI mode. Use paint(), addFiglet(), or switch to Human mode.',
       "Never call mutation methods (paint, removeLayer, etc.) inside FIGMII.subscribe('document') callbacks \u2014 this creates an infinite loop.",
       'Always wrap multiple mutations in FIGMII.batch(). Unbatched rapid mutations can lose layers and create excessive undo entries.',
+      'Beautiful paint() canvases without semantic regions are not exportable as runtime UI. Pair every interactive element with FIGMII.regions.* labels (markInput, markButton, defineRegion, etc.) so readme-app knows what to render.',
     ],
   };
 }

@@ -5,6 +5,7 @@ import { useViewportStore } from '@stores/viewportStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { removeLayer } from '@primitives/document-model/operations.ts';
 import { saveDocument } from '@features/file-io/fileSaveLoad.ts';
+import { getToolHandler } from '@features/tools/toolRegistry.ts';
 
 /**
  * Hook that registers global keyboard shortcuts for the design tool.
@@ -27,6 +28,14 @@ export function useKeyboardShortcuts(): void {
         if (e.key === 'Escape' || (ctrl && e.shiftKey && (e.key === 'E' || e.key === 'e'))) {
           e.preventDefault();
           uiState.setExportDialogOpen(false);
+        }
+        return;
+      }
+
+      if (uiState.labelPicker.open) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          uiState.closeLabelPicker();
         }
         return;
       }
@@ -199,6 +208,17 @@ export function useKeyboardShortcuts(): void {
       // Don't process single-key shortcuts if ctrl is held
       if (ctrl) return;
 
+      // Route Enter/Escape to the active tool first (e.g., region-paint commits/cancels).
+      if (e.key === 'Enter' || e.key === 'Escape') {
+        const tool = useToolStore.getState().activeTool;
+        const handler = getToolHandler(tool);
+        if (handler.onKeyDown) {
+          const before = e.defaultPrevented;
+          handler.onKeyDown(e);
+          if (e.defaultPrevented && !before) return;
+        }
+      }
+
       // Tool shortcuts
       const toolShortcuts: Partial<Record<string, ToolType>> = {
         v: 'select',
@@ -208,6 +228,7 @@ export function useKeyboardShortcuts(): void {
         t: 'text-block',
         f: 'figlet-text',
         p: 'draw',
+        r: 'region-paint',
       };
       const shortcutTool = toolShortcuts[e.key.toLowerCase()];
       if (shortcutTool) {
@@ -219,10 +240,17 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
-      // Delete/Backspace: delete selected layers
+      // Delete/Backspace: delete selected region (region mode) or selected layers.
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         const uiState = useUiStore.getState();
+
+        if (uiState.selectedRegionId) {
+          useDocumentStore.getState().removeRegion(uiState.selectedRegionId);
+          uiState.setSelectedRegion(null);
+          return;
+        }
+
         const selected = uiState.selectedLayerIds;
         if (selected.length === 0) return;
 

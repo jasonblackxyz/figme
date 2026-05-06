@@ -48,6 +48,7 @@ import type {
   PageRuntimeMetadata,
 } from '@primitives/runtime-semantics/types.ts';
 import { batch, isBatching, getPendingDocument, setPendingDocument } from './batch.ts';
+import { buildRegionApi } from './regionApi.ts';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -419,6 +420,11 @@ interface AddFigletSpec {
 // ---------------------------------------------------------------------------
 
 export function buildApi() {
+  const regions = buildRegionApi({
+    getDocument: () => getCurrentDocument(),
+    commitDocument: (next) => commitDocument(next),
+  });
+
   const api = {
     version: { api: '1.0', app: 'FIGMII 2.0' },
 
@@ -686,6 +692,10 @@ export function buildApi() {
     validateRuntimeSemantics() {
       return validateRuntimeSemantics(getCurrentDocument());
     },
+
+    // Region semantics — Phase E. window.FIGMII.regions.*
+    regions,
+
     moveLayer(id: string, col: number, row: number): void {
       const page = getActivePage();
       if (page && !page.layers[id]) {
