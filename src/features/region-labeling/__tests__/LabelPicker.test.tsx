@@ -66,6 +66,27 @@ describe('LabelPicker', () => {
     expect(Object.keys(page.regions ?? {})).toHaveLength(0);
   });
 
+  it('cancel discards the in-flight draft so subsequent paints start clean', () => {
+    // Pre-condition: the beforeEach seeded 3 cells in the draft.
+    expect(useUiStore.getState().regionDraftCells.size).toBe(3);
+
+    render(<LabelPicker />);
+    fireEvent.click(screen.getByText('Cancel'));
+
+    // After cancel: picker closed AND draft cleared (no phantom cells leaking
+    // into the next paint session).
+    expect(useUiStore.getState().labelPicker.open).toBe(false);
+    expect(useUiStore.getState().regionDraftCells.size).toBe(0);
+    expect(useUiStore.getState().regionDraftTargetId).toBeNull();
+  });
+
+  it('closing via the × button also clears the draft', () => {
+    render(<LabelPicker />);
+    fireEvent.click(document.querySelector('[aria-label="Close label picker"]') as HTMLButtonElement);
+    expect(useUiStore.getState().labelPicker.open).toBe(false);
+    expect(useUiStore.getState().regionDraftCells.size).toBe(0);
+  });
+
   it('rejects invalid props JSON', () => {
     render(<LabelPicker />);
     const propsInput = document.querySelector('[data-property="props"]') as HTMLTextAreaElement;

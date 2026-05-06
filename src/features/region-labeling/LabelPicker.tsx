@@ -161,6 +161,7 @@ function LabelPickerForm({ editingRegion }: LabelPickerFormProps) {
 
   const handleCancel = () => {
     closeLabelPicker();
+    clearRegionDraft();
   };
 
   return (

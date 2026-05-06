@@ -36,6 +36,7 @@ export function useKeyboardShortcuts(): void {
         if (e.key === 'Escape') {
           e.preventDefault();
           uiState.closeLabelPicker();
+          uiState.clearRegionDraft();
         }
         return;
       }
