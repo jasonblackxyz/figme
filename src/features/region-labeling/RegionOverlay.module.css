@@ -1,0 +1,100 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.region {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: auto;
+  cursor: pointer;
+  border: 1px solid var(--region-color, #2563eb);
+  background: var(--region-fill, rgba(37, 99, 235, 0.08));
+  border-radius: 2px;
+  transition: background-color 0.15s ease;
+}
+
+.region:hover {
+  background: var(--region-fill-strong, rgba(37, 99, 235, 0.16));
+}
+
+.regionSelected {
+  background: var(--region-fill-strong, rgba(37, 99, 235, 0.2));
+  outline: 1px solid var(--region-color, #2563eb);
+  outline-offset: 0;
+}
+
+.regionExclude {
+  position: absolute;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.18) 0,
+      rgba(0, 0, 0, 0.18) 2px,
+      transparent 2px,
+      transparent 5px
+    );
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+}
+
+.label {
+  position: absolute;
+  top: -16px;
+  left: 0;
+  max-width: 240px;
+  padding: 1px 6px;
+  background: var(--region-color, #2563eb);
+  color: #fff;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  line-height: 1.2;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  letter-spacing: 0.2px;
+}
+
+.tooltip {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  z-index: 10;
+  padding: 4px 6px;
+  background: var(--color-surface-raised, #1a1a1a);
+  color: var(--color-text, #fff);
+  border: 1px solid var(--color-border, #333);
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.draftCell {
+  position: absolute;
+  background: rgba(37, 99, 235, 0.32);
+  border: 1px solid rgba(37, 99, 235, 0.6);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.draftHint {
+  position: absolute;
+  top: -22px;
+  left: 0;
+  padding: 2px 6px;
+  background: var(--color-surface-raised, #111);
+  color: var(--color-text, #eee);
+  border: 1px solid var(--color-accent, #2563eb);
+  border-radius: 3px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+}

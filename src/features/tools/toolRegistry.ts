@@ -7,6 +7,7 @@ import { dividerTool } from './dividerTool.ts';
 import { textBlockTool } from './textBlockTool.ts';
 import { figletTextTool } from './figletTextTool.ts';
 import { drawTool } from './drawTool.ts';
+import { regionPaintTool } from './regionPaintTool.ts';
 
 const registry: Record<string, ToolHandler> = {
   select: selectTool,
@@ -16,6 +17,7 @@ const registry: Record<string, ToolHandler> = {
   'text-block': textBlockTool,
   'figlet-text': figletTextTool,
   'draw': drawTool,
+  'region-paint': regionPaintTool,
 };
 
 export function getToolHandler(tool: ToolType): ToolHandler {

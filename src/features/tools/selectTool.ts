@@ -2,6 +2,7 @@ import type { ToolHandler } from './types.ts';
 import type { GridPosition } from '@primitives/grid-engine/types.ts';
 import { rectIntersects } from '@primitives/grid-engine/geometry.ts';
 import { moveLayer } from '@primitives/document-model/operations.ts';
+import { findRegionAtCell } from '@primitives/document-model/regionShape.ts';
 import { flattenLayerOrder, isEffectivelyLocked, isEffectivelyHidden } from '@primitives/document-model/hierarchy.ts';
 import { useDocumentStore } from '@stores/documentStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
@@ -18,6 +19,17 @@ export const selectTool: ToolHandler = {
 
   onPointerDown(gridPos: GridPosition, event: PointerEvent) {
     const uiState = useUiStore.getState();
+
+    // Region selection mode: clicking the canvas selects/clears the region under the cursor.
+    if (uiState.canvasSelectionMode === 'regions') {
+      const doc = useDocumentStore.getState().document;
+      const page = doc.pages.find((p) => p.id === doc.activePageId);
+      const region = page ? findRegionAtCell(page.regions, page.regionOrder, gridPos) : undefined;
+      uiState.setSelectedLayers([]);
+      uiState.setSelectedRegion(region?.id ?? null);
+      return;
+    }
+
     const hit = hitTestLayers(gridPos);
 
     if (hit) {

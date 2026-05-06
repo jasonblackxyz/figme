@@ -8,6 +8,7 @@ import {
   Type,
   ALargeSmall,
   Pencil,
+  Tag,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import styles from './Toolbar.module.css';
@@ -38,6 +39,9 @@ const TOOLS: ToolbarItem[] = [
   'separator',
   // Drawing
   { type: 'draw', label: 'Draw', shortcut: 'P', icon: Pencil },
+  'separator',
+  // Semantics
+  { type: 'region-paint', label: 'Label Region', shortcut: 'R', icon: Tag },
 ];
 
 export function Toolbar() {

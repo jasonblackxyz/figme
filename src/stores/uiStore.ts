@@ -1,9 +1,22 @@
 import { create } from 'zustand';
 import type { InterfaceMode } from '@stores/toolStore.ts';
+import type { GridRect, GridPosition } from '@primitives/grid-engine/types.ts';
+
+export type CanvasSelectionMode = 'layers' | 'regions';
+
+export type RegionPaintMode = 'add' | 'erase';
+
+export interface LabelPickerState {
+  open: boolean;
+  rect: GridRect | null;
+  exclude: GridPosition[];
+  editingRegionId: string | null;
+}
 
 interface UiState {
   selectedLayerIds: string[];
   selectedRuntimeAnnotationId: string | null;
+  selectedRegionId: string | null;
   hoveredLayerId: string | null;
   interfaceMode: InterfaceMode;
   layersPanelOpen: boolean;
@@ -22,8 +35,30 @@ interface UiState {
   openColorPickerId: string | null;
   brushSize: 1 | 2 | 3;
   eraserMode: boolean;
+  // Region labeling
+  canvasSelectionMode: CanvasSelectionMode;
+  regionOverlayVisible: boolean;
+  regionPaintMode: RegionPaintMode;
+  regionPaintStaysActive: boolean;
+  regionDraftCells: Set<string>;
+  regionDraftTargetId: string | null;
+  labelPicker: LabelPickerState;
   setSelectedLayers: (ids: string[]) => void;
   setSelectedRuntimeAnnotation: (id: string | null) => void;
+  setSelectedRegion: (id: string | null) => void;
+  setCanvasSelectionMode: (mode: CanvasSelectionMode) => void;
+  toggleCanvasSelectionMode: () => void;
+  setRegionOverlayVisible: (visible: boolean) => void;
+  toggleRegionOverlay: () => void;
+  setRegionPaintMode: (mode: RegionPaintMode) => void;
+  toggleRegionPaintMode: () => void;
+  setRegionPaintStaysActive: (v: boolean) => void;
+  beginRegionDraft: (targetRegionId: string | null, seedCells?: GridPosition[]) => void;
+  addRegionDraftCells: (cells: GridPosition[]) => void;
+  removeRegionDraftCells: (cells: GridPosition[]) => void;
+  clearRegionDraft: () => void;
+  openLabelPicker: (input: { rect: GridRect; exclude?: GridPosition[]; editingRegionId?: string | null }) => void;
+  closeLabelPicker: () => void;
   setHoveredLayer: (id: string | null) => void;
   setInterfaceMode: (mode: InterfaceMode) => void;
   toggleInterfaceMode: () => void;
@@ -53,6 +88,7 @@ interface UiState {
 export const useUiStore = create<UiState>((set, get) => ({
   selectedLayerIds: [],
   selectedRuntimeAnnotationId: null,
+  selectedRegionId: null,
   hoveredLayerId: null,
   interfaceMode: 'ai',
   layersPanelOpen: true,
@@ -71,9 +107,61 @@ export const useUiStore = create<UiState>((set, get) => ({
   openColorPickerId: null,
   brushSize: 1 as 1 | 2 | 3,
   eraserMode: false,
+  canvasSelectionMode: 'layers',
+  regionOverlayVisible: true,
+  regionPaintMode: 'add',
+  regionPaintStaysActive: false,
+  regionDraftCells: new Set<string>(),
+  regionDraftTargetId: null,
+  labelPicker: { open: false, rect: null, exclude: [], editingRegionId: null },
 
   setSelectedLayers: (ids: string[]) => set({ selectedLayerIds: ids }),
   setSelectedRuntimeAnnotation: (id: string | null) => set({ selectedRuntimeAnnotationId: id }),
+  setSelectedRegion: (id: string | null) => set({ selectedRegionId: id }),
+  setCanvasSelectionMode: (mode: CanvasSelectionMode) =>
+    set({ canvasSelectionMode: mode, selectedRegionId: mode === 'layers' ? null : get().selectedRegionId }),
+  toggleCanvasSelectionMode: () =>
+    set((s) => ({
+      canvasSelectionMode: s.canvasSelectionMode === 'layers' ? 'regions' : 'layers',
+      selectedRegionId: s.canvasSelectionMode === 'regions' ? null : s.selectedRegionId,
+    })),
+  setRegionOverlayVisible: (visible: boolean) => set({ regionOverlayVisible: visible }),
+  toggleRegionOverlay: () => set((s) => ({ regionOverlayVisible: !s.regionOverlayVisible })),
+  setRegionPaintMode: (mode: RegionPaintMode) => set({ regionPaintMode: mode }),
+  toggleRegionPaintMode: () =>
+    set((s) => ({ regionPaintMode: s.regionPaintMode === 'add' ? 'erase' : 'add' })),
+  setRegionPaintStaysActive: (v: boolean) => set({ regionPaintStaysActive: v }),
+  beginRegionDraft: (targetRegionId: string | null, seedCells?: GridPosition[]) => {
+    const next = new Set<string>();
+    if (seedCells) {
+      for (const cell of seedCells) next.add(`${cell.row},${cell.col}`);
+    }
+    set({ regionDraftCells: next, regionDraftTargetId: targetRegionId });
+  },
+  addRegionDraftCells: (cells: GridPosition[]) => {
+    if (cells.length === 0) return;
+    const next = new Set(get().regionDraftCells);
+    for (const cell of cells) next.add(`${cell.row},${cell.col}`);
+    set({ regionDraftCells: next });
+  },
+  removeRegionDraftCells: (cells: GridPosition[]) => {
+    if (cells.length === 0) return;
+    const next = new Set(get().regionDraftCells);
+    for (const cell of cells) next.delete(`${cell.row},${cell.col}`);
+    set({ regionDraftCells: next });
+  },
+  clearRegionDraft: () => set({ regionDraftCells: new Set<string>(), regionDraftTargetId: null }),
+  openLabelPicker: (input) =>
+    set({
+      labelPicker: {
+        open: true,
+        rect: input.rect,
+        exclude: input.exclude ?? [],
+        editingRegionId: input.editingRegionId ?? null,
+      },
+    }),
+  closeLabelPicker: () =>
+    set({ labelPicker: { open: false, rect: null, exclude: [], editingRegionId: null } }),
   setHoveredLayer: (id: string | null) => set({ hoveredLayerId: id }),
   setInterfaceMode: (mode: InterfaceMode) => set({ interfaceMode: mode }),
   toggleInterfaceMode: () =>

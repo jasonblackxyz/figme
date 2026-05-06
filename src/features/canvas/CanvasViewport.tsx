@@ -13,6 +13,8 @@ import { ArtboardFrame } from './ArtboardFrame.tsx';
 import { TextEditor } from '@features/text-editor/TextEditor.tsx';
 import { SmartGuides } from '@features/smart-guides/SmartGuides.tsx';
 import { RuntimeAnnotationOverlay } from '@features/export-prep/RuntimeAnnotationOverlay.tsx';
+import { RegionOverlay } from '@features/region-labeling/RegionOverlay.tsx';
+import { CanvasChrome } from '@features/region-labeling/CanvasChrome.tsx';
 import { getToolHandler } from '@features/tools/toolRegistry.ts';
 import styles from './CanvasViewport.module.css';
 
@@ -72,10 +74,12 @@ export function CanvasViewport() {
       <div className={styles.overlay}>
         <SelectionOverlay gridConfig={gridConfig} panX={panX} panY={panY} />
         <RuntimeAnnotationOverlay gridConfig={gridConfig} panX={panX} panY={panY} />
+        <RegionOverlay gridConfig={gridConfig} panX={panX} panY={panY} />
         <DrawingPreview />
         <TextEditor />
         <SmartGuides />
       </div>
+      <CanvasChrome />
     </div>
   );
 }

@@ -16,6 +16,7 @@ describe('Toolbar', () => {
     expect(screen.getByText('Text')).toBeInTheDocument();
     expect(screen.getByText('FIGlet')).toBeInTheDocument();
     expect(screen.getByText('Draw')).toBeInTheDocument();
+    expect(screen.getByText('Label Region')).toBeInTheDocument();
   });
 
   it('renders visual separators between tool groups', () => {
@@ -23,7 +24,7 @@ describe('Toolbar', () => {
     expect(screen.queryAllByRole('separator')).toHaveLength(0);
     const toolbar = screen.getByRole('toolbar');
     const separators = toolbar.querySelectorAll('div[aria-hidden="true"]');
-    expect(separators).toHaveLength(3);
+    expect(separators).toHaveLength(4);
   });
 
   it('exposes the intended accessible names for each tool', () => {

@@ -108,4 +108,24 @@ describe('useKeyboardShortcuts', () => {
     fireEvent.keyDown(window, { key: 'o', ctrlKey: true });
     expect(useUiStore.getState().importDialogOpen).toBe(false);
   });
+
+  it('Escape on an open LabelPicker closes it AND clears the in-flight draft', () => {
+    useUiStore.setState({
+      labelPicker: {
+        open: true,
+        rect: { col: 0, row: 0, width: 2, height: 2 },
+        exclude: [],
+        editingRegionId: null,
+      },
+      regionDraftCells: new Set(['0,0', '0,1']),
+      regionDraftTargetId: null,
+    });
+    render(<KeyboardShortcutsHarness />);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(useUiStore.getState().labelPicker.open).toBe(false);
+    expect(useUiStore.getState().regionDraftCells.size).toBe(0);
+    expect(useUiStore.getState().regionDraftTargetId).toBeNull();
+  });
 });
