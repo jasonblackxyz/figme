@@ -1,6 +1,7 @@
 import type { FIGMIIDocument, FIGMIIPage, Layer } from './types.ts';
 import { DOCUMENT_SCHEMA_VERSION } from './types.ts';
 import { normalizeRuntimeMetadata } from '@primitives/runtime-semantics/defaults.ts';
+import { migrateLegacyRuntimeAuthoring } from '@primitives/runtime-semantics/regionCompat.ts';
 
 let migrationIdCounter = 0;
 
@@ -25,8 +26,11 @@ export function deserializeDocument(json: string): FIGMIIDocument {
  * Handles documents saved before background layers and runtime regions existed.
  */
 export function migrateDocument(doc: FIGMIIDocument): FIGMIIDocument {
-  let changed = doc.metadata.version !== DOCUMENT_SCHEMA_VERSION;
-  const pages = doc.pages.map((page): FIGMIIPage => {
+  const legacyMigration = migrateLegacyRuntimeAuthoring(doc);
+  const migratedDoc = legacyMigration.document;
+  let changed = legacyMigration.changed || migratedDoc.metadata.version !== DOCUMENT_SCHEMA_VERSION;
+
+  const pages = migratedDoc.pages.map((page): FIGMIIPage => {
     let nextPage = page.runtime
       ? page
       : {
@@ -51,6 +55,18 @@ export function migrateDocument(doc: FIGMIIDocument): FIGMIIDocument {
         ...nextPage,
         regionOrder: Object.keys(nextPage.regions),
       };
+    }
+
+    const layers: Record<string, Layer> = {};
+    let strippedLayerRuntime = false;
+    for (const [layerId, layer] of Object.entries(nextPage.layers)) {
+      const { runtime: _runtime, ...cleanLayer } = layer as Layer & { runtime?: unknown };
+      if (_runtime !== undefined) strippedLayerRuntime = true;
+      layers[layerId] = cleanLayer;
+    }
+    if (strippedLayerRuntime) {
+      changed = true;
+      nextPage = { ...nextPage, layers };
     }
 
     const hasBackground = Object.values(nextPage.layers).some(
@@ -81,13 +97,13 @@ export function migrateDocument(doc: FIGMIIDocument): FIGMIIDocument {
     return nextPage;
   });
 
-  const runtime = normalizeRuntimeMetadata(doc.runtime);
-  if (!doc.runtime) changed = true;
+  const runtime = normalizeRuntimeMetadata(migratedDoc.runtime);
+  if (!migratedDoc.runtime) changed = true;
 
-  if (!changed) return { ...doc, runtime };
+  if (!changed) return { ...migratedDoc, runtime };
 
   return {
-    ...doc,
+    ...migratedDoc,
     pages,
     runtime,
     metadata: {

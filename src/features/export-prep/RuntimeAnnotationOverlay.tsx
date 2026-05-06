@@ -12,37 +12,38 @@ interface RuntimeAnnotationOverlayProps {
 export function RuntimeAnnotationOverlay({ gridConfig, panX, panY }: RuntimeAnnotationOverlayProps) {
   const doc = useDocumentStore((s) => s.document);
   const visible = useUiStore((s) => s.exportDialogOpen);
-  const selectedId = useUiStore((s) => s.selectedRuntimeAnnotationId);
-  const setSelected = useUiStore((s) => s.setSelectedRuntimeAnnotation);
+  const selectedId = useUiStore((s) => s.selectedRegionId);
+  const setSelected = useUiStore((s) => s.setSelectedRegion);
   const activePage = doc.pages.find((page) => page.id === doc.activePageId);
 
   if (!visible || !activePage) return null;
 
-  const annotations = Object.values(doc.runtime?.annotations ?? {})
-    .filter((annotation) => annotation.pageId === activePage.id && annotation.export !== false);
+  const regions = Object.values(activePage.regions ?? {})
+    .filter((region) => region.exportMode !== 'ignore');
 
   return (
     <>
-      {annotations.map((annotation) => (
+      {regions.map((region) => (
         <button
-          key={annotation.id}
+          key={region.id}
           type="button"
-          className={`${styles.box} ${selectedId === annotation.id ? styles.selected : ''}`}
+          className={`${styles.box} ${selectedId === region.id ? styles.selected : ''}`}
           style={{
-            left: annotation.rect.col * gridConfig.cellWidth + panX,
-            top: annotation.rect.row * gridConfig.cellHeight + panY,
-            width: annotation.rect.width * gridConfig.cellWidth,
-            height: annotation.rect.height * gridConfig.cellHeight,
+            left: region.shape.rect.col * gridConfig.cellWidth + panX,
+            top: region.shape.rect.row * gridConfig.cellHeight + panY,
+            width: region.shape.rect.width * gridConfig.cellWidth,
+            height: region.shape.rect.height * gridConfig.cellHeight,
           }}
           onClick={(event) => {
             event.stopPropagation();
-            setSelected(annotation.id);
+            setSelected(region.id);
           }}
-          aria-label={`Runtime annotation ${annotation.semanticId}`}
-          data-runtime-annotation-id={annotation.id}
-          data-semantic-id={annotation.semanticId}
+          aria-label={`Runtime region ${region.semanticId ?? region.id}`}
+          data-runtime-region-id={region.id}
+          data-semantic-id={region.semanticId ?? region.id}
+          data-component-kind={region.componentKind}
         >
-          <span className={styles.label}>{annotation.semanticId}</span>
+          <span className={styles.label}>{region.semanticId ?? region.id}</span>
         </button>
       ))}
     </>

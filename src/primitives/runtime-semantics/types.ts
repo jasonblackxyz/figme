@@ -244,11 +244,21 @@ export interface DesignPackage {
 
 export interface FigMeRuntimeMetadata {
   manifest?: RuntimeManifestMetadata;
-  tokens: Record<string, DesignStyleDef>;
-  components: Record<string, RuntimeComponentDef>;
-  bindings: Record<string, DesignBinding>;
-  interactions: Record<string, DesignInteraction>;
-  annotations: Record<string, RuntimeAnnotation>;
+  tokens?: Record<string, DesignStyleDef>;
+  designFamily?: string;
+  packageVersion?: string;
+  sourceRefs?: string[];
+}
+
+export interface LegacyFigMeRuntimeMetadata extends FigMeRuntimeMetadata {
+  /** @deprecated Migration input only. Runtime authoring now lives on page.regions. */
+  components?: Record<string, RuntimeComponentDef>;
+  /** @deprecated Migration input only. Runtime authoring now lives on page.regions. */
+  bindings?: Record<string, DesignBinding>;
+  /** @deprecated Migration input only. Runtime authoring now lives on page.regions. */
+  interactions?: Record<string, DesignInteraction>;
+  /** @deprecated Migration input only. Runtime authoring now lives on page.regions. */
+  annotations?: Record<string, RuntimeAnnotation>;
 }
 
 export interface RuntimeSemanticsExport {

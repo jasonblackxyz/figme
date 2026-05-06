@@ -3,13 +3,11 @@ import type { GridConfig, GridPosition, GridRect } from '@primitives/grid-engine
 import type { Palette } from '@primitives/style-system/types.ts';
 import type {
   FigMeRuntimeMetadata,
-  LayerRuntimeMetadata,
   PageRuntimeMetadata,
 } from '@primitives/runtime-semantics/types.ts';
 
 export type {
   FigMeRuntimeMetadata,
-  LayerRuntimeMetadata,
   PageRuntimeMetadata,
 } from '@primitives/runtime-semantics/types.ts';
 
@@ -129,7 +127,6 @@ export interface Layer {
   autoLayout?: AutoLayoutConfig;
   customColors?: { color?: string; bg?: string };
   cellColorOverrides?: Record<string, string>;
-  runtime?: LayerRuntimeMetadata;
 }
 
 export const RUNTIME_ROLES = [

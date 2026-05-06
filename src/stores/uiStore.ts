@@ -15,8 +15,9 @@ export interface LabelPickerState {
 
 interface UiState {
   selectedLayerIds: string[];
-  selectedRuntimeAnnotationId: string | null;
   selectedRegionId: string | null;
+  /** @deprecated Use selectedRegionId. */
+  selectedRuntimeAnnotationId: string | null;
   hoveredLayerId: string | null;
   interfaceMode: InterfaceMode;
   layersPanelOpen: boolean;
@@ -44,8 +45,9 @@ interface UiState {
   regionDraftTargetId: string | null;
   labelPicker: LabelPickerState;
   setSelectedLayers: (ids: string[]) => void;
-  setSelectedRuntimeAnnotation: (id: string | null) => void;
   setSelectedRegion: (id: string | null) => void;
+  /** @deprecated Use setSelectedRegion. */
+  setSelectedRuntimeAnnotation: (id: string | null) => void;
   setCanvasSelectionMode: (mode: CanvasSelectionMode) => void;
   toggleCanvasSelectionMode: () => void;
   setRegionOverlayVisible: (visible: boolean) => void;
@@ -87,8 +89,8 @@ interface UiState {
 
 export const useUiStore = create<UiState>((set, get) => ({
   selectedLayerIds: [],
-  selectedRuntimeAnnotationId: null,
   selectedRegionId: null,
+  selectedRuntimeAnnotationId: null,
   hoveredLayerId: null,
   interfaceMode: 'ai',
   layersPanelOpen: true,
@@ -116,14 +118,19 @@ export const useUiStore = create<UiState>((set, get) => ({
   labelPicker: { open: false, rect: null, exclude: [], editingRegionId: null },
 
   setSelectedLayers: (ids: string[]) => set({ selectedLayerIds: ids }),
-  setSelectedRuntimeAnnotation: (id: string | null) => set({ selectedRuntimeAnnotationId: id }),
-  setSelectedRegion: (id: string | null) => set({ selectedRegionId: id }),
+  setSelectedRegion: (id: string | null) => set({ selectedRegionId: id, selectedRuntimeAnnotationId: id }),
+  setSelectedRuntimeAnnotation: (id: string | null) => set({ selectedRegionId: id, selectedRuntimeAnnotationId: id }),
   setCanvasSelectionMode: (mode: CanvasSelectionMode) =>
-    set({ canvasSelectionMode: mode, selectedRegionId: mode === 'layers' ? null : get().selectedRegionId }),
+    set({
+      canvasSelectionMode: mode,
+      selectedRegionId: mode === 'layers' ? null : get().selectedRegionId,
+      selectedRuntimeAnnotationId: mode === 'layers' ? null : get().selectedRegionId,
+    }),
   toggleCanvasSelectionMode: () =>
     set((s) => ({
       canvasSelectionMode: s.canvasSelectionMode === 'layers' ? 'regions' : 'layers',
       selectedRegionId: s.canvasSelectionMode === 'regions' ? null : s.selectedRegionId,
+      selectedRuntimeAnnotationId: s.canvasSelectionMode === 'regions' ? null : s.selectedRegionId,
     })),
   setRegionOverlayVisible: (visible: boolean) => set({ regionOverlayVisible: visible }),
   toggleRegionOverlay: () => set((s) => ({ regionOverlayVisible: !s.regionOverlayVisible })),

@@ -49,11 +49,13 @@ import {
   moveLayerToGroup as moveLayerToGroupOp,
 } from '@primitives/document-model/operations.ts';
 import {
-  generateRuntimeId,
   normalizeRuntimeMetadata,
-  slugifyRuntimeId,
 } from '@primitives/runtime-semantics/defaults.ts';
 import { inferRuntimeSemantics as inferRuntimeSemanticsOp } from '@primitives/runtime-semantics/inference.ts';
+import {
+  regionFromRuntimeAnnotation,
+  runtimeAnnotationUpdatesToRegionUpdates,
+} from '@primitives/runtime-semantics/regionCompat.ts';
 import { mergeImportedDocuments } from '@features/import/importMerge.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 
@@ -340,15 +342,15 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
           updatedPage = updateLayer(updatedPage, newId, {
             customColors: layer.customColors,
             cellColorOverrides: layer.cellColorOverrides ? { ...layer.cellColorOverrides } : undefined,
-            runtime: layer.runtime ? { ...layer.runtime } : undefined,
           });
         }
       }
     }
-    const updatedDoc = duplicateRuntimeAnnotations({
+    const updatedDoc = {
       ...doc,
       pages: doc.pages.map(p => p.id === page.id ? updatedPage : p),
-    }, page.id, layerIdMap);
+    };
+    void layerIdMap;
     set({ document: updatedDoc });
     useUiStore.getState().setSelectedLayers(newIds);
   },
@@ -701,137 +703,69 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   },
 
   setRuntimeComponent: (component: RuntimeComponentDef) => {
-    const { document: doc } = get();
-    if (!component.id.trim()) return;
-    get().pushUndo();
-    const runtime = normalizeRuntimeMetadata(doc.runtime);
-    set({
-      document: {
-        ...doc,
-        runtime: {
-          ...runtime,
-          components: { ...runtime.components, [component.id]: component },
-        },
-      },
-    });
+    void component;
+    console.warn('FIGMII store: setRuntimeComponent is deprecated; component definitions are derived from page.regions during Design Package export.');
   },
 
   setRuntimeBinding: (binding: DesignBinding) => {
-    const { document: doc } = get();
-    if (!binding.id.trim()) return;
-    get().pushUndo();
-    const runtime = normalizeRuntimeMetadata(doc.runtime);
-    set({
-      document: {
-        ...doc,
-        runtime: {
-          ...runtime,
-          bindings: { ...runtime.bindings, [binding.id]: binding },
-        },
-      },
-    });
+    void binding;
+    console.warn('FIGMII store: setRuntimeBinding is deprecated; add bindings directly to page.regions.');
   },
 
   setRuntimeInteraction: (interaction: DesignInteraction) => {
-    const { document: doc } = get();
-    if (!interaction.id.trim()) return;
-    get().pushUndo();
-    const runtime = normalizeRuntimeMetadata(doc.runtime);
-    set({
-      document: {
-        ...doc,
-        runtime: {
-          ...runtime,
-          interactions: { ...runtime.interactions, [interaction.id]: interaction },
-        },
-      },
-    });
+    void interaction;
+    console.warn('FIGMII store: setRuntimeInteraction is deprecated; add interactions directly to page.regions.');
   },
 
   createRuntimeAnnotation: (annotation: Partial<RuntimeAnnotation>) => {
     const { document: doc } = get();
-    const activePage = doc.pages.find(p => p.id === doc.activePageId);
-    const pageId = annotation.pageId ?? activePage?.id;
-    const page = doc.pages.find(p => p.id === pageId);
+    const page = doc.pages.find(p => p.id === (annotation.pageId ?? doc.activePageId));
     if (!page) return null;
 
-    const runtime = normalizeRuntimeMetadata(doc.runtime);
-    const id = annotation.id ?? generateRuntimeId('annotation');
-    const semanticId = annotation.semanticId?.trim() || uniqueRuntimeSemanticId(
-      runtime,
-      page.id,
-      annotation.name ?? 'node',
-    );
-    const rect = annotation.rect ?? { col: 0, row: 0, width: 8, height: 3 };
-    const nextAnnotation: RuntimeAnnotation = {
-      id,
+    const region = regionFromRuntimeAnnotation({
+      ...annotation,
       pageId: page.id,
-      semanticId,
-      rect,
+      rect: annotation.rect ?? { col: 0, row: 0, width: 8, height: 3 },
       export: annotation.export ?? true,
-      ...(annotation.name ? { name: annotation.name } : {}),
-      ...(annotation.z !== undefined ? { z: annotation.z } : {}),
-      ...(annotation.sourceLayerIds ? { sourceLayerIds: [...annotation.sourceLayerIds] } : {}),
-      ...(annotation.role ? { role: annotation.role } : {}),
-      ...(annotation.componentId ? { componentId: annotation.componentId } : {}),
-      ...(annotation.componentKind ? { componentKind: annotation.componentKind } : {}),
-      ...(annotation.props ? { props: { ...annotation.props } } : {}),
-      ...(annotation.bindingSlots ? { bindingSlots: { ...annotation.bindingSlots } } : {}),
-      ...(annotation.interactionIds ? { interactionIds: [...annotation.interactionIds] } : {}),
-      ...(annotation.sticky ? { sticky: annotation.sticky } : {}),
-      ...(annotation.scrollContainerId ? { scrollContainerId: annotation.scrollContainerId } : {}),
-      ...(annotation.constraints ? { constraints: annotation.constraints } : {}),
-      ...(annotation.customModuleKind ? { customModuleKind: annotation.customModuleKind } : {}),
-      ...(annotation.inputShape ? { inputShape: annotation.inputShape } : {}),
-      ...(annotation.breakpointBehavior ? { breakpointBehavior: annotation.breakpointBehavior } : {}),
-      ...(annotation.tags ? { tags: [...annotation.tags] } : {}),
-      ...(annotation.provenance ? { provenance: annotation.provenance } : {}),
-    };
+    }, doc.runtime, page);
+    const updatedPage = addRegionOp(page, region);
 
     get().pushUndo();
     set({
       document: {
         ...doc,
-        runtime: {
-          ...runtime,
-          annotations: { ...runtime.annotations, [id]: nextAnnotation },
-        },
+        pages: doc.pages.map(p => p.id === page.id ? updatedPage : p),
       },
     });
-    return id;
+    return region.id;
   },
 
   updateRuntimeAnnotation: (annotationId: string, updates: Partial<RuntimeAnnotation>) => {
     const { document: doc } = get();
-    const runtime = normalizeRuntimeMetadata(doc.runtime);
-    const existing = runtime.annotations[annotationId];
-    if (!existing) return;
+    const page = doc.pages.find(p => p.regions?.[annotationId]);
+    const existing = page?.regions?.[annotationId];
+    if (!page || !existing) return;
+    const regionUpdates = runtimeAnnotationUpdatesToRegionUpdates(updates, doc.runtime, existing);
+    const updatedPage = updateRegionOp(page, annotationId, regionUpdates);
     get().pushUndo();
     set({
       document: {
         ...doc,
-        runtime: {
-          ...runtime,
-          annotations: {
-            ...runtime.annotations,
-            [annotationId]: { ...existing, ...updates, id: annotationId },
-          },
-        },
+        pages: doc.pages.map(p => p.id === page.id ? updatedPage : p),
       },
     });
   },
 
   removeRuntimeAnnotation: (annotationId: string) => {
     const { document: doc } = get();
-    const runtime = normalizeRuntimeMetadata(doc.runtime);
-    if (!runtime.annotations[annotationId]) return;
+    const page = doc.pages.find(p => p.regions?.[annotationId]);
+    if (!page) return;
+    const updatedPage = removeRegionOp(page, annotationId);
     get().pushUndo();
-    const annotations = { ...runtime.annotations };
-    delete annotations[annotationId];
     set({
       document: {
         ...doc,
-        runtime: { ...runtime, annotations },
+        pages: doc.pages.map(p => p.id === page.id ? updatedPage : p),
       },
     });
   },
@@ -870,56 +804,4 @@ function applyZOrder(getState: StoreGet, set: StoreSet, op: (page: FIGMIIPage, l
     updated = op(updated, id);
   }
   commitPage(set, doc, page, updated);
-}
-
-function duplicateRuntimeAnnotations(
-  doc: FIGMIIDocument,
-  pageId: string,
-  layerIdMap: Map<string, string>,
-): FIGMIIDocument {
-  if (layerIdMap.size === 0) return doc;
-  const runtime = normalizeRuntimeMetadata(doc.runtime);
-  const annotations = { ...runtime.annotations };
-
-  for (const annotation of Object.values(runtime.annotations)) {
-    if (annotation.pageId !== pageId || !annotation.sourceLayerIds?.some((id) => layerIdMap.has(id))) {
-      continue;
-    }
-    const id = generateRuntimeId('annotation');
-    const sourceLayerIds = annotation.sourceLayerIds
-      .map((sourceId) => layerIdMap.get(sourceId) ?? sourceId);
-    annotations[id] = {
-      ...annotation,
-      id,
-      semanticId: uniqueRuntimeSemanticId({ ...runtime, annotations }, pageId, `${annotation.semanticId}-copy`),
-      rect: {
-        ...annotation.rect,
-        col: annotation.rect.col + 2,
-        row: annotation.rect.row + 2,
-      },
-      sourceLayerIds,
-    };
-  }
-
-  return {
-    ...doc,
-    runtime: { ...runtime, annotations },
-  };
-}
-
-function uniqueRuntimeSemanticId(
-  runtime: ReturnType<typeof normalizeRuntimeMetadata>,
-  pageId: string,
-  base: string,
-): string {
-  const normalized = slugifyRuntimeId(base, 'node');
-  const existing = new Set(
-    Object.values(runtime.annotations)
-      .filter((annotation) => annotation.pageId === pageId)
-      .map((annotation) => annotation.semanticId),
-  );
-  if (!existing.has(normalized)) return normalized;
-  let index = 2;
-  while (existing.has(`${normalized}-${index}`)) index += 1;
-  return `${normalized}-${index}`;
 }

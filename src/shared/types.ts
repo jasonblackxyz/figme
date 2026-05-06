@@ -35,9 +35,10 @@ export type {
   ComponentDef,
   ComponentInstanceProperties,
   FigMeRuntimeMetadata,
-  LayerRuntimeMetadata,
   PageRuntimeMetadata,
 } from '@primitives/document-model/types.ts';
+
+export type { LayerRuntimeMetadata } from '@primitives/runtime-semantics/types.ts';
 
 export type {
   CharEntry,

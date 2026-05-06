@@ -10,15 +10,17 @@ import { flattenLayerOrder, isEffectivelyHidden } from '@primitives/document-mod
 import {
   createRuntimeProvenance,
   DEFAULT_DESKTOP_BEHAVIOR,
-  normalizeRuntimeMetadata,
+  normalizeLegacyRuntimeMetadata,
   seedRuntimeBindings,
   seedRuntimeComponents,
   seedRuntimeInteractions,
   seedSemanticTokens,
   slugifyRuntimeId,
 } from './defaults.ts';
+import { migrateLegacyRuntimeAuthoring } from './regionCompat.ts';
 import type {
-  FigMeRuntimeMetadata,
+  LayerRuntimeMetadata,
+  LegacyFigMeRuntimeMetadata,
   RuntimeAnnotation,
   RuntimeComponentDef,
   RuntimeDiagnostic,
@@ -49,11 +51,11 @@ export function inferRuntimeSemantics(
   doc: FigMeDocument,
   options: RuntimeInferenceOptions = {},
 ): InferenceResult {
-  const runtime = normalizeRuntimeMetadata(doc.runtime);
+  const runtime = normalizeLegacyRuntimeMetadata(doc.runtime);
   const diagnostics: RuntimeDiagnostic[] = [];
   const targetPageIds = new Set(options.pageIds ?? doc.pages.map((page) => page.id));
 
-  const nextRuntime: FigMeRuntimeMetadata = {
+  const nextRuntime: LegacyFigMeRuntimeMetadata & Required<Pick<LegacyFigMeRuntimeMetadata, 'tokens' | 'components' | 'bindings' | 'interactions' | 'annotations'>> = {
     manifest: {
       ...runtime.manifest,
       id: runtime.manifest?.id ?? slugifyRuntimeId(doc.name, 'figmii-design'),
@@ -85,19 +87,21 @@ export function inferRuntimeSemantics(
     }
   }
 
-  return {
-    document: {
+  const migrated = migrateLegacyRuntimeAuthoring({
       ...doc,
       pages,
       runtime: nextRuntime,
-    },
+    });
+
+  return {
+    document: migrated.document,
     diagnostics,
   };
 }
 
 function inferPage(
   page: FigMePage,
-  runtime: FigMeRuntimeMetadata,
+  runtime: LegacyFigMeRuntimeMetadata & Required<Pick<LegacyFigMeRuntimeMetadata, 'components' | 'annotations'>>,
   diagnostics: RuntimeDiagnostic[],
 ): FigMePage {
   const existingSourceLayerIds = new Set(
@@ -175,7 +179,7 @@ function inferPage(
 
 function inferLayerDraft(layer: Layer, inputAlreadyCreated: boolean): AnnotationDraft | null {
   const name = layer.name.toLowerCase();
-  const layerRuntime = layer.runtime;
+  const layerRuntime = (layer as Layer & { runtime?: LayerRuntimeMetadata }).runtime;
   const layerSemanticId = layerRuntime?.semanticId;
   const nameSlug = slugifyRuntimeId(layerSemanticId ?? layer.name, layer.kind);
 
@@ -333,7 +337,7 @@ function defaultComponentIdForKind(componentKind: RuntimeAnnotation['componentKi
   return 'panel.frame';
 }
 
-function uniqueAnnotationId(runtime: FigMeRuntimeMetadata, base: string): string {
+function uniqueAnnotationId(runtime: LegacyFigMeRuntimeMetadata & Required<Pick<LegacyFigMeRuntimeMetadata, 'annotations'>>, base: string): string {
   const normalized = `annotation.${slugifyRuntimeId(base, 'node')}`;
   if (!runtime.annotations[normalized]) return normalized;
   let index = 2;
@@ -341,7 +345,7 @@ function uniqueAnnotationId(runtime: FigMeRuntimeMetadata, base: string): string
   return `${normalized}-${index}`;
 }
 
-function uniqueSemanticId(runtime: FigMeRuntimeMetadata, pageId: string, base: string): string {
+function uniqueSemanticId(runtime: LegacyFigMeRuntimeMetadata & Required<Pick<LegacyFigMeRuntimeMetadata, 'annotations'>>, pageId: string, base: string): string {
   const normalized = slugifyRuntimeId(base, 'node');
   const pageSemantics = new Set(
     Object.values(runtime.annotations)

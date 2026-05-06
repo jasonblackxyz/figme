@@ -79,8 +79,8 @@ function rebuildPage(specPage: GridSpecPage): FIGMIIPage {
     name: specPage.name,
     layers,
     layerOrder,
-    regions: {},
-    regionOrder: [],
+    regions: specPage.regions ?? {},
+    regionOrder: specPage.regionOrder ?? Object.keys(specPage.regions ?? {}),
     canvasColsOverride: specPage.gridOverride?.cols,
     canvasRowsOverride: specPage.gridOverride?.rows,
     canvasX: 0,
@@ -117,7 +117,7 @@ function rebuildLayer(specLayer: GridSpecLayer): Layer {
     layer.autoLayout = { ...specLayer.autoLayout };
   }
   if (specLayer.runtime) {
-    layer.runtime = { ...specLayer.runtime };
+    return { ...layer, runtime: { ...specLayer.runtime } } as Layer;
   }
 
   return layer;

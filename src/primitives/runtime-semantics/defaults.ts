@@ -5,6 +5,7 @@ import type {
   DesignStyleDef,
   FigMeRuntimeMetadata,
   FrameChars,
+  LegacyFigMeRuntimeMetadata,
   RuntimeComponentDef,
   RuntimeManifestMetadata,
   RuntimeProvenance,
@@ -61,14 +62,21 @@ export function createEmptyRuntimeMetadata(): FigMeRuntimeMetadata {
       provenance: createRuntimeProvenance('figmii', undefined, 'Runtime metadata initialized by FIGMII.'),
     },
     tokens: {},
-    components: {},
-    bindings: {},
-    interactions: {},
-    annotations: {},
   };
 }
 
-export function normalizeRuntimeMetadata(runtime?: Partial<FigMeRuntimeMetadata>): FigMeRuntimeMetadata {
+export function normalizeRuntimeMetadata(runtime?: Partial<LegacyFigMeRuntimeMetadata>): FigMeRuntimeMetadata {
+  const empty = createEmptyRuntimeMetadata();
+  return {
+    manifest: { ...empty.manifest, ...(runtime?.manifest ?? {}) },
+    tokens: { ...(runtime?.tokens ?? {}) },
+    ...(runtime?.designFamily !== undefined ? { designFamily: runtime.designFamily } : {}),
+    ...(runtime?.packageVersion !== undefined ? { packageVersion: runtime.packageVersion } : {}),
+    ...(runtime?.sourceRefs !== undefined ? { sourceRefs: [...runtime.sourceRefs] } : {}),
+  };
+}
+
+export function normalizeLegacyRuntimeMetadata(runtime?: Partial<LegacyFigMeRuntimeMetadata>): Required<Pick<LegacyFigMeRuntimeMetadata, 'tokens' | 'components' | 'bindings' | 'interactions' | 'annotations'>> & LegacyFigMeRuntimeMetadata {
   const empty = createEmptyRuntimeMetadata();
   return {
     manifest: { ...empty.manifest, ...(runtime?.manifest ?? {}) },
@@ -77,6 +85,9 @@ export function normalizeRuntimeMetadata(runtime?: Partial<FigMeRuntimeMetadata>
     bindings: { ...(runtime?.bindings ?? {}) },
     interactions: { ...(runtime?.interactions ?? {}) },
     annotations: { ...(runtime?.annotations ?? {}) },
+    ...(runtime?.designFamily !== undefined ? { designFamily: runtime.designFamily } : {}),
+    ...(runtime?.packageVersion !== undefined ? { packageVersion: runtime.packageVersion } : {}),
+    ...(runtime?.sourceRefs !== undefined ? { sourceRefs: [...runtime.sourceRefs] } : {}),
   };
 }
 

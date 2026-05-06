@@ -4,6 +4,7 @@ import type {
   LayerRuntimeMetadata,
   PageRuntimeMetadata,
 } from '@primitives/runtime-semantics/types.ts';
+import type { SemanticRegion } from '@primitives/document-model/types.ts';
 
 /** Top-level GridSpec document — the structured export format. */
 export interface GridSpec {
@@ -36,6 +37,8 @@ export interface GridSpecPage {
   id: string;
   name: string;
   gridOverride?: { cols: number; rows: number };
+  regions?: Record<string, SemanticRegion>;
+  regionOrder?: string[];
   layers: GridSpecLayer[];
   buffer?: GridSpecCompactBuffer;
   runtime?: PageRuntimeMetadata;
@@ -75,7 +78,7 @@ export interface GridSpecLayer {
   };
   /** Raw properties passed through from the document model. */
   properties: Record<string, unknown>;
-  /** Optional semantic metadata authored in FIGMII. */
+  /** @deprecated Legacy import-only layer metadata. New exports use page.regions. */
   runtime?: LayerRuntimeMetadata;
   /** Pre-computed convenience data resolved by the exporter. */
   resolved: GridSpecResolved;

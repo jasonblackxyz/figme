@@ -63,11 +63,8 @@ export function SpecView({ document, selectedLayerIds }: SpecViewProps): ReactNo
     runtime: document.runtime
       ? {
           manifest: document.runtime.manifest,
-          tokenCount: Object.keys(document.runtime.tokens).length,
-          componentCount: Object.keys(document.runtime.components).length,
-          bindingCount: Object.keys(document.runtime.bindings).length,
-          interactionCount: Object.keys(document.runtime.interactions).length,
-          annotationCount: Object.keys(document.runtime.annotations).length,
+          tokenCount: Object.keys(document.runtime.tokens ?? {}).length,
+          regionCount: document.pages.reduce((sum, page) => sum + Object.keys(page.regions ?? {}).length, 0),
         }
       : null,
   };
