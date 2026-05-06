@@ -167,31 +167,89 @@ describe('batch()', () => {
     });
   });
 
-  it('keeps runtime semantic mutations inside batch', () => {
+  it('keeps region semantic mutations inside batch', () => {
     const pageId = api.getDocument().activePageId;
-    let annotationId: string | null = null;
+    let regionId = '';
 
     api.batch(() => {
       api.setPageRuntime(pageId, { screenId: 'search', exportAsScreen: true });
-      annotationId = api.createRuntimeAnnotation({
-        pageId,
+      regionId = api.regions.defineRegion({
         semanticId: 'search-input',
         rect: { col: 2, row: 3, width: 24, height: 3 },
         role: 'input',
         componentKind: 'text-input',
-        componentId: 'query.input',
+        bindings: [{ slot: 'value', path: 'search.query', fallback: '' }],
       });
 
       expect(api.getPageRuntime(pageId)?.screenId).toBe('search');
-      expect(Object.keys(api.getDocument().runtime?.annotations ?? {})).toContain(annotationId);
+      expect(api.getPage(pageId)?.regions?.[regionId]).toBeDefined();
     });
 
     const doc = api.getDocument();
     expect(doc.pages.find((page) => page.id === pageId)?.runtime?.screenId).toBe('search');
-    expect(Object.keys(doc.runtime?.annotations ?? {})).toContain(annotationId);
+    expect(doc.pages.find((page) => page.id === pageId)?.regions?.[regionId]).toBeDefined();
 
     useDocumentStore.getState().undo();
     expect(api.getPageRuntime(pageId)?.screenId).not.toBe('search');
-    expect(Object.keys(api.getDocument().runtime?.annotations ?? {})).not.toContain(annotationId);
+    expect(api.getPage(pageId)?.regions?.[regionId]).toBeUndefined();
+  });
+
+  it('bridges deprecated runtime annotation API onto regions', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const pageId = api.getDocument().activePageId;
+
+    const regionId = api.createRuntimeAnnotation({
+      pageId,
+      semanticId: 'legacy-search',
+      rect: { col: 1, row: 1, width: 12, height: 3 },
+      role: 'input',
+      componentKind: 'text-input',
+      bindingSlots: { value: 'search.query' },
+    });
+
+    expect(regionId).toBeTruthy();
+    expect(api.getPage(pageId)?.regions?.[regionId!]).toMatchObject({
+      semanticId: 'legacy-search',
+      componentKind: 'text-input',
+      bindings: [{ slot: 'value', path: 'search.query' }],
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('createRuntimeAnnotation is deprecated'));
+
+    api.updateRuntimeAnnotation(regionId!, { semanticId: 'legacy-search-updated' });
+    expect(api.getPage(pageId)?.regions?.[regionId!]?.semanticId).toBe('legacy-search-updated');
+
+    api.removeRuntimeAnnotation(regionId!);
+    expect(api.getPage(pageId)?.regions?.[regionId!]).toBeUndefined();
+    warn.mockRestore();
+  });
+
+  it('supports minimal FIGMII.regions CRUD with undo/redo', () => {
+    const pageId = api.getDocument().activePageId;
+    const regionId = api.regions.defineRegion({
+      rect: { col: 4, row: 5, width: 16, height: 4 },
+      componentKind: 'button',
+      semanticId: 'submit-button',
+      role: 'button',
+      interactions: [{ id: 'submit', action: { kind: 'submitQuery', target: 'submit-button' } }],
+    });
+
+    expect(api.regions.getRegion(regionId)).toMatchObject({
+      semanticId: 'submit-button',
+      componentKind: 'button',
+    });
+    expect(api.regions.listRegions(pageId).map((region) => region.id)).toEqual([regionId]);
+
+    api.regions.updateRegion(regionId, { semanticId: 'primary-submit' });
+    api.regions.setRegionShape(regionId, { rect: { col: 6, row: 7, width: 18, height: 5 } });
+    expect(api.regions.getRegion(regionId)).toMatchObject({
+      semanticId: 'primary-submit',
+      shape: { rect: { col: 6, row: 7, width: 18, height: 5 } },
+    });
+
+    useDocumentStore.getState().undo();
+    expect(api.regions.getRegion(regionId)?.shape.rect).toEqual({ col: 4, row: 5, width: 16, height: 4 });
+
+    api.regions.removeRegion(regionId);
+    expect(api.regions.getRegion(regionId)).toBeUndefined();
   });
 });

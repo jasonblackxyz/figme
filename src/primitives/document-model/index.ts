@@ -24,9 +24,9 @@ export type {
   FIGMIIDocument,
   ComponentDef,
   PageRuntimeMetadata,
-  LayerRuntimeMetadata,
   FigMeRuntimeMetadata,
 } from './types.ts'
+export type { LayerRuntimeMetadata } from '@primitives/runtime-semantics/types.ts'
 export {
   DOCUMENT_SCHEMA_VERSION,
   RUNTIME_ROLES,

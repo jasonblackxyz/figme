@@ -67,6 +67,8 @@ export function exportAsGridSpec(doc: FIGMIIDocument, options?: GridSpecExportOp
           rows: canvasSize.effectiveRows,
         },
       } : {}),
+      ...(page.regions ? { regions: page.regions } : {}),
+      ...(page.regionOrder ? { regionOrder: page.regionOrder } : {}),
       layers,
       ...(page.runtime ? { runtime: page.runtime } : {}),
     };
@@ -205,7 +207,6 @@ function buildSpecLayer(
     ...(childNames && childNames.length > 0 ? { childNames } : {}),
     ...(layer.autoLayout ? { autoLayout: layer.autoLayout } : {}),
     properties: layer.properties as Record<string, unknown>,
-    ...(layer.runtime ? { runtime: layer.runtime } : {}),
     resolved,
   };
 }

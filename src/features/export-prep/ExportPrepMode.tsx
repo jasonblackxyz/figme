@@ -16,11 +16,16 @@ import {
   exportRuntimeSemanticsAsJson,
   validateRuntimeSemantics,
 } from '@primitives/runtime-semantics/index.ts';
+import {
+  RUNTIME_COMPONENT_KINDS,
+  RUNTIME_ROLES,
+  type RegionShape,
+  type RuntimeComponentKind,
+  type RuntimeRole,
+  type SemanticRegion,
+} from '@primitives/document-model/types.ts';
 import type {
-  RuntimeAnnotation,
-  RuntimeComponentKind,
   RuntimeDesktopBehavior,
-  RuntimeNodeRole,
 } from '@primitives/runtime-semantics/types.ts';
 import styles from './ExportPrepMode.module.css';
 
@@ -29,31 +34,30 @@ interface ExportPrepModeProps {
   onClose: () => void;
 }
 
-const ROLE_OPTIONS: RuntimeNodeRole[] = ['container', 'content', 'input', 'button', 'link', 'decoration', 'custom'];
-const COMPONENT_KIND_OPTIONS: RuntimeComponentKind[] = ['frame', 'text-input', 'custom-module'];
+const ROLE_OPTIONS: RuntimeRole[] = [...RUNTIME_ROLES];
+const COMPONENT_KIND_OPTIONS: RuntimeComponentKind[] = [...RUNTIME_COMPONENT_KINDS];
 const DESKTOP_OPTIONS: RuntimeDesktopBehavior[] = ['centered-mobile-canvas', 'widen-modules', 'split-pane'];
 
 export function ExportPrepMode({ visible, onClose }: ExportPrepModeProps) {
   const doc = useDocumentStore((s) => s.document);
   const setRuntimeManifest = useDocumentStore((s) => s.setRuntimeManifest);
   const setPageRuntime = useDocumentStore((s) => s.setPageRuntime);
-  const createRuntimeAnnotation = useDocumentStore((s) => s.createRuntimeAnnotation);
-  const updateRuntimeAnnotation = useDocumentStore((s) => s.updateRuntimeAnnotation);
-  const removeRuntimeAnnotation = useDocumentStore((s) => s.removeRuntimeAnnotation);
+  const addRegion = useDocumentStore((s) => s.addRegion);
+  const updateRegion = useDocumentStore((s) => s.updateRegion);
+  const removeRegion = useDocumentStore((s) => s.removeRegion);
   const inferRuntimeSemantics = useDocumentStore((s) => s.inferRuntimeSemantics);
   const selectedLayerIds = useUiStore((s) => s.selectedLayerIds);
-  const selectedAnnotationId = useUiStore((s) => s.selectedRuntimeAnnotationId);
-  const setSelectedAnnotation = useUiStore((s) => s.setSelectedRuntimeAnnotation);
+  const selectedRegionId = useUiStore((s) => s.selectedRegionId);
+  const setSelectedRegion = useUiStore((s) => s.setSelectedRegion);
   const [inferenceMessage, setInferenceMessage] = useState('');
 
   const activePage = doc.pages.find((page) => page.id === doc.activePageId) ?? doc.pages[0];
-  const annotations = useMemo(() => {
+  const regions = useMemo(() => {
     if (!activePage) return [];
-    return Object.values(doc.runtime?.annotations ?? {})
-      .filter((annotation) => annotation.pageId === activePage.id)
+    return Object.values(activePage.regions ?? {})
       .sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
-  }, [activePage, doc.runtime?.annotations]);
-  const selectedAnnotation = annotations.find((annotation) => annotation.id === selectedAnnotationId) ?? annotations[0];
+  }, [activePage]);
+  const selectedRegion = regions.find((region) => region.id === selectedRegionId) ?? regions[0];
   const diagnostics = useMemo(() => validateRuntimeSemantics(doc), [doc]);
   const packagePreview = useMemo(() => exportDesignPackageAsJson(doc, { includeRenderOracle: true }), [doc]);
 
@@ -65,7 +69,7 @@ export function ExportPrepMode({ visible, onClose }: ExportPrepModeProps) {
   const errorCount = diagnostics.filter((diagnostic) => diagnostic.severity === 'error').length;
   const warningCount = diagnostics.filter((diagnostic) => diagnostic.severity === 'warning').length;
 
-  function addAnnotationFromSelection() {
+  function addRegionFromSelection() {
     if (!activePage) return;
     const selectedLayers = selectedLayerIds
       .map((id) => activePage.layers[id])
@@ -74,19 +78,21 @@ export function ExportPrepMode({ visible, onClose }: ExportPrepModeProps) {
       ? rectFromLayers(selectedLayers)
       : { col: 0, row: 0, width: 12, height: 4 };
     const label = selectedLayers[0]?.name ?? 'Runtime Node';
-    const id = createRuntimeAnnotation({
-      pageId: activePage.id,
-      semanticId: slug(label),
-      name: label,
-      rect,
-      sourceLayerIds: selectedLayers.map((layer) => layer.id),
+    const semanticId = slug(label);
+    const id = uniqueRegionId(activePage, semanticId);
+    addRegion({
+      id,
+      semanticId,
+      shape: { rect },
+      provenance: {
+        source: 'human',
+        note: selectedLayers.length > 0 ? `Created from selected layers: ${selectedLayers.map((layer) => layer.id).join(', ')}` : undefined,
+      },
       role: 'container',
       componentKind: 'frame',
-      componentId: 'panel.frame',
-      z: annotations.length,
-      export: true,
+      z: regions.length,
     });
-    if (id) setSelectedAnnotation(id);
+    setSelectedRegion(id);
   }
 
   function runInference() {
@@ -176,7 +182,7 @@ export function ExportPrepMode({ visible, onClose }: ExportPrepModeProps) {
                 <button className={styles.primaryButton} onClick={runInference}>
                   <RefreshCw size={14} /> Infer
                 </button>
-                <button className={styles.button} onClick={addAnnotationFromSelection}>
+                <button className={styles.button} onClick={addRegionFromSelection}>
                   <Plus size={14} /> Region
                 </button>
                 {inferenceMessage && <span className={styles.empty}>{inferenceMessage}</span>}
@@ -185,28 +191,28 @@ export function ExportPrepMode({ visible, onClose }: ExportPrepModeProps) {
           )}
 
           <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Annotations</h3>
+            <h3 className={styles.sectionTitle}>Regions</h3>
             <div className={styles.annotationList}>
-              {annotations.map((annotation) => (
+              {regions.map((region) => (
                 <button
-                  key={annotation.id}
-                  className={`${styles.annotationButton} ${annotation.id === selectedAnnotation?.id ? styles.selectedAnnotation : ''}`}
-                  onClick={() => setSelectedAnnotation(annotation.id)}
+                  key={region.id}
+                  className={`${styles.annotationButton} ${region.id === selectedRegion?.id ? styles.selectedAnnotation : ''}`}
+                  onClick={() => setSelectedRegion(region.id)}
                 >
-                  <span>{annotation.semanticId}</span>
-                  <span className={styles.annotationMeta}>{annotation.role ?? 'node'} · {annotation.componentKind ?? annotation.componentId ?? 'component'}</span>
+                  <span>{region.semanticId ?? region.id}</span>
+                  <span className={styles.annotationMeta}>{region.role ?? 'node'} · {region.componentKind}</span>
                 </button>
               ))}
-              {annotations.length === 0 && <div className={styles.empty}>No annotations</div>}
+              {regions.length === 0 && <div className={styles.empty}>No regions</div>}
             </div>
           </section>
 
-          {selectedAnnotation && (
-            <AnnotationEditor
-              key={selectedAnnotation.id}
-              annotation={selectedAnnotation}
-              onUpdate={(updates) => updateRuntimeAnnotation(selectedAnnotation.id, updates)}
-              onRemove={() => removeRuntimeAnnotation(selectedAnnotation.id)}
+          {selectedRegion && (
+            <RegionEditor
+              key={selectedRegion.id}
+              region={selectedRegion}
+              onUpdate={(updates) => updateRegion(selectedRegion.id, updates)}
+              onRemove={() => removeRegion(selectedRegion.id)}
             />
           )}
 
@@ -263,16 +269,16 @@ export function ExportPrepMode({ visible, onClose }: ExportPrepModeProps) {
   );
 }
 
-interface AnnotationEditorProps {
-  annotation: RuntimeAnnotation;
-  onUpdate: (updates: Partial<RuntimeAnnotation>) => void;
+interface RegionEditorProps {
+  region: SemanticRegion;
+  onUpdate: (updates: Partial<Omit<SemanticRegion, 'id'>>) => void;
   onRemove: () => void;
 }
 
-function AnnotationEditor({ annotation, onUpdate, onRemove }: AnnotationEditorProps) {
-  const [propsText, setPropsText] = useState(JSON.stringify(annotation.props ?? {}, null, 2));
-  const [bindingsText, setBindingsText] = useState(formatKeyValueRecord(annotation.bindingSlots ?? {}));
-  const [interactionsText, setInteractionsText] = useState(annotation.interactionIds?.join(', ') ?? '');
+function RegionEditor({ region, onUpdate, onRemove }: RegionEditorProps) {
+  const [propsText, setPropsText] = useState(JSON.stringify(region.props ?? {}, null, 2));
+  const [bindingsText, setBindingsText] = useState(formatBindings(region.bindings ?? []));
+  const [interactionsText, setInteractionsText] = useState(region.interactions?.map((interaction) => interaction.id).join(', ') ?? '');
 
   function applyPropsText() {
     const parsed = parseJsonRecord(propsText);
@@ -280,12 +286,13 @@ function AnnotationEditor({ annotation, onUpdate, onRemove }: AnnotationEditorPr
   }
 
   function applyBindingsText() {
-    onUpdate({ bindingSlots: parseKeyValueRecord(bindingsText) });
+    onUpdate({ bindings: parseBindings(bindingsText) });
   }
 
   function applyInteractionsText() {
     onUpdate({
-      interactionIds: interactionsText.split(',').map((item) => item.trim()).filter(Boolean),
+      interactions: interactionsText.split(',').map((item) => item.trim()).filter(Boolean)
+        .map((id) => ({ id, action: { kind: 'custom', target: id } })),
     });
   }
 
@@ -293,22 +300,24 @@ function AnnotationEditor({ annotation, onUpdate, onRemove }: AnnotationEditorPr
     <section className={styles.section}>
       <h3 className={styles.sectionTitle}>Selected</h3>
       <div className={styles.grid}>
-        <LabeledInput label="Semantic ID" value={annotation.semanticId} onChange={(value) => onUpdate({ semanticId: value })} />
-        <LabeledSelect label="Role" value={annotation.role ?? 'container'} options={ROLE_OPTIONS} onChange={(value) => onUpdate({ role: value as RuntimeNodeRole })} />
+        <LabeledInput label="Semantic ID" value={region.semanticId ?? ''} onChange={(value) => onUpdate({ semanticId: value })} />
+        <LabeledSelect label="Role" value={region.role ?? 'container'} options={ROLE_OPTIONS} onChange={(value) => onUpdate({ role: value as RuntimeRole })} />
         <LabeledSelect
           label="Component"
-          value={annotation.componentKind ?? 'frame'}
+          value={region.componentKind}
           options={COMPONENT_KIND_OPTIONS}
-          onChange={(value) => onUpdate({
-            componentKind: value as RuntimeComponentKind,
-            componentId: defaultComponentId(value as RuntimeComponentKind, annotation.semanticId),
-          })}
+          onChange={(value) => onUpdate({ componentKind: value as RuntimeComponentKind })}
         />
-        <LabeledInput label="Component ID" value={annotation.componentId ?? ''} onChange={(value) => onUpdate({ componentId: value })} />
-        <LabeledInput label="Col" value={String(annotation.rect.col)} onChange={(value) => onUpdate({ rect: { ...annotation.rect, col: numberOr(annotation.rect.col, value) } })} />
-        <LabeledInput label="Row" value={String(annotation.rect.row)} onChange={(value) => onUpdate({ rect: { ...annotation.rect, row: numberOr(annotation.rect.row, value) } })} />
-        <LabeledInput label="Width" value={String(annotation.rect.width)} onChange={(value) => onUpdate({ rect: { ...annotation.rect, width: Math.max(1, numberOr(annotation.rect.width, value)) } })} />
-        <LabeledInput label="Height" value={String(annotation.rect.height)} onChange={(value) => onUpdate({ rect: { ...annotation.rect, height: Math.max(1, numberOr(annotation.rect.height, value)) } })} />
+        <LabeledSelect
+          label="Export"
+          value={region.exportMode ?? 'runtime'}
+          options={['runtime', 'oracle-only', 'ignore']}
+          onChange={(value) => onUpdate({ exportMode: value as SemanticRegion['exportMode'] })}
+        />
+        <LabeledInput label="Col" value={String(region.shape.rect.col)} onChange={(value) => onUpdate({ shape: updateRect(region.shape, { col: numberOr(region.shape.rect.col, value) }) })} />
+        <LabeledInput label="Row" value={String(region.shape.rect.row)} onChange={(value) => onUpdate({ shape: updateRect(region.shape, { row: numberOr(region.shape.rect.row, value) }) })} />
+        <LabeledInput label="Width" value={String(region.shape.rect.width)} onChange={(value) => onUpdate({ shape: updateRect(region.shape, { width: Math.max(1, numberOr(region.shape.rect.width, value)) }) })} />
+        <LabeledInput label="Height" value={String(region.shape.rect.height)} onChange={(value) => onUpdate({ shape: updateRect(region.shape, { height: Math.max(1, numberOr(region.shape.rect.height, value)) }) })} />
         <div className={`${styles.field} ${styles.fieldFull}`}>
           <label className={styles.label}>Props JSON</label>
           <textarea className={styles.textarea} value={propsText} onChange={(event) => setPropsText(event.target.value)} onBlur={applyPropsText} />
@@ -364,7 +373,7 @@ function LabeledSelect({ label, value, options, onChange }: LabeledSelectProps) 
   );
 }
 
-function rectFromLayers(layers: Array<{ rect: RuntimeAnnotation['rect'] }>): RuntimeAnnotation['rect'] {
+function rectFromLayers(layers: Array<{ rect: RegionShape['rect'] }>): RegionShape['rect'] {
   const minCol = Math.min(...layers.map((layer) => layer.rect.col));
   const minRow = Math.min(...layers.map((layer) => layer.rect.row));
   const maxCol = Math.max(...layers.map((layer) => layer.rect.col + layer.rect.width));
@@ -372,17 +381,17 @@ function rectFromLayers(layers: Array<{ rect: RuntimeAnnotation['rect'] }>): Run
   return { col: minCol, row: minRow, width: maxCol - minCol, height: maxRow - minRow };
 }
 
-function formatKeyValueRecord(record: Record<string, string>): string {
-  return Object.entries(record).map(([key, value]) => `${key}=${value}`).join('\n');
+function formatBindings(bindings: NonNullable<SemanticRegion['bindings']>): string {
+  return bindings.map((binding) => `${binding.slot}=${binding.path}`).join('\n');
 }
 
-function parseKeyValueRecord(value: string): Record<string, string> {
-  const result: Record<string, string> = {};
+function parseBindings(value: string): NonNullable<SemanticRegion['bindings']> {
+  const result: NonNullable<SemanticRegion['bindings']> = [];
   for (const line of value.split(/\n|,/)) {
     const [key, ...rest] = line.split('=');
     const trimmedKey = key?.trim();
     const trimmedValue = rest.join('=').trim();
-    if (trimmedKey && trimmedValue) result[trimmedKey] = trimmedValue;
+    if (trimmedKey && trimmedValue) result.push({ slot: trimmedKey, path: trimmedValue });
   }
   return result;
 }
@@ -403,10 +412,16 @@ function numberOr(fallback: number, value: string): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function defaultComponentId(kind: RuntimeComponentKind, semanticId: string): string {
-  if (kind === 'text-input') return 'query.input';
-  if (kind === 'custom-module') return `module.${slug(semanticId)}`;
-  return 'panel.frame';
+function updateRect(shape: RegionShape, patch: Partial<RegionShape['rect']>): RegionShape {
+  return { ...shape, rect: { ...shape.rect, ...patch } };
+}
+
+function uniqueRegionId(page: NonNullable<ReturnType<typeof useDocumentStore.getState>['document']['pages'][number]>, semanticId: string): string {
+  const base = semanticId || 'region';
+  if (!page.regions?.[base]) return base;
+  let index = 2;
+  while (page.regions?.[`${base}-${index}`]) index += 1;
+  return `${base}-${index}`;
 }
 
 function slug(value: string): string {

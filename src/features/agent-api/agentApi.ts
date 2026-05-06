@@ -2,7 +2,14 @@ import { useDocumentStore } from '@stores/documentStore.ts';
 import { useToolStore, type InterfaceMode } from '@stores/toolStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { useViewportStore } from '@stores/viewportStore.ts';
-import type { FIGMIIDocument, FIGMIIPage, Layer, LayerKind, LayerProperties, CanvasProperties } from '@primitives/document-model/types.ts';
+import type {
+  FIGMIIDocument,
+  FIGMIIPage,
+  Layer,
+  LayerKind,
+  LayerProperties,
+  CanvasProperties,
+} from '@primitives/document-model/types.ts';
 import type { GridRect } from '@primitives/grid-engine/types.ts';
 import type { StyleKey } from '@primitives/style-system/types.ts';
 import {
@@ -10,6 +17,9 @@ import {
   removeLayer as removeLayerOp,
   updateLayer as updateLayerOp,
   moveLayer as moveLayerOp,
+  addRegion as addRegionOp,
+  updateRegion as updateRegionOp,
+  removeRegion as removeRegionOp,
   reorderLayers,
   addPage,
   removePage,
@@ -30,23 +40,24 @@ import { exportAsJson, exportAsMarkdown } from '@features/export/exporters.ts';
 import {
   exportDesignPackageAsJson,
   exportRuntimeSemanticsAsJson,
-  generateRuntimeId,
   inferRuntimeSemantics as inferRuntimeSemanticsOp,
   normalizeRuntimeMetadata,
-  slugifyRuntimeId,
   validateRuntimeSemantics,
 } from '@primitives/runtime-semantics/index.ts';
 import type {
   DesignBinding,
   DesignInteraction,
   DesignStyleDef,
-  FigMeRuntimeMetadata,
   RuntimeAnnotation,
   RuntimeComponentDef,
   RuntimeInferenceOptions,
   RuntimeManifestMetadata,
   PageRuntimeMetadata,
 } from '@primitives/runtime-semantics/types.ts';
+import {
+  regionFromRuntimeAnnotation,
+  runtimeAnnotationUpdatesToRegionUpdates,
+} from '@primitives/runtime-semantics/regionCompat.ts';
 import { batch, isBatching, getPendingDocument, setPendingDocument } from './batch.ts';
 import { buildRegionApi } from './regionApi.ts';
 
@@ -206,124 +217,66 @@ function setRuntimeToken(id: string, token: DesignStyleDef): void {
 }
 
 function setRuntimeComponent(component: RuntimeComponentDef): void {
-  if (!component.id.trim()) return;
-  const doc = getCurrentDocument();
-  const runtime = normalizeRuntimeMetadata(doc.runtime);
-  commitDocument({
-    ...doc,
-    runtime: {
-      ...runtime,
-      components: { ...runtime.components, [component.id]: component },
-    },
-  });
+  void component;
+  warnDeprecatedRuntimeApi('addRuntimeComponent', 'Components are now derived from page.regions during Design Package export.');
 }
 
 function setRuntimeBinding(binding: DesignBinding): void {
-  if (!binding.id.trim()) return;
-  const doc = getCurrentDocument();
-  const runtime = normalizeRuntimeMetadata(doc.runtime);
-  commitDocument({
-    ...doc,
-    runtime: {
-      ...runtime,
-      bindings: { ...runtime.bindings, [binding.id]: binding },
-    },
-  });
+  void binding;
+  warnDeprecatedRuntimeApi('addBinding', 'Add bindings directly to FIGMII.regions entries instead.');
 }
 
 function setRuntimeInteraction(interaction: DesignInteraction): void {
-  if (!interaction.id.trim()) return;
-  const doc = getCurrentDocument();
-  const runtime = normalizeRuntimeMetadata(doc.runtime);
-  commitDocument({
-    ...doc,
-    runtime: {
-      ...runtime,
-      interactions: { ...runtime.interactions, [interaction.id]: interaction },
-    },
-  });
+  void interaction;
+  warnDeprecatedRuntimeApi('addInteraction', 'Add interactions directly to FIGMII.regions entries instead.');
 }
 
 function createRuntimeAnnotation(spec: Partial<RuntimeAnnotation>): string | null {
+  warnDeprecatedRuntimeApi('createRuntimeAnnotation', 'Use FIGMII.regions.defineRegion().');
   const doc = getCurrentDocument();
-  const activePage = doc.pages.find((page) => page.id === doc.activePageId);
-  const pageId = spec.pageId ?? activePage?.id;
-  const page = doc.pages.find((candidate) => candidate.id === pageId);
+  const page = doc.pages.find((candidate) => candidate.id === (spec.pageId ?? doc.activePageId));
   if (!page) return null;
 
-  const runtime = normalizeRuntimeMetadata(doc.runtime);
-  const id = spec.id ?? generateRuntimeId('annotation');
-  const semanticId = spec.semanticId?.trim() || uniqueRuntimeSemanticId(
-    runtime,
-    page.id,
-    spec.name ?? 'node',
-  );
-  const rect = spec.rect ?? { col: 0, row: 0, width: 8, height: 3 };
-  const annotation: RuntimeAnnotation = {
-    id,
+  const region = regionFromRuntimeAnnotation({
+    ...spec,
     pageId: page.id,
-    semanticId,
-    rect,
+    rect: spec.rect ?? { col: 0, row: 0, width: 8, height: 3 },
     export: spec.export ?? true,
-    ...(spec.name ? { name: spec.name } : {}),
-    ...(spec.z !== undefined ? { z: spec.z } : {}),
-    ...(spec.sourceLayerIds ? { sourceLayerIds: [...spec.sourceLayerIds] } : {}),
-    ...(spec.role ? { role: spec.role } : {}),
-    ...(spec.componentId ? { componentId: spec.componentId } : {}),
-    ...(spec.componentKind ? { componentKind: spec.componentKind } : {}),
-    ...(spec.props ? { props: { ...spec.props } } : {}),
-    ...(spec.bindingSlots ? { bindingSlots: { ...spec.bindingSlots } } : {}),
-    ...(spec.interactionIds ? { interactionIds: [...spec.interactionIds] } : {}),
-    ...(spec.sticky ? { sticky: spec.sticky } : {}),
-    ...(spec.scrollContainerId ? { scrollContainerId: spec.scrollContainerId } : {}),
-    ...(spec.constraints ? { constraints: spec.constraints } : {}),
-    ...(spec.customModuleKind ? { customModuleKind: spec.customModuleKind } : {}),
-    ...(spec.inputShape ? { inputShape: spec.inputShape } : {}),
-    ...(spec.breakpointBehavior ? { breakpointBehavior: spec.breakpointBehavior } : {}),
-    ...(spec.tags ? { tags: [...spec.tags] } : {}),
-    ...(spec.provenance ? { provenance: spec.provenance } : {}),
-  };
+  }, doc.runtime, page);
 
   commitDocument({
     ...doc,
-    runtime: {
-      ...runtime,
-      annotations: { ...runtime.annotations, [id]: annotation },
-    },
+    pages: doc.pages.map((candidate) => candidate.id === page.id ? addRegionOp(page, region) : candidate),
   });
-  return id;
+  return region.id;
 }
 
 function updateRuntimeAnnotation(id: string, updates: Partial<RuntimeAnnotation>): void {
+  warnDeprecatedRuntimeApi('updateRuntimeAnnotation', 'Use FIGMII.regions.updateRegion().');
   const doc = getCurrentDocument();
-  const runtime = normalizeRuntimeMetadata(doc.runtime);
-  const existing = runtime.annotations[id];
-  if (!existing) return;
+  const page = doc.pages.find((candidate) => candidate.regions?.[id]);
+  const existing = page?.regions?.[id];
+  if (!page || !existing) return;
+  const regionUpdates = runtimeAnnotationUpdatesToRegionUpdates(updates, doc.runtime, existing);
   commitDocument({
     ...doc,
-    runtime: {
-      ...runtime,
-      annotations: {
-        ...runtime.annotations,
-        [id]: { ...existing, ...updates, id },
-      },
-    },
+    pages: doc.pages.map((candidate) => candidate.id === page.id ? updateRegionOp(page, id, regionUpdates) : candidate),
   });
 }
 
 function removeRuntimeAnnotation(id: string): void {
+  warnDeprecatedRuntimeApi('removeRuntimeAnnotation', 'Use FIGMII.regions.removeRegion().');
   const doc = getCurrentDocument();
-  const runtime = normalizeRuntimeMetadata(doc.runtime);
-  if (!runtime.annotations[id]) return;
-  const annotations = { ...runtime.annotations };
-  delete annotations[id];
+  const page = doc.pages.find((candidate) => candidate.regions?.[id]);
+  if (!page) return;
   commitDocument({
     ...doc,
-    runtime: { ...runtime, annotations },
+    pages: doc.pages.map((candidate) => candidate.id === page.id ? removeRegionOp(page, id) : candidate),
   });
 }
 
 function inferRuntimeSemantics(options?: RuntimeInferenceOptions) {
+  warnDeprecatedRuntimeApi('inferRuntimeSemantics', 'Inference now writes page.regions.');
   const result = inferRuntimeSemanticsOp(getCurrentDocument(), options);
   commitDocument(result.document);
   return result.diagnostics;
@@ -365,21 +318,12 @@ function defaultPropsForKind(kind: LayerKind): LayerProperties {
   }
 }
 
-function uniqueRuntimeSemanticId(
-  runtime: FigMeRuntimeMetadata,
-  pageId: string,
-  base: string,
-): string {
-  const normalized = slugifyRuntimeId(base, 'node');
-  const existing = new Set(
-    Object.values(runtime.annotations)
-      .filter((annotation) => annotation.pageId === pageId)
-      .map((annotation) => annotation.semanticId),
-  );
-  if (!existing.has(normalized)) return normalized;
-  let index = 2;
-  while (existing.has(`${normalized}-${index}`)) index += 1;
-  return `${normalized}-${index}`;
+const deprecatedRuntimeApiWarnings = new Set<string>();
+
+function warnDeprecatedRuntimeApi(method: string, replacement: string): void {
+  if (deprecatedRuntimeApiWarnings.has(method)) return;
+  deprecatedRuntimeApiWarnings.add(method);
+  console.warn(`[FIGMII] ${method} is deprecated. ${replacement}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -690,6 +634,7 @@ export function buildApi() {
       return inferRuntimeSemantics(options);
     },
     validateRuntimeSemantics() {
+      warnDeprecatedRuntimeApi('validateRuntimeSemantics', 'Use FIGMII.export.toDesignPackage() or the Design Package export diagnostics for region-backed validation.');
       return validateRuntimeSemantics(getCurrentDocument());
     },
 

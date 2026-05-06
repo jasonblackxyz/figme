@@ -45,10 +45,45 @@ describe('runtime semantic exports', () => {
     const buffer = composePageBuffer(activePage, gridConfig);
     const html = exportAsHtml(inferred, buffer, gridConfig);
 
-    expect(imported.runtime?.annotations).toEqual(inferred.runtime?.annotations);
+    expect(imported.pages[0]?.regions).toEqual(inferred.pages[0]?.regions);
     expect(imported.pages[0]?.runtime).toEqual(inferred.pages[0]?.runtime);
     expect(html).toContain('data-runtime-semantics');
     expect(html).toContain('data-semantic-id="search-input"');
+  });
+
+  it('imports legacy GridSpec layer runtime as canonical regions', () => {
+    let doc = createEmptyDocument('Legacy GridSpec');
+    doc = addLayer(doc, {
+      id: 'legacy-layer',
+      kind: 'border-box',
+      name: 'Legacy Search',
+      rect: { col: 3, row: 4, width: 20, height: 3 },
+      visible: true,
+      locked: false,
+      opacity: 1,
+      styleKey: 'border',
+      properties: {
+        borderStyle: 'rounded',
+        padding: { top: 1, right: 1, bottom: 1, left: 1 },
+      },
+    });
+    const gridSpec = exportAsGridSpec(doc);
+    gridSpec.pages[0]!.layers.find((layer) => layer.id === 'legacy-layer')!.runtime = {
+      semanticId: 'legacy-search',
+      role: 'input',
+      componentKind: 'text-input',
+      bindingSlots: { value: 'search.query' },
+    };
+
+    const imported = importGridSpec(JSON.stringify(gridSpec));
+    const region = Object.values(imported.pages[0]?.regions ?? {}).find((candidate) => candidate.semanticId === 'legacy-search');
+
+    expect(region).toMatchObject({
+      componentKind: 'text-input',
+      shape: { rect: { col: 3, row: 4, width: 20, height: 3 } },
+      bindings: [{ slot: 'value', path: 'search.query' }],
+    });
+    expect(imported.pages[0]?.layers['legacy-layer']).not.toHaveProperty('runtime');
   });
 
   it('preserves custom module ids and embeds parseable runtime JSON in HTML', () => {
@@ -63,41 +98,34 @@ describe('runtime semantic exports', () => {
           screenId: 'home',
           exportAsScreen: true,
         },
-      }],
-      runtime: {
-        ...doc.runtime!,
-        annotations: {
+        regions: {
           graph: {
             id: 'graph',
-            pageId: page.id,
             semanticId: 'graph-region',
-            name: 'Graph <Region>',
-            rect: { col: 2, row: 2, width: 20, height: 8 },
-            export: true,
-            role: 'custom',
+            shape: { rect: { col: 2, row: 2, width: 20, height: 8 } },
+            role: 'container',
             componentKind: 'custom-module',
-            componentId: 'homepage.graph',
-            customModuleKind: 'parent-doc-chip-graph',
-            props: { label: 'A&B </script>' },
+            props: { moduleKind: 'parent-doc-chip-graph', label: 'A&B </script>' },
           },
         },
-      },
+        regionOrder: ['graph'],
+      }],
     };
 
     const designPackage = buildDesignPackage(annotated);
     const screenNode = designPackage.screens[0]?.nodes[0];
-    const component = designPackage.components.find((candidate) => candidate.id === 'homepage.graph');
+    const component = designPackage.components.find((candidate) => candidate.id === 'custom.parent-doc-chip-graph');
     const gridConfig = applyPageCanvasSizeToGridConfig(annotated.pages[0]!, annotated.gridConfig);
     const buffer = composePageBuffer(annotated.pages[0]!, gridConfig);
     const html = exportAsHtml(annotated, buffer, gridConfig);
     const runtimeText = html.match(/<script type="application\/json" data-runtime-semantics>([\s\S]*?)<\/script>/)?.[1] ?? '';
 
-    expect(screenNode?.componentId).toBe('homepage.graph');
+    expect(screenNode?.componentId).toBe('custom.parent-doc-chip-graph');
     expect(component).toMatchObject({
-      id: 'homepage.graph',
+      id: 'custom.parent-doc-chip-graph',
       kind: 'custom-module',
       moduleKind: 'parent-doc-chip-graph',
     });
-    expect(JSON.parse(runtimeText).annotations[0].props.label).toBe('A&B </script>');
+    expect(JSON.parse(runtimeText).regions[0].props.label).toBe('A&B </script>');
   });
 });

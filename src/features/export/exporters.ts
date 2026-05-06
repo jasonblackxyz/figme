@@ -25,8 +25,8 @@ export function exportAsHtml(
 ): string {
   const palette = doc.palette;
   const activePage = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
-  const runtimeAnnotations = activePage
-    ? Object.values(doc.runtime?.annotations ?? {}).filter((annotation) => annotation.pageId === activePage.id && annotation.export !== false)
+  const semanticRegions = activePage
+    ? Object.values(activePage.regions ?? {}).filter((region) => region.exportMode !== 'ignore')
     : [];
 
   let bodyRows = '';
@@ -64,27 +64,25 @@ export function exportAsHtml(
     bodyRows += `<div class="row">${spans}</div>\n`;
   }
 
-  const semanticOverlays = runtimeAnnotations.map((annotation) => {
+  const semanticOverlays = semanticRegions.map((region) => {
     const attrs = [
-      `data-annotation-id="${escapeAttr(annotation.id)}"`,
-      `data-semantic-id="${escapeAttr(annotation.semanticId)}"`,
-      annotation.role ? `data-role="${escapeAttr(annotation.role)}"` : '',
-      annotation.componentId ? `data-component-id="${escapeAttr(annotation.componentId)}"` : '',
-      annotation.componentKind ? `data-component-kind="${escapeAttr(annotation.componentKind)}"` : '',
-      annotation.sourceLayerIds?.length ? `data-source-layer-ids="${escapeAttr(annotation.sourceLayerIds.join(','))}"` : '',
+      `data-region-id="${escapeAttr(region.id)}"`,
+      `data-semantic-id="${escapeAttr(region.semanticId ?? region.id)}"`,
+      region.role ? `data-role="${escapeAttr(region.role)}"` : '',
+      `data-component-kind="${escapeAttr(region.componentKind)}"`,
     ].filter(Boolean).join(' ');
     const style = [
-      `left:${annotation.rect.col * gridConfig.cellWidth}px`,
-      `top:${annotation.rect.row * gridConfig.cellHeight}px`,
-      `width:${annotation.rect.width * gridConfig.cellWidth}px`,
-      `height:${annotation.rect.height * gridConfig.cellHeight}px`,
+      `left:${region.shape.rect.col * gridConfig.cellWidth}px`,
+      `top:${region.shape.rect.row * gridConfig.cellHeight}px`,
+      `width:${region.shape.rect.width * gridConfig.cellWidth}px`,
+      `height:${region.shape.rect.height * gridConfig.cellHeight}px`,
     ].join(';');
     return `<div class="semantic-region" ${attrs} style="${style}"></div>`;
   }).join('\n');
 
   const runtimeJson = JSON.stringify({
     pageId: activePage?.id,
-    annotations: runtimeAnnotations,
+    regions: semanticRegions,
     runtime: doc.runtime,
   });
 

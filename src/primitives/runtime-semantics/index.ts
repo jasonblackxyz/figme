@@ -12,6 +12,7 @@ export type {
   FrameChars,
   FrameComponentDef,
   LayerRuntimeMetadata,
+  LegacyFigMeRuntimeMetadata,
   PageRuntimeMetadata,
   RenderOracle,
   RuntimeAnnotation,
@@ -34,6 +35,7 @@ export {
   createEmptyRuntimeMetadata,
   createRuntimeProvenance,
   generateRuntimeId,
+  normalizeLegacyRuntimeMetadata,
   normalizeRuntimeMetadata,
   seedRuntimeBindings,
   seedRuntimeComponents,
@@ -41,6 +43,13 @@ export {
   seedSemanticTokens,
   slugifyRuntimeId,
 } from './defaults.ts';
+export {
+  migrateLegacyRuntimeAuthoring,
+  regionFromRuntimeAnnotation,
+  regionShapeFromRect,
+  runtimeAnnotationFromRegion,
+  runtimeAnnotationUpdatesToRegionUpdates,
+} from './regionCompat.ts';
 export {
   buildDesignPackage,
   buildRuntimeSemanticsExport,
