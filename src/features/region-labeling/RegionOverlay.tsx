@@ -6,6 +6,7 @@ import { useUiStore } from '@stores/uiStore.ts';
 import { useToolStore } from '@stores/toolStore.ts';
 import type { RuntimeComponentKind, SemanticRegion } from '@primitives/document-model/types.ts';
 import { regionColorForKind } from './regionColors.ts';
+import { getEffectiveRegionRole } from './runtimeKindMetadata.ts';
 import styles from './RegionOverlay.module.css';
 
 interface RegionOverlayProps {
@@ -30,6 +31,7 @@ export function RegionOverlay({ gridConfig, panX, panY }: RegionOverlayProps) {
   const overlayVisible = useUiStore((s) => s.regionOverlayVisible);
   const selectionMode = useUiStore((s) => s.canvasSelectionMode);
   const selectedRegionId = useUiStore((s) => s.selectedRegionId);
+  const filters = useUiStore((s) => s.regionOverlayFilters);
   const setSelectedRegion = useUiStore((s) => s.setSelectedRegion);
   const setSelectedLayers = useUiStore((s) => s.setSelectedLayers);
   const draftCells = useUiStore((s) => s.regionDraftCells);
@@ -53,16 +55,30 @@ export function RegionOverlay({ gridConfig, panX, panY }: RegionOverlayProps) {
     return list;
   }, [activePage]);
 
-  if (!activePage) return null;
-
   const isPaintTool = activeTool === 'region-paint';
   const isRegionsClickable = isPaintTool || selectionMode === 'regions';
   const showRegions = overlayVisible || isPaintTool;
+  const filteredRegions = useMemo(() => {
+    const kindFilters = new Set(filters.componentKinds);
+    const roleFilters = new Set(filters.roles);
+    const shouldFilterByKind = kindFilters.size > 0;
+    const shouldFilterByRole = roleFilters.size > 0;
+
+    if (!shouldFilterByKind && !shouldFilterByRole) return regions;
+
+    return regions.filter((region) => {
+      if (shouldFilterByKind && !kindFilters.has(region.componentKind)) return false;
+      if (shouldFilterByRole && !roleFilters.has(getEffectiveRegionRole(region))) return false;
+      return true;
+    });
+  }, [filters, regions]);
+
+  if (!activePage) return null;
 
   // Hide the region currently being repainted so the draft preview is the source of truth.
   const visibleRegions = draftTargetId
-    ? regions.filter((r) => r.id !== draftTargetId)
-    : regions;
+    ? filteredRegions.filter((r) => r.id !== draftTargetId)
+    : filteredRegions;
 
   const draftPositions: CellPos[] = [];
   for (const key of draftCells) {
@@ -199,4 +215,3 @@ function DraftPreview({ cells, panX, panY, gridConfig, paintMode, targetIsExisti
     </>
   );
 }
-

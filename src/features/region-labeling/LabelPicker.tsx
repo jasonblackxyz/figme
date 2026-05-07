@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
 import {
-  RUNTIME_TIER_1_COMPONENT_KINDS,
-  RUNTIME_TIER_2_COMPONENT_KINDS,
   RUNTIME_ROLES,
   type RuntimeAction,
   type RuntimeComponentKind,
@@ -14,6 +12,7 @@ import { useDocumentStore } from '@stores/documentStore.ts';
 import { useUiStore } from '@stores/uiStore.ts';
 import { useToolStore } from '@stores/toolStore.ts';
 import { generateRuntimeId, slugifyRuntimeId } from '@primitives/runtime-semantics/defaults.ts';
+import { RuntimeComponentKindPicker } from './RuntimeComponentKindPicker.tsx';
 import styles from './LabelPicker.module.css';
 
 const ACTION_KINDS: ReadonlyArray<RuntimeAction['kind']> = [
@@ -190,24 +189,11 @@ function LabelPickerForm({ editingRegion }: LabelPickerFormProps) {
 
           <div className={styles.field}>
             <label className={styles.fieldLabel} htmlFor="figmii-label-picker-kind">Component Kind</label>
-            <select
+            <RuntimeComponentKindPicker
               id="figmii-label-picker-kind"
-              className={styles.select}
               value={state.componentKind}
-              onChange={(e) => setState((s) => ({ ...s, componentKind: e.target.value as RuntimeComponentKind }))}
-              data-property="componentKind"
-            >
-              <optgroup label="Tier 1 — fully implemented">
-                {RUNTIME_TIER_1_COMPONENT_KINDS.map((kind) => (
-                  <option key={kind} value={kind}>{kind}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Tier 2 — reserved (renders as placeholder)">
-                {RUNTIME_TIER_2_COMPONENT_KINDS.map((kind) => (
-                  <option key={kind} value={kind}>{kind}</option>
-                ))}
-              </optgroup>
-            </select>
+              onChange={(componentKind) => setState((s) => ({ ...s, componentKind }))}
+            />
           </div>
 
           <div className={styles.row}>

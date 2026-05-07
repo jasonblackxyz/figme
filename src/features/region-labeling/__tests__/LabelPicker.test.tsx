@@ -16,6 +16,7 @@ beforeEach(() => {
     selectedRegionId: null,
     regionDraftCells: new Set(['2,2', '2,3', '3,2']),
     regionDraftTargetId: null,
+    regionOverlayFilters: { componentKinds: [], roles: [] },
     regionPaintStaysActive: false,
     labelPicker: {
       open: true,
@@ -38,8 +39,9 @@ describe('LabelPicker', () => {
 
   it('saves a region with selected component kind and semantic id', () => {
     render(<LabelPicker />);
-    const kindSelect = document.querySelector('[data-property="componentKind"]') as HTMLSelectElement;
-    fireEvent.change(kindSelect, { target: { value: 'button' } });
+    const kindInput = document.querySelector('[data-property="componentKind"]') as HTMLInputElement;
+    fireEvent.change(kindInput, { target: { value: 'button' } });
+    fireEvent.click(document.querySelector('[data-kind-option="button"]') as HTMLButtonElement);
     const idInput = document.querySelector('[data-property="semanticId"]') as HTMLInputElement;
     fireEvent.change(idInput, { target: { value: 'submit' } });
 

@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
 import {
-  RUNTIME_TIER_1_COMPONENT_KINDS,
-  RUNTIME_TIER_2_COMPONENT_KINDS,
   RUNTIME_ROLES,
   type RuntimeAction,
   type RuntimeBindingRef,
@@ -15,6 +13,7 @@ import { useUiStore } from '@stores/uiStore.ts';
 import { useToolStore } from '@stores/toolStore.ts';
 import { validateRegionAuthoring } from '@primitives/document-model/regionValidation.ts';
 import { slugifyRuntimeId } from '@primitives/runtime-semantics/defaults.ts';
+import { RuntimeComponentKindPicker } from '@features/region-labeling/RuntimeComponentKindPicker.tsx';
 import styles from './PropertiesPanel.module.css';
 
 const ACTION_KINDS: ReadonlyArray<RuntimeAction['kind']> = [
@@ -85,24 +84,12 @@ export function RegionProperties({ region }: RegionPropertiesProps) {
       <h3 className={styles.sectionTitle}>Region</h3>
       <div className={styles.fieldGroup}>
         <div className={styles.field}>
-          <label className={styles.fieldLabel}>Kind</label>
-          <select
-            className={styles.fieldSelect}
+          <label className={styles.fieldLabel} htmlFor="figmii-region-properties-kind">Kind</label>
+          <RuntimeComponentKindPicker
+            id="figmii-region-properties-kind"
             value={region.componentKind}
-            onChange={(e) => setKind(e.target.value as RuntimeComponentKind)}
-            data-property="componentKind"
-          >
-            <optgroup label="Tier 1">
-              {RUNTIME_TIER_1_COMPONENT_KINDS.map((kind) => (
-                <option key={kind} value={kind}>{kind}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Tier 2 (placeholder)">
-              {RUNTIME_TIER_2_COMPONENT_KINDS.map((kind) => (
-                <option key={kind} value={kind}>{kind}</option>
-              ))}
-            </optgroup>
-          </select>
+            onChange={setKind}
+          />
         </div>
 
         <div className={styles.field}>

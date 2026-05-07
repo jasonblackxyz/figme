@@ -7,6 +7,7 @@ beforeEach(() => {
     selectedRegionId: null,
     canvasSelectionMode: 'layers',
     regionOverlayVisible: true,
+    regionOverlayFilters: { componentKinds: [], roles: [] },
     regionPaintMode: 'add',
     regionPaintStaysActive: false,
     regionDraftCells: new Set(),
@@ -70,5 +71,23 @@ describe('uiStore — region labeling state', () => {
     expect(useUiStore.getState().regionPaintMode).toBe('erase');
     useUiStore.getState().toggleRegionPaintMode();
     expect(useUiStore.getState().regionPaintMode).toBe('add');
+  });
+
+  it('toggles and clears region overlay filters', () => {
+    useUiStore.getState().toggleRegionOverlayKindFilter('button');
+    useUiStore.getState().toggleRegionOverlayRoleFilter('input');
+    expect(useUiStore.getState().regionOverlayFilters).toEqual({
+      componentKinds: ['button'],
+      roles: ['input'],
+    });
+
+    useUiStore.getState().toggleRegionOverlayKindFilter('button');
+    expect(useUiStore.getState().regionOverlayFilters.componentKinds).toEqual([]);
+
+    useUiStore.getState().clearRegionOverlayFilters();
+    expect(useUiStore.getState().regionOverlayFilters).toEqual({
+      componentKinds: [],
+      roles: [],
+    });
   });
 });
