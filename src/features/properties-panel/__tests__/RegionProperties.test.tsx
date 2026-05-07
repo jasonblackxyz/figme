@@ -26,6 +26,7 @@ beforeEach(() => {
     selectedLayerIds: [],
     selectedRegionId: 'r1',
     canvasSelectionMode: 'regions',
+    regionOverlayFilters: { componentKinds: [], roles: [] },
   });
   useToolStore.setState({ activeTool: 'select' });
 });
@@ -34,8 +35,8 @@ describe('RegionProperties section', () => {
   it('renders the region section with current kind', () => {
     render(<PropertiesPanel />);
     expect(document.querySelector('[data-component="region-properties"]')).toBeInTheDocument();
-    const kindSelect = document.querySelector('[data-property="componentKind"]') as HTMLSelectElement;
-    expect(kindSelect.value).toBe('text-input');
+    const kindInput = document.querySelector('[data-property="componentKind"]') as HTMLInputElement;
+    expect(kindInput.value).toBe('text-input');
   });
 
   it('shows validation diagnostic when text-input lacks value binding', () => {
@@ -46,8 +47,9 @@ describe('RegionProperties section', () => {
 
   it('updating component kind persists to the store', () => {
     render(<PropertiesPanel />);
-    const kindSelect = document.querySelector('[data-property="componentKind"]') as HTMLSelectElement;
-    fireEvent.change(kindSelect, { target: { value: 'button' } });
+    const kindInput = document.querySelector('[data-property="componentKind"]') as HTMLInputElement;
+    fireEvent.change(kindInput, { target: { value: 'button' } });
+    fireEvent.click(document.querySelector('[data-kind-option="button"]') as HTMLButtonElement);
     const region = useDocumentStore
       .getState()
       .document.pages[0]!.regions!['r1'];

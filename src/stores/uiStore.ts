@@ -1,10 +1,16 @@
 import { create } from 'zustand';
 import type { InterfaceMode } from '@stores/toolStore.ts';
 import type { GridRect, GridPosition } from '@primitives/grid-engine/types.ts';
+import type { RuntimeComponentKind, RuntimeRole } from '@primitives/document-model/types.ts';
 
 export type CanvasSelectionMode = 'layers' | 'regions';
 
 export type RegionPaintMode = 'add' | 'erase';
+
+export interface RegionOverlayFilters {
+  componentKinds: RuntimeComponentKind[];
+  roles: RuntimeRole[];
+}
 
 export interface LabelPickerState {
   open: boolean;
@@ -39,6 +45,7 @@ interface UiState {
   // Region labeling
   canvasSelectionMode: CanvasSelectionMode;
   regionOverlayVisible: boolean;
+  regionOverlayFilters: RegionOverlayFilters;
   regionPaintMode: RegionPaintMode;
   regionPaintStaysActive: boolean;
   regionDraftCells: Set<string>;
@@ -52,6 +59,9 @@ interface UiState {
   toggleCanvasSelectionMode: () => void;
   setRegionOverlayVisible: (visible: boolean) => void;
   toggleRegionOverlay: () => void;
+  toggleRegionOverlayKindFilter: (kind: RuntimeComponentKind) => void;
+  toggleRegionOverlayRoleFilter: (role: RuntimeRole) => void;
+  clearRegionOverlayFilters: () => void;
   setRegionPaintMode: (mode: RegionPaintMode) => void;
   toggleRegionPaintMode: () => void;
   setRegionPaintStaysActive: (v: boolean) => void;
@@ -111,6 +121,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   eraserMode: false,
   canvasSelectionMode: 'layers',
   regionOverlayVisible: true,
+  regionOverlayFilters: { componentKinds: [], roles: [] },
   regionPaintMode: 'add',
   regionPaintStaysActive: false,
   regionDraftCells: new Set<string>(),
@@ -134,6 +145,31 @@ export const useUiStore = create<UiState>((set, get) => ({
     })),
   setRegionOverlayVisible: (visible: boolean) => set({ regionOverlayVisible: visible }),
   toggleRegionOverlay: () => set((s) => ({ regionOverlayVisible: !s.regionOverlayVisible })),
+  toggleRegionOverlayKindFilter: (kind: RuntimeComponentKind) =>
+    set((s) => {
+      const exists = s.regionOverlayFilters.componentKinds.includes(kind);
+      return {
+        regionOverlayFilters: {
+          ...s.regionOverlayFilters,
+          componentKinds: exists
+            ? s.regionOverlayFilters.componentKinds.filter((item) => item !== kind)
+            : [...s.regionOverlayFilters.componentKinds, kind],
+        },
+      };
+    }),
+  toggleRegionOverlayRoleFilter: (role: RuntimeRole) =>
+    set((s) => {
+      const exists = s.regionOverlayFilters.roles.includes(role);
+      return {
+        regionOverlayFilters: {
+          ...s.regionOverlayFilters,
+          roles: exists
+            ? s.regionOverlayFilters.roles.filter((item) => item !== role)
+            : [...s.regionOverlayFilters.roles, role],
+        },
+      };
+    }),
+  clearRegionOverlayFilters: () => set({ regionOverlayFilters: { componentKinds: [], roles: [] } }),
   setRegionPaintMode: (mode: RegionPaintMode) => set({ regionPaintMode: mode }),
   toggleRegionPaintMode: () =>
     set((s) => ({ regionPaintMode: s.regionPaintMode === 'add' ? 'erase' : 'add' })),

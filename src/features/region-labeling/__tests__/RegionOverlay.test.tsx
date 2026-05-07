@@ -16,6 +16,7 @@ function setupDocWithRegions() {
     id: 'r1',
     componentKind: 'frame',
     semanticId: 'header',
+    role: 'header',
     shape: { rect: { col: 0, row: 0, width: 10, height: 3 } },
   });
   page = addRegion(page, {
@@ -44,6 +45,7 @@ beforeEach(() => {
     selectedRegionId: null,
     canvasSelectionMode: 'layers',
     regionOverlayVisible: true,
+    regionOverlayFilters: { componentKinds: [], roles: [] },
     regionDraftCells: new Set(),
     regionDraftTargetId: null,
   });
@@ -55,6 +57,30 @@ describe('RegionOverlay', () => {
     setupDocWithRegions();
     render(<RegionOverlay gridConfig={gridConfig as never} panX={0} panY={0} />);
     expect(screen.getByLabelText(/Region header · frame/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Region submit · button/)).toBeInTheDocument();
+  });
+
+  it('filters visible regions by component kind', () => {
+    setupDocWithRegions();
+    useUiStore.setState({ regionOverlayFilters: { componentKinds: ['button'], roles: [] } });
+    render(<RegionOverlay gridConfig={gridConfig as never} panX={0} panY={0} />);
+    expect(screen.queryByLabelText(/Region header · frame/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Region submit · button/)).toBeInTheDocument();
+  });
+
+  it('filters visible regions by explicit role', () => {
+    setupDocWithRegions();
+    useUiStore.setState({ regionOverlayFilters: { componentKinds: [], roles: ['header'] } });
+    render(<RegionOverlay gridConfig={gridConfig as never} panX={0} panY={0} />);
+    expect(screen.getByLabelText(/Region header · frame/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Region submit · button/)).not.toBeInTheDocument();
+  });
+
+  it('filters visible regions by default role inferred from component kind', () => {
+    setupDocWithRegions();
+    useUiStore.setState({ regionOverlayFilters: { componentKinds: [], roles: ['button'] } });
+    render(<RegionOverlay gridConfig={gridConfig as never} panX={0} panY={0} />);
+    expect(screen.queryByLabelText(/Region header · frame/)).not.toBeInTheDocument();
     expect(screen.getByLabelText(/Region submit · button/)).toBeInTheDocument();
   });
 

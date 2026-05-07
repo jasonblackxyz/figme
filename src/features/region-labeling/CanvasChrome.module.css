@@ -71,6 +71,114 @@
   color: var(--color-text, #fff);
 }
 
+.filterWrap {
+  position: relative;
+}
+
+.filterPopover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(320px, calc(100vw - 24px));
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--color-surface, #1a1a1a);
+  border: 1px solid var(--color-border, #333);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.filterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.filterTitle,
+.filterGroupTitle {
+  color: var(--color-text-dim, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.clearButton {
+  background: transparent;
+  border: 1px solid var(--color-border, #333);
+  color: var(--color-text-dim, #888);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.clearButton:not(:disabled):hover {
+  border-color: var(--color-accent, #2563eb);
+  color: var(--color-text, #fff);
+}
+
+.clearButton:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 8px;
+}
+
+.filterGroup + .filterGroup {
+  border-top: 1px solid var(--color-border, #333);
+  margin-top: 8px;
+}
+
+.filterOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.filterOption {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--color-border, #333);
+  color: var(--color-text-dim, #888);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.filterOption:hover,
+.filterOptionActive {
+  border-color: var(--color-accent, #2563eb);
+  color: var(--color-text, #fff);
+}
+
+.filterName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filterCount {
+  color: var(--color-text-dim, #888);
+}
+
+.emptyFilter {
+  color: var(--color-text-dim, #888);
+  font-size: 10px;
+}
+
 .divider {
   width: 1px;
   height: 14px;
