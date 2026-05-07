@@ -1,0 +1,396 @@
+{
+  "schemaVersion": "readme-design-package-v1",
+  "manifest": {
+    "id": "minimal-search",
+    "family": "minimal-search",
+    "version": "0.1.0",
+    "breakpoints": {
+      "search": {
+        "cols": 228,
+        "rows": 57
+      }
+    },
+    "defaultScreen": "search",
+    "desktopDefault": "centered-mobile-canvas",
+    "backgroundToken": "board.bg",
+    "provenance": {
+      "source": "figmii",
+      "note": "Exported from FIGMII Design Package exporter."
+    }
+  },
+  "tokens": {
+    "palette.accentBorder": {
+      "color": "#2563eb",
+      "bg": "transparent"
+    },
+    "palette.accentText": {
+      "color": "#2563eb",
+      "bg": "transparent"
+    },
+    "palette.badge": {
+      "color": "#ffffff",
+      "bg": "#2563eb"
+    },
+    "palette.bg": {
+      "color": "#1a1a1a",
+      "bg": "#faf6ef"
+    },
+    "palette.border": {
+      "color": "#6b6b80",
+      "bg": "transparent"
+    },
+    "palette.dim": {
+      "color": "#999999",
+      "bg": "transparent"
+    },
+    "palette.dimOnCard": {
+      "color": "#999999",
+      "bg": "#f0ece4"
+    },
+    "palette.dot": {
+      "color": "#c0c0cc",
+      "bg": "transparent"
+    },
+    "palette.edge": {
+      "color": "#6b6b80",
+      "bg": "transparent"
+    },
+    "palette.etchCursor": {
+      "color": "#ffffff",
+      "bg": "#667744"
+    },
+    "palette.etchFrame": {
+      "color": "#cc3333",
+      "bg": "#aa2222"
+    },
+    "palette.etchKnob": {
+      "color": "#ffffff",
+      "bg": "#cc3333"
+    },
+    "palette.etchScreen": {
+      "color": "#88aa66",
+      "bg": "#667744"
+    },
+    "palette.etchScreenBorder": {
+      "color": "#556633",
+      "bg": "#667744"
+    },
+    "palette.etchTrail": {
+      "color": "#334422",
+      "bg": "#667744"
+    },
+    "palette.ghostBlob": {
+      "color": "#aaaaff",
+      "bg": "transparent"
+    },
+    "palette.ghostBubbleBg": {
+      "color": "#3a3a4a",
+      "bg": "#f0ece4"
+    },
+    "palette.ghostBubbleBorder": {
+      "color": "#6b6b80",
+      "bg": "#f0ece4"
+    },
+    "palette.ghostBubbleText": {
+      "color": "#1a1a1a",
+      "bg": "#f0ece4"
+    },
+    "palette.ghostBubbleUser": {
+      "color": "#2563eb",
+      "bg": "#f0ece4"
+    },
+    "palette.ghostClose": {
+      "color": "#999999",
+      "bg": "#f0ece4"
+    },
+    "palette.ghostEye": {
+      "color": "#ffffff",
+      "bg": "#aaaaff"
+    },
+    "palette.ghostInput": {
+      "color": "#1a1a1a",
+      "bg": "#f0ece4"
+    },
+    "palette.ghostInputCursor": {
+      "color": "#2563eb",
+      "bg": "#f0ece4"
+    },
+    "palette.ghostInputHint": {
+      "color": "#999999",
+      "bg": "#f0ece4"
+    },
+    "palette.imageDeep": {
+      "color": "#222222",
+      "bg": "transparent"
+    },
+    "palette.imageEdge": {
+      "color": "#ffffff",
+      "bg": "transparent"
+    },
+    "palette.imageLight": {
+      "color": "#cccccc",
+      "bg": "transparent"
+    },
+    "palette.imageMid": {
+      "color": "#888888",
+      "bg": "transparent"
+    },
+    "palette.modalBg": {
+      "color": "#3a3a4a",
+      "bg": "#f0ece4"
+    },
+    "palette.modalBorder": {
+      "color": "#6b6b80",
+      "bg": "#f0ece4"
+    },
+    "palette.modalClose": {
+      "color": "#999999",
+      "bg": "#f0ece4"
+    },
+    "palette.modalHeading": {
+      "color": "#2563eb",
+      "bg": "#f0ece4",
+      "fontWeight": 700
+    },
+    "palette.modalHint": {
+      "color": "#999999",
+      "bg": "#f0ece4"
+    },
+    "palette.modalTab": {
+      "color": "#999999",
+      "bg": "#f0ece4"
+    },
+    "palette.modalTabActive": {
+      "color": "#2563eb",
+      "bg": "#f0ece4"
+    },
+    "palette.modalText": {
+      "color": "#3a3a4a",
+      "bg": "#f0ece4"
+    },
+    "palette.modalTitle": {
+      "color": "#1a1a1a",
+      "bg": "#f0ece4",
+      "fontWeight": 700
+    },
+    "palette.modalTitleBold": {
+      "color": "#1a1a1a",
+      "bg": "#f0ece4",
+      "fontWeight": 700
+    },
+    "palette.nodeBg": {
+      "color": "#3a3a4a",
+      "bg": "#f0ece4"
+    },
+    "palette.queryBg": {
+      "color": "#1a1a1a",
+      "bg": "transparent"
+    },
+    "palette.queryBorder": {
+      "color": "#2563eb",
+      "bg": "transparent"
+    },
+    "palette.queryButton": {
+      "color": "#999999",
+      "bg": "transparent"
+    },
+    "palette.queryButtonActive": {
+      "color": "#ffffff",
+      "bg": "#2563eb"
+    },
+    "palette.queryCitation": {
+      "color": "#999999",
+      "bg": "transparent"
+    },
+    "palette.queryCursor": {
+      "color": "#2563eb",
+      "bg": "transparent"
+    },
+    "palette.queryDivider": {
+      "color": "#6b6b80",
+      "bg": "transparent"
+    },
+    "palette.queryError": {
+      "color": "#dc2626",
+      "bg": "transparent"
+    },
+    "palette.queryHint": {
+      "color": "#999999",
+      "bg": "transparent"
+    },
+    "palette.queryMatch": {
+      "color": "#2563eb",
+      "bg": "transparent",
+      "fontWeight": 700
+    },
+    "palette.queryPill": {
+      "color": "#2563eb",
+      "bg": "transparent"
+    },
+    "palette.queryPillBlink": {
+      "color": "#ffffff",
+      "bg": "#2563eb"
+    },
+    "palette.queryText": {
+      "color": "#1a1a1a",
+      "bg": "transparent"
+    },
+    "palette.success": {
+      "color": "#16a34a",
+      "bg": "transparent"
+    },
+    "palette.text": {
+      "color": "#1a1a1a",
+      "bg": "transparent"
+    },
+    "palette.textBold": {
+      "color": "#1a1a1a",
+      "bg": "transparent",
+      "fontWeight": 700
+    },
+    "board.bg": {
+      "color": "#1a1a1a",
+      "bg": "#faf6ef"
+    },
+    "panel.border": {
+      "color": "#6b6b80",
+      "bg": "transparent"
+    },
+    "panel.fill": {
+      "color": "#3a3a4a",
+      "bg": "#f0ece4"
+    },
+    "text.primary": {
+      "color": "#1a1a1a",
+      "bg": "transparent"
+    },
+    "text.muted": {
+      "color": "#999999",
+      "bg": "transparent"
+    },
+    "accent.primary": {
+      "color": "#2563eb",
+      "bg": "transparent"
+    },
+    "input.border": {
+      "color": "#2563eb",
+      "bg": "transparent"
+    },
+    "input.fill": {
+      "color": "#1a1a1a",
+      "bg": "transparent"
+    },
+    "input.text": {
+      "color": "#1a1a1a",
+      "bg": "transparent"
+    },
+    "input.placeholder": {
+      "color": "#999999",
+      "bg": "transparent"
+    },
+    "input.cursor": {
+      "color": "#2563eb",
+      "bg": "transparent"
+    },
+    "status.fill": {
+      "color": "#ffffff",
+      "bg": "#2563eb"
+    }
+  },
+  "components": [
+    {
+      "id": "runtime.text-input",
+      "kind": "text-input",
+      "name": "Text Input",
+      "minWidth": 4,
+      "minHeight": 1,
+      "provenance": {
+        "source": "ai-enrichment",
+        "confidence": 0.9
+      },
+      "chars": {
+        "tl": "+",
+        "t": "-",
+        "tr": "+",
+        "l": "|",
+        "r": "|",
+        "bl": "+",
+        "b": "-",
+        "br": "+"
+      },
+      "multiline": false,
+      "tokens": {
+        "border": "input.border",
+        "fill": "input.fill",
+        "text": "input.text",
+        "placeholder": "input.placeholder",
+        "cursor": "input.cursor"
+      },
+      "padding": {
+        "top": 0,
+        "right": 1,
+        "bottom": 0,
+        "left": 1
+      }
+    }
+  ],
+  "screens": [
+    {
+      "id": "search",
+      "name": "Page 1",
+      "canvas": {
+        "cols": 228,
+        "rows": 57
+      },
+      "desktopBehavior": "centered-mobile-canvas",
+      "nodes": [
+        {
+          "id": "search-input",
+          "componentId": "runtime.text-input",
+          "rect": {
+            "col": 3,
+            "row": 3,
+            "width": 28,
+            "height": 1
+          },
+          "role": "input",
+          "props": {
+            "placeholder": "Search…"
+          },
+          "bindings": {
+            "value": "search-input-value"
+          },
+          "interactionIds": [
+            "submitquery"
+          ],
+          "provenance": {
+            "source": "ai-enrichment",
+            "confidence": 0.9
+          }
+        }
+      ]
+    }
+  ],
+  "bindings": {
+    "search-input-value": {
+      "id": "search-input-value",
+      "path": "search.query",
+      "provenance": {
+        "source": "ai-enrichment",
+        "confidence": 0.9
+      }
+    }
+  },
+  "interactions": {
+    "submitquery": {
+      "id": "submitquery",
+      "action": {
+        "kind": "submitQuery"
+      },
+      "provenance": {
+        "source": "ai-enrichment",
+        "confidence": 0.9
+      }
+    }
+  }
+}
