@@ -69,9 +69,12 @@ function composeMinimalSearch(): string {
   });
 
   // 4. The semantic label: a text-input region over the input cells with a
-  // value binding and a submit interaction.
+  // value binding and a submit interaction. Height is 3 so the region fits
+  // the runtime text-input's 3-row frame (top border + content + bottom
+  // border); a height: 1 region collapses the frame and zeroes the overlay's
+  // cssRect.height in the readme-app renderer.
   api.regions.markInput(
-    { rect: { col: 3, row: 3, width: 28, height: 1 } },
+    { rect: { col: 2, row: 2, width: 30, height: 3 } },
     {
       semanticId: 'search-input',
       valuePath: 'search.query',
